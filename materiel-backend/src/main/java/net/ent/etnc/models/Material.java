@@ -50,4 +50,9 @@ public class Material extends AbstractPersistableWithIdSetter<Long> {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id")
     private Room room;
+
+    @Getter
+    @Setter
+    @Column(name = "archived", nullable = false)
+    private boolean archived;
 }
