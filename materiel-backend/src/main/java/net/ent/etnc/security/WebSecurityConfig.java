@@ -1,7 +1,6 @@
 package net.ent.etnc.security;
 
-
-import net.ent.etnc.objectrent.security.jwt.AuthJwtFilter;
+import net.ent.etnc.security.jwt.AuthJwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -100,12 +99,10 @@ public class WebSecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/login/", "/api/v1/auth/refresh/", "/api/v1/auth/logout/").permitAll()
+                        .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(authJwtFilter, UsernamePasswordAuthenticationFilter.class);
         return httpSecurity.build();
     }
 }
-
-

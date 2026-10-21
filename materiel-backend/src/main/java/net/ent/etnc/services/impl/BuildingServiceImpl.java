@@ -29,7 +29,7 @@ public class BuildingServiceImpl extends AbstractService<Building, BuildingRepos
     @Transactional
     public Building create(final Building building) {
         if (findByNumber(building.getNumber()).isPresent()) {
-            throw new ServiceException(String.format("Le bâtiment numéro %s éxiste déjà.", building.getNumber()));
+            throw new ServiceException(String.format("Le bâtiment numéro %s existe déjà.", building.getNumber()));
         }
         validateBuilding(building);
         return super.create(building);
@@ -37,10 +37,10 @@ public class BuildingServiceImpl extends AbstractService<Building, BuildingRepos
 
     private void validateBuilding(final Building building) {
         if (building.getNumber() == null || building.getNumber() < 0) {
-            throw new ServiceException("La numéro de bâtiment doit être positif.");
+            throw new ServiceException("Le numéro de bâtiment doit être positif.");
         }
         if (building.getNumber() > 999) {
-            throw new ServiceException("La numéro de bâtiment doit être inférieur à 999.");
+            throw new ServiceException("Le numéro de bâtiment doit être inférieur à 999.");
         }
     }
 

@@ -38,17 +38,17 @@ public class RoomServiceImpl extends AbstractService<Room, RoomRepository> imple
     public Room create(final Room room) {
         validateRoom(room);
         if (findByNumberAndBuilding(room.getNumber(), room.getBuilding()).isPresent()) {
-            throw new ServiceException(String.format("La salle numéro %s éxiste déjà dans le bâtiment %s.", room.getNumber(), room.getBuilding().getNumber()));
+            throw new ServiceException(String.format("La salle numéro %s existe déjà dans le bâtiment %s.", room.getNumber(), room.getBuilding().getNumber()));
         }
         return super.create(room);
     }
 
     private void validateRoom(final Room room) {
         if (room.getNumber() == null || room.getNumber() < 0) {
-            throw new ServiceException("La numéro de la salle doit être positif.");
+            throw new ServiceException("Le numéro de la salle doit être positif.");
         }
         if (room.getNumber() > 999) {
-            throw new ServiceException("La numéro de la salle doit être inférieur à 999.");
+            throw new ServiceException("Le numéro de la salle doit être inférieur à 999.");
         }
     }
     
