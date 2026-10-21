@@ -1,5 +1,6 @@
 package net.ent.etnc.services.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import net.ent.etnc.models.Building;
 import net.ent.etnc.models.Room;
 import net.ent.etnc.repositories.RoomRepository;
@@ -16,6 +17,7 @@ import java.util.Optional;
 /**
  * Service des {@link Room}.
  */
+@Slf4j
 @Service
 public class RoomServiceImpl extends AbstractService<Room, RoomRepository> implements RoomService {
 
@@ -36,26 +38,47 @@ public class RoomServiceImpl extends AbstractService<Room, RoomRepository> imple
     @Override
     @Transactional
     public Room create(final Room room) {
+        log.debug("Demande de création d'une salle : numéro={}, bâtiment_id={}",
+                room.getNumber(), room.getBuilding() != null ? room.getBuilding().getId() : null);
+
         validateRoom(room);
         if (findByNumberAndBuilding(room.getNumber(), room.getBuilding()).isPresent()) {
-            throw new ServiceException(String.format("La salle numéro %s existe déjà dans le bâtiment %s.", room.getNumber(), room.getBuilding().getNumber()));
+            log.warn("Échec création salle : la salle numéro {} existe déjà dans le bâtiment {}",
+                    room.getNumber(), room.getBuilding().getNumber());
+            throw new ServiceException(String.format("La salle numéro %s existe déjà dans le bâtiment %s.",
+                    room.getNumber(), room.getBuilding().getNumber()));
         }
-        return super.create(room);
+
+        Room created = super.create(room);
+        log.info("Salle créée avec succès [id={}, number={}, buildingNumber={}]",
+                created.getId(), created.getNumber(), created.getBuilding().getNumber());
+        return created;
     }
 
     private void validateRoom(final Room room) {
+        if (room.getBuilding() == null) {
+            log.warn("Validation rejetée : bâtiment non renseigné pour la salle.");
+            throw new ServiceException("Le bâtiment doit être renseigné.");
+        }
         if (room.getNumber() == null || room.getNumber() < 0) {
+            log.warn("Validation rejetée : numéro de salle invalide ({})", room.getNumber());
             throw new ServiceException("Le numéro de la salle doit être positif.");
         }
         if (room.getNumber() > 999) {
+            log.warn("Validation rejetée : numéro de salle supérieur à 999 ({})", room.getNumber());
             throw new ServiceException("Le numéro de la salle doit être inférieur à 999.");
         }
     }
-    
+
     @Override
+    @Transactional
     public Room update(final Room room) {
+        log.debug("Demande de mise à jour de la salle [id={}, number={}]", room.getId(), room.getNumber());
         validateRoom(room);
-        return super.update(room);
+
+        Room updated = super.update(room);
+        log.info("Salle mise à jour avec succès [id={}, number={}]", updated.getId(), updated.getNumber());
+        return updated;
     }
 
     @Override

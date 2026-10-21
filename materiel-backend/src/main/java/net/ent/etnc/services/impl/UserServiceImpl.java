@@ -1,5 +1,6 @@
 package net.ent.etnc.services.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import net.ent.etnc.models.User;
 import net.ent.etnc.repositories.UserRepository;
 import net.ent.etnc.services.UserService;
@@ -20,6 +21,7 @@ import java.util.Optional;
 /**
  * Transactional service for account business rules and actor lookup.
  */
+@Slf4j
 @Service
 public class UserServiceImpl extends AbstractService<User, UserRepository> implements UserService {
 
@@ -40,17 +42,26 @@ public class UserServiceImpl extends AbstractService<User, UserRepository> imple
     @Override
     @Transactional
     public User create(User entity) {
+        log.debug("Demande de création d'un utilisateur [username={}]", entity.getUsername());
+
         if (entity.getUsername() == null || entity.getUsername().isBlank()) {
+            log.warn("Échec création utilisateur : le nom d'utilisateur est vide.");
             throw new ServiceException("Le nom d'utilisateur est obligatoire.");
         }
         if (repository.existsByUsername(entity.getUsername())) {
+            log.warn("Échec création utilisateur : le nom d'utilisateur '{}' est déjà utilisé.", entity.getUsername());
             throw new ServiceException("Le nom d'utilisateur est déjà utilisé.");
         }
         if (entity.getPassword() == null || entity.getPassword().isBlank()) {
+            log.warn("Échec création utilisateur : mot de passe manquant pour '{}'.", entity.getUsername());
             throw new ServiceException("Le mot de passe est obligatoire.");
         }
+
         entity.setPassword(passwordEncoder.encode(entity.getPassword()));
-        return super.create(entity);
+        User created = super.create(entity);
+        log.info("Utilisateur créé avec succès [id={}, username={}, role={}]",
+                created.getId(), created.getUsername(), created.getRole());
+        return created;
     }
 
     /**
@@ -71,6 +82,7 @@ public class UserServiceImpl extends AbstractService<User, UserRepository> imple
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()
                 || authentication instanceof AnonymousAuthenticationToken) {
+            log.warn("Tentative d'accès non authentifié à currentUser()");
             throw new AccessDeniedException("Utilisateur non authentifié");
         }
 
@@ -78,10 +90,16 @@ public class UserServiceImpl extends AbstractService<User, UserRepository> imple
             case User user -> user.getUsername();
             case UserDetails userDetails -> userDetails.getUsername();
             case String principalName -> principalName;
-            default -> throw new AccessDeniedException("Type de principal non supporté");
+            default -> {
+                log.warn("Principal d'authentification invalide rencontré : {}", authentication.getPrincipal().getClass());
+                throw new AccessDeniedException("Type de principal non supporté");
+            }
         };
 
         return repository.findByUsername(username)
-                .orElseThrow(() -> new AccessDeniedException("Utilisateur introuvable : " + username));
+                .orElseThrow(() -> {
+                    log.warn("Utilisateur authentifié introuvable en base : {}", username);
+                    return new AccessDeniedException("Utilisateur introuvable : " + username);
+                });
     }
 }

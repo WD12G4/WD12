@@ -1,5 +1,6 @@
 package net.ent.etnc.services.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import net.ent.etnc.models.RefreshToken;
 import net.ent.etnc.models.User;
 import net.ent.etnc.repositories.RefreshTokenRepository;
@@ -25,6 +26,7 @@ import java.util.UUID;
 /**
  * Transactional implementation of refresh-token creation, rotation and revocation.
  */
+@Slf4j
 @Service
 public class RefreshTokenServiceImpl implements RefreshTokenService {
     /**
@@ -66,6 +68,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Override
     @Transactional
     public String createToken(User user, String ipAddress, String userAgent) {
+        log.debug("Création d'un refresh token pour l'utilisateur id={}, ip={}", user.getId(), ipAddress);
         return createToken(user, UUID.randomUUID().toString(), ipAddress, userAgent).rawToken();
     }
 
@@ -75,20 +78,35 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Override
     @Transactional(noRollbackFor = {ExpiredRefreshTokenException.class, ReusedRefreshTokenException.class})
     public RotateResult rotate(String rawToken, String ipAddress, String userAgent) {
-        if (rawToken == null || rawToken.isBlank()) throw new InvalidRefreshTokenException();
+        if (rawToken == null || rawToken.isBlank()) {
+            log.warn("Tentative de rotation avec un refresh token vide");
+            throw new InvalidRefreshTokenException();
+        }
         Instant now = clock.instant();
         RefreshToken current = repository.findByTokenHashForUpdate(hash(rawToken))
-                .orElseThrow(InvalidRefreshTokenException::new);
+                .orElseThrow(() -> {
+                    log.warn("Tentative de rotation : refresh token inconnu");
+                    return new InvalidRefreshTokenException();
+                });
+
         if (current.isRevoked()) {
+            log.error("ALERTE SÉCURITÉ : Réutilisation détectée d'un refresh token déjà révoqué (familyId={}, user={}) ! Révocation de la famille.",
+                    current.getFamilyId(), current.getUser().getUsername());
             repository.revokeActiveByFamilyId(current.getFamilyId(), now);
             throw new ReusedRefreshTokenException();
         }
+
         if (current.isExpiredAt(now)) {
+            log.warn("Tentative de rotation avec un refresh token expiré (familyId={}, user={})",
+                    current.getFamilyId(), current.getUser().getUsername());
             current.revoke(now, null);
             throw new ExpiredRefreshTokenException();
         }
+
         GeneratedToken next = createToken(current.getUser(), current.getFamilyId(), ipAddress, userAgent);
         current.revoke(now, next.tokenHash());
+        log.info("Rotation réussie du refresh token pour l'utilisateur '{}' (familyId={})",
+                current.getUser().getUsername(), current.getFamilyId());
         return new RotateResult(current.getUser(), next.rawToken());
     }
 
@@ -100,7 +118,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public void revokeToken(String rawToken) {
         if (rawToken == null || rawToken.isBlank()) return;
         repository.findByTokenHashForUpdate(hash(rawToken))
-                .ifPresent(token -> token.revoke(clock.instant(), null));
+                .ifPresent(token -> {
+                    log.info("Révocation du refresh token lors de la déconnexion (familyId={}, user={})",
+                            token.getFamilyId(), token.getUser().getUsername());
+                    token.revoke(clock.instant(), null);
+                });
     }
 
     /**

@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: materiel-backend
+
+# Configuration des logs
+logging:
+  # Niveaux de logs par package
+  level:
+    root: INFO
+    net.ent.etnc: DEBUG                    # Vos services et contrôleurs en DEBUG
+    org.springframework.security: INFO    # Passer à DEBUG pour investiguer l'authentification
+    org.hibernate.SQL: WARN               # Passer à DEBUG pour voir les requêtes SQL générées
+    org.hibernate.orm.jdbc.bind: WARN     # Passer à TRACE pour voir les valeurs injectées dans le SQL
+
+  # Format d'affichage dans la console
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%t] %-40.40logger{39} : %m%n%wEx"
+
+  # Enregistrement dans un fichier avec rotation automatique
+  file:
+    name: logs/materiel-backend.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
+      total-size-cap: 1GB
