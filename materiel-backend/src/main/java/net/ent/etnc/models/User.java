@@ -17,12 +17,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 
-
 @Entity
 @Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(name = "uk__users__username", columnNames = "username")
 })
-@EqualsAndHashCode(callSuper = false, of = "username")
+@EqualsAndHashCode(callSuper = false, of = "username", doNotUseGetters = false)
 @ToString(callSuper = true, of = {"username", "role"})
 public class User extends AbstractPersistableWithIdSetter<Long> implements UserDetails {
 
@@ -74,5 +73,4 @@ public class User extends AbstractPersistableWithIdSetter<Long> implements UserD
     public @Nullable String getPassword() {
         return this.password;
     }
-
 }

@@ -26,13 +26,13 @@ public interface RefreshTokenRepository extends BaseRepository<RefreshToken> {
      * Finds and locks a refresh token for transactional rotation.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select token from RefreshToken token join fetch token.user where token.tokenHash = :tokenHash")
+    @Query("select token from RefreshToken token where token.tokenHash = :tokenHash")
     Optional<RefreshToken> findByTokenHashForUpdate(@Param("tokenHash") String tokenHash);
 
     /**
      * Revokes every still-active token in the same family.
      */
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Modifying(flushAutomatically = true)
     @Query("""
             update RefreshToken token
                set token.revokedAt = :revokedAt

@@ -1,5 +1,6 @@
 package net.ent.etnc.models;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -25,5 +26,6 @@ public class Building extends AbstractPersistableWithIdSetter<Long> {
     @NotNull(message = "le numéro de bâtiment doit être renseigné")
     @Min(value = 0, message = "le numéro de bâtiment doit être positif")
     @Max(value = 999, message = "Le numéro de bâtiment doit être inférieur à 999")
+    @Column(name = "number", nullable = false)
     private Integer number;
 }

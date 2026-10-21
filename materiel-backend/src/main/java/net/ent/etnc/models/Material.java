@@ -14,13 +14,13 @@ import net.ent.etnc.models.enums.EMaterialType;
 import java.time.LocalDate;
 
 /**
- * Materiel.
+ * Matériel.
  */
 @Entity
 @Table(name = "materials",
         uniqueConstraints = @UniqueConstraint(name = "uk__material__serial_number",
                 columnNames = "serial_number"))
-@EqualsAndHashCode(callSuper = false, of = "serialNumber")
+@EqualsAndHashCode(callSuper = false, of = "serialNumber", doNotUseGetters = false)
 @ToString(callSuper = true, of = {"serialNumber"})
 public class Material extends AbstractPersistableWithIdSetter<Long> {
 
@@ -44,15 +44,14 @@ public class Material extends AbstractPersistableWithIdSetter<Long> {
     @Column(name = "end_availability_date", nullable = false)
     private LocalDate endAvailabilityDate;
 
-
     @Getter
     @Setter
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
+    @JoinColumn(name = "room_id", foreignKey = @ForeignKey(name = "fk__materials__rooms"))
     private Room room;
 
     @Getter
     @Setter
     @Column(name = "archived", nullable = false)
-    private boolean archived;
+    private boolean archived = false;
 }
