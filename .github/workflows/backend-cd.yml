@@ -49,6 +49,10 @@ jobs:
           echo "=========================================================="
 
           docker build \
+            --network=host \
+            --build-arg HTTP_PROXY="http://172.16.0.1:8080" \
+            --build-arg HTTPS_PROXY="http://172.16.0.1:8080" \
+            --build-arg NO_PROXY="localhost,127.0.0.1,*.internet.comsic,*.etrs.net,*.etrs.terre.defense.gouv.fr,192.168.*,172.16.*,10.10.*,*.pdi,*.etnc.terre.defense.gouv.fr" \
             -t "${IMAGE_NAME}:${TAG}" \
             -t "${IMAGE_NAME}:${BRANCH_TAG}" \
             -t "${IMAGE_NAME}:${SHA_TAG}" \

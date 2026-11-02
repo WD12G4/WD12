@@ -18,6 +18,9 @@ jobs:
     name: Backend Build & Test
     runs-on: self-hosted
 
+    env:
+      GRADLE_OPTS: "-Dhttp.proxyHost=172.16.0.1 -Dhttp.proxyPort=8080 -Dhttps.proxyHost=172.16.0.1 -Dhttps.proxyPort=8080 -Dhttp.nonProxyHosts=localhost|127.0.0.1|*.internet.comsic|*.etrs.net|*.etrs.terre.defense.gouv.fr|192.168.*|172.16.*|10.10.*|*.pdi|*.etnc.terre.defense.gouv.fr"
+
     services:
       postgres:
         image: postgres:16-alpine
