@@ -1,0 +1,56 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+
+enum EMaterialType <<enumeration>> {
+  + UC
+  + SCREEN
+  + PROJECTOR
+  + PERIPHERAL
+  --
+  - libelle: String
+  --
+  + getLibelle(): String
+}
+
+class Building <<entity>> {
+  - number: Integer {unique, 0 <= value <= 999}
+  --
+  + getNumber(): Integer
+  + setNumber(number: Integer): void
+}
+
+class Room <<entity>> {
+  - number: Integer {0 <= value <= 999}
+  --
+  + getNumber(): Integer
+  + setNumber(number: Integer): void
+  + getBuilding(): Building
+  + setBuilding(building: Building): void
+}
+
+class Material <<entity>> {
+  - serialNumber: String {unique, 1..100 chars}
+  - materialType: EMaterialType
+  - endAvailabilityDate: LocalDate
+  --
+  + getSerialNumber(): String
+  + setSerialNumber(serialNumber: String): void
+  + getMaterialType(): EMaterialType
+  + setMaterialType(materialType: EMaterialType): void
+  + getEndAvailabilityDate(): LocalDate
+  + setEndAvailabilityDate(date: LocalDate): void
+  + getRoom(): Room
+  + setRoom(room: Room): void
+}
+
+' Relations et multiplicités
+Room "1" --> "1" Building : -building > \n{fk: building_id, not null}
+note on link: Contrainte d'unicité composite:\n{unique: (building, number)}
+
+Material "*" --> "0..1" Room : -room > \n{fk: room_id}
+Material ..> EMaterialType : <<uses>>
+
+@enduml

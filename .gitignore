@@ -1,0 +1,25 @@
+# Gradle / Java
+.gradle/
+**/build/
+!**/gradle/wrapper/gradle-wrapper.jar
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IntelliJ IDEA & IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.vscode/
+
+# Gemini / Agents logs & scratch
+.agents/
+.gemini/
+
+# System
+.DS_Store
+Thumbs.db

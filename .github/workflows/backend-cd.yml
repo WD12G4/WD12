@@ -1,0 +1,77 @@
+name: Backend CD
+
+on:
+  push:
+    branches: [ "main", "proto-backend-frontend", "develop" ]
+    paths:
+      - 'materiel-backend/**'
+      - '.github/workflows/backend-cd.yml'
+      - 'docker-compose.yml'
+      - 'docker-compose.prod.yml'
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Tag de version pour l'image Docker backend (ex: latest, v1.0.0)"
+        required: false
+        default: 'latest'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  docker-build-push:
+    name: Build & Push Docker Image to GHCR
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker image
+        shell: bash
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_NAME="ghcr.io/${REPO_LOWER}-backend"
+          TAG="${{ inputs.image_tag || 'latest' }}"
+          SHA_TAG=$(echo "${{ github.sha }}" | cut -c1-7)
+          BRANCH_TAG="${GITHUB_REF_NAME:-backend}"
+
+          echo "=========================================================="
+          echo "Construction de l'image Docker : ${IMAGE_NAME}:${TAG}"
+          echo "=========================================================="
+
+          docker build \
+            -t "${IMAGE_NAME}:${TAG}" \
+            -t "${IMAGE_NAME}:${BRANCH_TAG}" \
+            -t "${IMAGE_NAME}:${SHA_TAG}" \
+            -f ./materiel-backend/materiel-backend.dockerfile \
+            ./materiel-backend
+
+          echo "=========================================================="
+          echo "Publication de l'image sur GHCR"
+          echo "=========================================================="
+          docker push "${IMAGE_NAME}:${TAG}"
+          docker push "${IMAGE_NAME}:${BRANCH_TAG}"
+          docker push "${IMAGE_NAME}:${SHA_TAG}"
+
+      - name: Test Docker Pull from GHCR
+        shell: bash
+        run: |
+          echo "=========================================================="
+          echo "Test de récupération (pull) de l'image Docker depuis GHCR"
+          echo "=========================================================="
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_NAME="ghcr.io/${REPO_LOWER}-backend"
+          TAG="${{ inputs.image_tag || 'latest' }}"
+          echo "Pulling image: ${IMAGE_NAME}:${TAG}..."
+          docker pull "${IMAGE_NAME}:${TAG}"
+          echo "Image récupérée avec succès :"
+          docker images | grep "${IMAGE_NAME}" || true

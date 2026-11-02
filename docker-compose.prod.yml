@@ -1,0 +1,63 @@
+services:
+  # -------------------------------------------------------------
+  # 1. Base de données PostgreSQL
+  # -------------------------------------------------------------
+  postgres:
+    image: postgres:16
+    container_name: materiel_db
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - materiel_network
+
+  # -------------------------------------------------------------
+  # 2. Interface web Adminer pour la base de données
+  # -------------------------------------------------------------
+  adminer:
+    image: adminer:latest
+    container_name: materiel_adminer
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${ADMINER_PORT:-8081}:8080"
+    depends_on:
+      - postgres
+    networks:
+      - materiel_network
+
+  # -------------------------------------------------------------
+  # 3. Backend Spring Boot (Java 21) - Image pré-buildée CD
+  # -------------------------------------------------------------
+  backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/wd12g4/wd12-backend:latest}
+    container_name: materiel_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    networks:
+      - materiel_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  materiel_network:
+    driver: bridge
