@@ -57,6 +57,23 @@ services:
     networks:
       - materiel_network
 
+  # -------------------------------------------------------------
+  # 4. Frontend Vue 3 (Vite + Nginx)
+  # -------------------------------------------------------------
+  frontend:
+    build:
+      context: ./materiel-frontend
+      dockerfile: materiel-frontend.dockerfile
+    image: ${FRONTEND_IMAGE:-ghcr.io/wd12g4/wd12-frontend:latest}
+    container_name: materiel_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    networks:
+      - materiel_network
+
 volumes:
   postgres_data:
     driver: local

@@ -2,12 +2,12 @@ name: Backend CI
 
 on:
   push:
-    branches: [ "main", "proto-backend-frontend", "develop" ]
+    branches: [ "main", "proto-backend-frontend", "develop", "frontBase_ESL" ]
     paths:
       - 'materiel-backend/**'
       - '.github/workflows/backend-ci.yml'
   pull_request:
-    branches: [ "main", "develop", "proto-backend-frontend" ]
+    branches: [ "main", "develop", "proto-backend-frontend", "frontBase_ESL" ]
     paths:
       - 'materiel-backend/**'
       - '.github/workflows/backend-ci.yml'
