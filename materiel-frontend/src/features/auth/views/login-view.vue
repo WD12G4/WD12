@@ -36,6 +36,13 @@ async function signIn(username: string, password: string): Promise<void> {
 </script>
 
 <template>
+  <!-- Marque -->
+  <div class="login-brand">
+    <span class="brand-logo" aria-hidden="true">GP</span>
+    <h1>Gestion du parc</h1>
+    <p>Le matériel informatique et les salles de l'école, au même endroit.</p>
+  </div>
+
   <Card title="Connexion">
     <template #header>
       <p>Connectez-vous avec le compte fourni par l'administrateur.</p>

@@ -1,0 +1,36 @@
+<script setup lang="ts">
+/**
+ * Barre du haut, affichée seulement sur mobile : marque et bouton d'ouverture du menu.
+ * Composant de présentation : l'état du menu est tenu par App.vue.
+ * Utilisé par : App.vue
+ */
+import AppIcon from './app-icon.vue';
+
+//------------------ PROPS / EMITS ---------------------------
+defineProps<{
+  /** Vrai si le menu latéral est ouvert. */
+  menuOpen: boolean;
+}>();
+
+const emit = defineEmits<{
+  /** L'utilisateur ouvre ou ferme le menu. */
+  toggle: [];
+}>();
+</script>
+
+<template>
+  <header class="topbar">
+    <button
+        type="button"
+        class="icon-button"
+        aria-label="Menu principal"
+        aria-controls="app-sidebar"
+        :aria-expanded="menuOpen"
+        @click="emit('toggle')"
+    >
+      <AppIcon name="menu" />
+    </button>
+    <span class="brand-logo" aria-hidden="true">GP</span>
+    <span class="brand-name">Gestion du parc</span>
+  </header>
+</template>

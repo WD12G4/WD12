@@ -21,11 +21,3 @@ defineProps<{
   </section>
 </template>
 
-<style scoped>
-.card {
-  margin-bottom: 1.5rem;
-  padding: 1.5rem;
-  border: 1px solid var(--border);
-  border-radius: 1.25rem;
-}
-</style>

@@ -1,12 +1,14 @@
 <script setup lang="ts">
 /**
- * Menu principal : liens autorisés, utilisateur connecté et bouton de déconnexion.
+ * Barre latérale : marque, liens autorisés, utilisateur connecté et déconnexion.
+ * Sur mobile, elle devient un tiroir ouvert par le bouton menu de app-topbar.vue.
  * Composant de présentation : les liens arrivent déjà filtrés selon le rôle (use-nav-links.ts).
  * Utilisé par : App.vue
  */
 import {computed} from 'vue';
 import {roleLabels, type User} from '../../models/user.model.ts';
 import type {NavLink} from '../composables/use-nav-links.ts';
+import AppIcon from './app-icon.vue';
 import Link from './Link.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -15,36 +17,74 @@ const props = defineProps<{
   links: readonly NavLink[];
   /** Utilisateur connecté. */
   user: User;
+  /** Vrai si le tiroir est ouvert (mobile uniquement). */
+  open: boolean;
 }>();
 
 const emit = defineEmits<{
   /** L'utilisateur demande à se déconnecter. */
   logout: [];
+  /** L'utilisateur ferme le tiroir (clic sur le fond, mobile). */
+  close: [];
 }>();
 
 //------------------ COMPUTED --------------------------------
-/** « jdupont (Gestionnaire) » : le rôle est affiché par son libellé, jamais par son code. */
-const userLabel = computed(() => `${props.user.username} (${roleLabels[props.user.role]})`);
+/** Rôle affiché par son libellé, jamais par son code. */
+const roleLabel = computed(() => roleLabels[props.user.role]);
+
+/** Initiale affichée dans la pastille de l'utilisateur. */
+const initial = computed(() => props.user.username.charAt(0).toUpperCase());
 </script>
 
 <template>
-  <nav class="nav" aria-label="Menu principal">
-    <Link
-        v-for="link in links"
-        :key="link.to.name"
-        :to="link.to"
-    >
-      {{ link.label }}
-    </Link>
-  </nav>
-  <div class="session-bar">
-    <span class="muted">Connecté : {{ userLabel }}</span>
-    <button
-        type="button"
-        class="secondary-button"
-        @click="emit('logout')"
-    >
-      Se déconnecter
-    </button>
-  </div>
+  <aside
+      id="app-sidebar"
+      class="sidebar"
+      :class="{ open }"
+  >
+    <!-- Marque -->
+    <div class="brand">
+      <span class="brand-logo" aria-hidden="true">GP</span>
+      <span class="brand-name">Gestion du parc</span>
+    </div>
+
+    <!-- Liens -->
+    <nav class="nav" aria-label="Menu principal">
+      <Link
+          v-for="link in links"
+          :key="link.to.name"
+          :to="link.to"
+      >
+        <AppIcon :name="link.icon" />
+        <span>{{ link.label }}</span>
+      </Link>
+    </nav>
+
+    <!-- Utilisateur connecté -->
+    <div class="user-card">
+      <span class="avatar" aria-hidden="true">{{ initial }}</span>
+      <div class="user-meta">
+        <strong>{{ user.username }}</strong>
+        <span>{{ roleLabel }}</span>
+      </div>
+      <button
+          type="button"
+          class="icon-button"
+          aria-label="Se déconnecter"
+          title="Se déconnecter"
+          @click="emit('logout')"
+      >
+        <AppIcon name="logout" />
+      </button>
+    </div>
+  </aside>
+
+  <!-- Fond cliquable derrière le tiroir (mobile) -->
+  <Transition name="fade">
+    <div
+        v-if="open"
+        class="sidebar-backdrop"
+        @click="emit('close')"
+    />
+  </Transition>
 </template>

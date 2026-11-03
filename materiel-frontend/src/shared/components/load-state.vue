@@ -22,7 +22,7 @@ const emit = defineEmits<{
 <template>
   <p
       v-if="loading"
-      class="muted"
+      class="loading"
       role="status"
   >
     Chargement…

@@ -1,75 +1,85 @@
 <script setup lang="ts">
 /**
- * Coquille de l'application : en-tête, menu (si connecté), message temporaire, page courante,
- * et alerte des remontées non lues pour le gestionnaire (RG-23).
+ * Coquille de l'application : barre latérale (si connecté), barre du haut sur mobile,
+ * message temporaire, page courante avec transition, et alerte des remontées non lues
+ * pour le gestionnaire (RG-23). Sans utilisateur connecté, la page est centrée (connexion).
  */
+import {computed, ref, watch} from 'vue';
+import {useRoute} from 'vue-router';
 import {useAuth} from './shared/composables/use-auth.ts';
 import {useFlashMessage} from './shared/composables/use-flash-message.ts';
 import {useNavLinks} from './shared/composables/use-nav-links.ts';
 import {navigateTo} from './router/navigation.ts';
 import AppNav from './shared/components/app-nav.vue';
+import AppTopbar from './shared/components/app-topbar.vue';
 import FlashMessage from './shared/components/flash-message.vue';
 import ReportAlert from './features/reports/components/report-alert.vue';
 import {useUnreadReports} from './features/reports/composables/use-unread-reports.ts';
 
 //------------------ DATAS -----------------------------------
+const route = useRoute();
 const {currentUser, logout} = useAuth();
 const {visibleLinks} = useNavLinks();
 const {clear: clearFlash} = useFlashMessage();
 const {unreadCount, visible: showReportAlert, dismiss: dismissReportAlert} = useUnreadReports();
+/** Menu latéral ouvert (mobile uniquement : sur grand écran il est toujours visible). */
+const menuOpen = ref(false);
+
+//------------------ COMPUTED --------------------------------
+/** Mise en page : avec barre latérale si connecté, centrée sinon. */
+const shellClass = computed(() => (currentUser.value ? 'app-shell' : 'guest-shell'));
 
 //------------------ FUNCTIONS -------------------------------
 /** Déconnecte l'utilisateur puis affiche la page de connexion (sans message de l'utilisateur précédent). */
 async function signOut(): Promise<void> {
+  menuOpen.value = false;
   await logout();
   clearFlash();
   await navigateTo({name: 'login'});
 }
+
+/** Ouvre ou ferme le menu latéral. */
+function toggleMenu(): void {
+  menuOpen.value = !menuOpen.value;
+}
+
+//------------------ LIFECYCLE -------------------------------
+// Sur mobile, le menu se referme dès qu'on change de page.
+watch(() => route.fullPath, () => {
+  menuOpen.value = false;
+});
 </script>
 
 <template>
-  <main class="container">
-    <!-- En-tête -->
-    <header class="header">
-      <h1>Gestion du parc</h1>
-      <p>Le matériel informatique et les salles de l'école, au même endroit.</p>
-    </header>
-
+  <div :class="shellClass">
     <!-- Menu, seulement pour un utilisateur connecté -->
-    <AppNav
-        v-if="currentUser"
-        :links="visibleLinks"
-        :user="currentUser"
-        @logout="signOut"
-    />
+    <template v-if="currentUser">
+      <AppNav
+          :links="visibleLinks"
+          :user="currentUser"
+          :open="menuOpen"
+          @logout="signOut"
+          @close="menuOpen = false"
+      />
+      <AppTopbar :menu-open="menuOpen" @toggle="toggleMenu" />
+    </template>
 
-    <FlashMessage />
-    <ReportAlert
-        v-if="showReportAlert"
-        :count="unreadCount"
-        @dismiss="dismissReportAlert"
-    />
+    <main class="content">
+      <FlashMessage />
+      <ReportAlert
+          v-if="showReportAlert"
+          :count="unreadCount"
+          @dismiss="dismissReportAlert"
+      />
 
-    <router-view />
-  </main>
+      <!-- Page courante, avec un fondu à chaque changement de route -->
+      <router-view v-slot="{ Component, route: current }">
+        <Transition name="page" mode="out-in">
+          <div :key="current.fullPath" class="page">
+            <component :is="Component" />
+          </div>
+        </Transition>
+      </router-view>
+    </main>
+  </div>
 </template>
-
-<style scoped>
-.container {
-  width: min(1200px, calc(100% - 2rem));
-  margin: 0 auto;
-  padding: 2rem 0;
-}
-
-.header {
-  margin-bottom: 2rem;
-}
-
-.header h1 {
-  margin-bottom: 0.25rem;
-}
-
-.header p {
-  margin-top: 0;
-}
-</style>
