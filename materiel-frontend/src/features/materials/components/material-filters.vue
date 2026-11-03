@@ -1,0 +1,60 @@
+<script setup lang="ts">
+/**
+ * Champs de recherche et de filtre de la liste des matériels (texte, type, archivés).
+ * Les filtres d'emplacement sont dans material-location-filters.vue.
+ * L'objet de filtres est lié en v-model (comme todo-filters.vue du cours).
+ * Utilisé par : features/materials/views/material-view.vue
+ */
+import type {Building} from '../../../models/building.model.ts';
+import type {Room} from '../../../models/room.model.ts';
+import {type MaterialFilters, materialTypeLabels, materialTypes} from '../../../models/material.model.ts';
+import MaterialLocationFilters from './material-location-filters.vue';
+
+//------------------ PROPS / EMITS ---------------------------
+defineProps<{
+  /** Bâtiments proposés dans le filtre. */
+  buildings: Building[];
+  /** Toutes les salles, transmises aux filtres d'emplacement. */
+  rooms: Room[];
+}>();
+
+/** Critères de recherche, modifiés directement par les champs. */
+const filters = defineModel<MaterialFilters>('filters', {required: true});
+
+</script>
+
+<template>
+  <div class="filters">
+    <div class="field search-field">
+      <label for="material-search">Rechercher</label>
+      <input
+          id="material-search"
+          v-model="filters.search"
+          type="search"
+          placeholder="Numéro de série, salle ou bâtiment…"
+      >
+    </div>
+    <div class="field">
+      <label for="material-type-filter">Type</label>
+      <select id="material-type-filter" v-model="filters.type">
+        <option value="all">Tous les types</option>
+        <option
+            v-for="type in materialTypes"
+            :key="type"
+            :value="type"
+        >
+          {{ materialTypeLabels[type] }}
+        </option>
+      </select>
+    </div>
+    <MaterialLocationFilters
+        v-model:filters="filters"
+        :buildings="buildings"
+        :rooms="rooms"
+    />
+    <label class="checkbox-field">
+      <input v-model="filters.showArchived" type="checkbox">
+      Afficher les archivés
+    </label>
+  </div>
+</template>

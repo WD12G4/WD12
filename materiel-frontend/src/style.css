@@ -1,0 +1,151 @@
+/*
+ * Styles globaux de l'application.
+ * Base : style.css du projet du cours (vue1). Toutes les couleurs sont des variables de :root ;
+ * aucune couleur ne doit être écrite en dur dans un composant.
+ */
+
+/* ------------------ VARIABLES ------------------------------ */
+:root {
+  font-family: Inter, system-ui, sans-serif;
+  font-synthesis: none;
+  --text: #24344b;
+  --title: #182a45;
+  --muted: #63738b;
+  --background: #f3f6fb;
+  --surface: #ffffff;
+  --surface-soft: #f6f8fc;
+  --surface-input: #fafbfe;
+  --nav-background: #e8edf6;
+  --border: #e0e7f0;
+  --border-input: #d5deeb;
+  --accent: #4259d6;
+  --accent-hover: #3145b9;
+  --accent-soft: #eef1fc;
+  --accent-soft-hover: #dde4ff;
+  --focus: #93a4ff;
+  --shadow: #243b5310;
+  --success: #257659;
+  --success-soft: #e1f5ed;
+  --warning: #8f6015;
+  --warning-soft: #fff0d4;
+  --danger: #b0344c;
+  --danger-soft: #fff2f4;
+  --danger-border: #f1d5db;
+  --neutral-soft: #edf0f4;
+  --backdrop: #182a4566;
+  color: var(--text);
+  background: var(--background);
+}
+
+/* ------------------ BASE ----------------------------------- */
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, input, select, textarea { font: inherit; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1, h2, h3 { color: var(--title); line-height: 1.2; }
+h1 { font-size: clamp(1.6rem, 5vw, 2.2rem); letter-spacing: -0.06rem; }
+h2 { margin: 0 0 0.6rem; font-size: 1.4rem; }
+h3 { margin: 0; font-size: 1.1rem; }
+p { color: var(--muted); line-height: 1.65; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+/* ------------------ NAVIGATION ----------------------------- */
+.nav { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.4rem; background: var(--nav-background); border-radius: 0.9rem; }
+.nav a { padding: 0.8rem 1rem; border-radius: 0.65rem; font-weight: 600; color: var(--muted); }
+.nav a.router-link-exact-active { background: var(--surface); color: var(--accent); box-shadow: 0 3px 8px var(--shadow); }
+.nav a:hover { background: var(--surface); text-decoration: none; }
+.session-bar { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; margin: 0.75rem 0 2rem; }
+.back-link { display: inline-block; margin-bottom: 1.5rem; font-weight: 600; }
+
+/* ------------------ CARTES ET MESSAGES --------------------- */
+.card { background: var(--surface); box-shadow: 0 8px 30px var(--shadow); }
+.muted, .list-count { font-size: 0.85rem; color: var(--muted); }
+.empty-state { padding: 2rem; text-align: center; background: var(--surface-soft); border-radius: 0.75rem; }
+.error-box { padding: 1rem; border: 1px solid var(--danger-border); border-radius: 0.75rem; background: var(--danger-soft); }
+.error-box p, .form-error { color: var(--danger); margin: 0 0 0.75rem; font-weight: 600; }
+.flash { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.75rem 1rem; margin-bottom: 1.5rem; border-radius: 0.75rem; font-weight: 600; }
+.flash.info { background: var(--accent-soft); color: var(--accent); }
+.flash.success { background: var(--success-soft); color: var(--success); }
+.flash.error { background: var(--danger-soft); color: var(--danger); }
+.demo-banner { padding: 0.6rem 1rem; border-radius: 0.65rem; background: var(--warning-soft); color: var(--warning); font-weight: 600; font-size: 0.85rem; }
+
+/* ------------------ FORMULAIRES ---------------------------- */
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.form-grid > .full-width { grid-column: 1 / -1; }
+.field { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+label { font-size: 0.9rem; font-weight: 600; }
+.checkbox-field { display: flex; flex-direction: row; align-items: center; gap: 0.5rem; }
+input:not([type='checkbox']), select, textarea { width: 100%; padding: 0.8rem 0.9rem; border: 1px solid var(--border-input); border-radius: 0.65rem; background: var(--surface-input); color: var(--text); }
+textarea { resize: vertical; min-height: 90px; }
+input[type='checkbox'] { accent-color: var(--accent); width: 18px; height: 18px; flex-shrink: 0; }
+.field-hint { font-size: 0.8rem; color: var(--muted); font-weight: 400; }
+
+/* ------------------ BOUTONS -------------------------------- */
+button, .button-link { display: inline-block; padding: 0.75rem 1rem; border: 1px solid transparent; border-radius: 0.65rem; background: var(--accent); color: var(--surface); font-weight: 600; cursor: pointer; }
+button:hover, .button-link:hover { background: var(--accent-hover); text-decoration: none; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+.secondary-button { background: var(--accent-soft); color: var(--accent); }
+.secondary-button:hover { background: var(--accent-soft-hover); }
+button.delete-button { color: var(--danger); background: var(--danger-soft); border: 1px solid var(--danger-border); }
+button.delete-button:hover { background: var(--danger-border); }
+.icon-button { padding: 0.2rem 0.6rem; background: transparent; color: inherit; font-size: 1.2rem; }
+.icon-button:hover { background: var(--surface); }
+.actions { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin-top: 1rem; }
+
+/* ------------------ FILTRES -------------------------------- */
+.filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: 0.75rem; background: var(--surface-soft); margin: 1.4rem 0; }
+.filters .search-field { grid-column: 1 / -1; }
+
+/* ------------------ LISTES ET TABLEAUX --------------------- */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { text-align: left; font-size: 0.8rem; color: var(--muted); padding: 0.6rem; border-bottom: 2px solid var(--border); }
+.data-table td { padding: 0.75rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+/* La cellule reste une cellule de tableau (pas de flex) pour que la bordure de ligne aille jusqu'au bout. */
+.data-table td.row-actions { text-align: right; white-space: nowrap; }
+.data-table td.row-actions > * + * { margin-left: 0.5rem; }
+.plain-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.75rem; }
+.plain-list > li { padding: 1rem; border: 1px solid var(--border); border-radius: 0.9rem; }
+.detail-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1.5rem; margin: 0; background: var(--surface-soft); border-radius: 0.75rem; }
+dt { color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; }
+dd { margin: 0; font-weight: 600; }
+
+/* ------------------ BADGES DE STATUT ----------------------- */
+.badge { display: inline-block; padding: 0.3rem 0.65rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 700; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+.badge.assigned { background: var(--success-soft); color: var(--success); }
+.badge.stock { background: var(--warning-soft); color: var(--warning); }
+.badge.archived { background: var(--neutral-soft); color: var(--muted); }
+.badge.expiring { background: var(--danger-soft); color: var(--danger); }
+
+/* ------------------ TABLEAU DE BORD ------------------------ */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.stat { display: flex; flex-direction: column; gap: 0.6rem; padding: 1.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; }
+.stat strong { font-size: 2rem; color: var(--title); }
+.stat span { color: var(--muted); font-size: 0.85rem; }
+.tree details { margin: 0.25rem 0; }
+.tree summary { cursor: pointer; padding: 0.5rem; border-radius: 0.5rem; font-weight: 600; }
+.tree summary:hover { background: var(--surface-soft); }
+.tree .tree-children { margin-left: 1.5rem; padding-left: 0.75rem; border-left: 2px solid var(--border); }
+.tree .count { color: var(--muted); font-weight: 400; }
+
+/* ------------------ IMPRESSION (document de remontée) ------ */
+@media print {
+  .nav, .session-bar, .flash, .no-print, .header { display: none; }
+  .card { box-shadow: none; border: none; }
+}
+
+/* ------------------ MOBILE --------------------------------- */
+@media (max-width: 600px) {
+  .nav a { flex: 1; text-align: center; padding: 0.65rem; }
+  .form-grid, .stats, .detail-grid { grid-template-columns: 1fr; }
+  .session-bar { flex-direction: column; align-items: stretch; }
+  .data-table thead { display: none; }
+  .data-table tr { display: grid; gap: 0.25rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+  .data-table td { border: none; padding: 0.15rem 0; }
+  .data-table td.row-actions { text-align: left; white-space: normal; }
+  .actions button { flex: 1; }
+}
+
+/* ------------------ ACCESSIBILITÉ -------------------------- */
+/* Texte lu par les lecteurs d'écran mais invisible à l'écran (en-tête de colonne « Actions »). */
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

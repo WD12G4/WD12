@@ -1,0 +1,67 @@
+/**
+ * Fonctions pures sur les dates : formatage français et calcul d'échéance.
+ * Inspiré de use-due-date.ts du projet du cours.
+ * Utilisé par : features/materials, features/home, features/reports.
+ * RG : RG-24 (alerte d'expiration groupée), RG-05 (date de fin non passée)
+ */
+
+/** Nombre de millisecondes dans un jour. */
+const DAY_MS = 86_400_000;
+
+/** Délai à partir duquel un matériel est considéré « bientôt expiré ». */
+export const EXPIRY_WARNING_DAYS = 30;
+
+/**
+ * Formate une date en français (ex. 03/11/2026).
+ * @param date date à formater
+ * @param emptyLabel texte affiché si la date est absente
+ */
+export function formatDate(date: Date | null, emptyLabel = 'Aucune'): string {
+    return date ? date.toLocaleDateString('fr-FR') : emptyLabel;
+}
+
+/**
+ * Formate une date et une heure en français (ex. 03/11/2026 14:05).
+ * @param date date à formater
+ */
+export function formatDateTime(date: Date): string {
+    return date.toLocaleString('fr-FR', {dateStyle: 'short', timeStyle: 'short'});
+}
+
+/**
+ * Nombre de jours calendaires entre aujourd'hui et une date (négatif si elle est passée).
+ * On compare des jours UTC pour ignorer l'heure et les changements d'heure, comme dans le cours.
+ * @param date date d'échéance
+ * @param today date du jour (paramètre pour pouvoir tester)
+ */
+export function daysUntil(date: Date, today = new Date()): number {
+    const dueDay = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+    const currentDay = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    return (dueDay - currentDay) / DAY_MS;
+}
+
+/**
+ * Indique si une date arrive à échéance dans les EXPIRY_WARNING_DAYS prochains jours (passée incluse).
+ * @param date date de fin de disponibilité, ou null
+ */
+export function isExpiringSoon(date: Date | null): boolean {
+    return date !== null && daysUntil(date) <= EXPIRY_WARNING_DAYS;
+}
+
+/**
+ * Convertit une Date en 'AAAA-MM-JJ' (heure locale), pour remplir un <input type="date">.
+ * toISOString() n'est pas utilisé : il convertit en UTC et peut donner la veille.
+ * @param date date à convertir
+ */
+export function toIsoDate(date: Date): string {
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${date.getFullYear()}-${month}-${day}`;
+}
+
+/**
+ * Date du jour au format 'AAAA-MM-JJ', pour l'attribut min d'un <input type="date"> (RG-05).
+ */
+export function todayIsoDate(): string {
+    return toIsoDate(new Date());
+}
