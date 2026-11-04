@@ -1,28 +1,101 @@
-name: Backend CD
+name: Backend CI/CD
 
 on:
   push:
-    branches: [ "main", "proto-backend-frontend", "develop", "frontBase_ESL" ]
+    branches: [ "main", "proto-backend-frontend", "frontBase_ESL" ]
     paths:
       - 'materiel-backend/**'
-      - '.github/workflows/backend-cd.yml'
+      - '.github/workflows/backend.yml'
       - 'docker-compose.yml'
       - 'docker-compose.prod.yml'
+  pull_request:
+    branches: [ "main", "proto-backend-frontend", "frontBase_ESL" ]
+    paths:
+      - 'materiel-backend/**'
+      - '.github/workflows/backend.yml'
   workflow_dispatch:
     inputs:
       image_tag:
         description: "Tag de version pour l'image Docker backend (ex: latest, v1.0.0)"
         required: false
         default: 'latest'
+      skip_tests:
+        description: "Passer les tests (build/push direct si coché)"
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
   packages: write
 
 jobs:
-  docker-build-push:
+  # --------------------------------------------------------------------------
+  # 1. CI : Compilation & Tests unitaires / intégration
+  # --------------------------------------------------------------------------
+  backend-build-test:
+    name: Backend Build & Test
+    runs-on: self-hosted
+    if: ${{ !inputs.skip_tests }}
+
+    env:
+      GRADLE_OPTS: "-Dhttp.proxyHost=172.16.0.1 -Dhttp.proxyPort=8080 -Dhttps.proxyHost=172.16.0.1 -Dhttps.proxyPort=8080 -Dhttp.nonProxyHosts=localhost|127.0.0.1|*.internet.comsic|*.etrs.net|*.etrs.terre.defense.gouv.fr|192.168.*|172.16.*|10.10.*|*.pdi|*.etnc.terre.defense.gouv.fr"
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: materiel_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: ./materiel-backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build -x test --no-daemon
+
+      - name: Run Tests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/materiel_db
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: postgres
+        run: ./gradlew test --no-daemon
+
+  # --------------------------------------------------------------------------
+  # 2. CD : Construction et publication de l'image Docker sur GHCR
+  # Ne s'exécute JAMAIS sur les Pull Requests.
+  # En push / dispatch, s'exécute uniquement si les tests ont réussi (ou si skip_tests est coché).
+  # --------------------------------------------------------------------------
+  backend-docker-publish:
     name: Build & Push Docker Image to GHCR
     runs-on: self-hosted
+    needs: [backend-build-test]
+    if: always() && github.event_name != 'pull_request' && (inputs.skip_tests || needs.backend-build-test.result == 'success')
 
     steps:
       - name: Checkout repository
