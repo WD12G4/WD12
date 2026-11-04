@@ -53,9 +53,9 @@ public class MaterialController {
     }
 
     /**
-     * Crée un nouveau matériel (réservé aux administrateurs).
+     * Crée un nouveau matériel (réservé aux administrateurs et gestionnaires).
      */
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public MaterialResponse create(@Valid @RequestBody MaterialRequest request) {
@@ -65,9 +65,9 @@ public class MaterialController {
     }
 
     /**
-     * Met à jour un matériel existant (réservé aux administrateurs).
+     * Met à jour un matériel existant (réservé aux administrateurs et gestionnaires).
      */
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @PutMapping("/{id}")
     public MaterialResponse update(@PathVariable Long id, @Valid @RequestBody MaterialRequest request) {
         Material existing = materialService.findById(id)
@@ -89,9 +89,9 @@ public class MaterialController {
     }
 
     /**
-     * Supprime (soft delete / archivage) un matériel par son identifiant (réservé aux administrateurs).
+     * Supprime (soft delete / archivage) un matériel par son identifiant (réservé aux administrateurs et gestionnaires).
      */
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         materialService.archiveById(id);
