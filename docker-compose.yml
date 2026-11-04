@@ -3,7 +3,7 @@ services:
   # 1. Base de données PostgreSQL
   # -------------------------------------------------------------
   postgres:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: materiel_db
     restart: unless-stopped
     env_file:
