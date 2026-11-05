@@ -58,11 +58,11 @@ services:
       - materiel_network
 
   # -------------------------------------------------------------
-  # 4. Frontend Vue 3 (Vite + Nginx) - Projet Terrain
+  # 4. Frontend Vue 3 PWA (Vite + Nginx) - materiel-terrain
   # -------------------------------------------------------------
   frontend:
     build:
-      context: ./materiel-frontend
+      context: ./materiel-terrain
       dockerfile: projet-terrain-frontend.dockerfile
     image: ${FRONTEND_IMAGE:-ghcr.io/wd12g4/projet-terrain-frontend:latest}
     container_name: projet_terrain_frontend

@@ -1,5 +1,5 @@
 # ==============================================================================
-# Multi-stage Dockerfile for Vue 3 + Vite Frontend - Projet Terrain
+# Multi-stage Dockerfile for Vue 3 + Vite PWA (materiel-terrain)
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
@@ -20,17 +20,17 @@ ENV http_proxy=${HTTP_PROXY} \
     no_proxy=${NO_PROXY} \
     NO_PROXY=${NO_PROXY}
 
-# Copie des manifestes de dépendances
+# Copie des fichiers de dépendances
 COPY package*.json ./
 
-# Configuration dynamique du proxy npm si présent et installation propre
+# Configuration proxy dynamique et installation propre des dépendances
 RUN if [ -n "$HTTP_PROXY" ]; then \
       npm config set proxy "$HTTP_PROXY" && \
       npm config set https-proxy "$HTTPS_PROXY"; \
     fi && \
     npm ci
 
-# Copie des sources et compilation des assets statiques (Vite)
+# Copie du code source et build de l'application (PWA)
 COPY . .
 RUN npm run build
 
@@ -43,10 +43,10 @@ WORKDIR /usr/share/nginx/html
 # Nettoyage des assets par défaut de Nginx
 RUN rm -rf ./*
 
-# Récupération du build de l'étape précédente
+# Récupération du build (dossier dist incluant sw.js, wasm, etc.)
 COPY --from=builder /app/dist .
 
-# Configuration Nginx (SPA + proxy inverse /api vers le backend)
+# Configuration Nginx adaptée SPA + PWA + Reverse Proxy
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

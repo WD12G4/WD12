@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "projet-terrain" ]
     paths:
-      - 'materiel-frontend/**'
+      - 'materiel-terrain/**'
       - '.github/workflows/frontend.yml'
       - 'docker-compose.yml'
       - 'docker-compose.prod.yml'
@@ -12,7 +12,7 @@ on:
   pull_request:
     branches: [ "projet-terrain" ]
     paths:
-      - 'materiel-frontend/**'
+      - 'materiel-terrain/**'
       - '.github/workflows/frontend.yml'
   workflow_dispatch:
     inputs:
@@ -26,14 +26,13 @@ on:
         required: false
         default: false
 
-
 permissions:
   contents: read
   packages: write
 
 jobs:
   # --------------------------------------------------------------------------
-  # 1. CI : Vérification TypeScript & Build
+  # 1. CI : Vérification TypeScript & Build (materiel-terrain)
   # --------------------------------------------------------------------------
   frontend-build-test:
     name: Frontend Build & Type Check
@@ -47,7 +46,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./materiel-frontend
+        working-directory: ./materiel-terrain
 
     steps:
       - name: Checkout repository
@@ -58,7 +57,7 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
-          cache-dependency-path: './materiel-frontend/package-lock.json'
+          cache-dependency-path: './materiel-terrain/package-lock.json'
 
       - name: Configure npm proxy
         run: |
@@ -114,8 +113,8 @@ jobs:
             -t "${IMAGE_NAME}:${TAG}" \
             -t "${IMAGE_NAME}:${BRANCH_TAG}" \
             -t "${IMAGE_NAME}:${SHA_TAG}" \
-            -f ./materiel-frontend/projet-terrain-frontend.dockerfile \
-            ./materiel-frontend
+            -f ./materiel-terrain/projet-terrain-frontend.dockerfile \
+            ./materiel-terrain
 
           echo "=========================================================="
           echo "Publication de l'image sur GHCR"
