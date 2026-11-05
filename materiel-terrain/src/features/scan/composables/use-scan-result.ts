@@ -2,6 +2,7 @@
  * Résultat de la lecture en cours et actions de l'agent dessus : changement de salle, prise en compte.
  * Le résultat reste affiché, lecture suspendue, jusqu'à ce que l'agent le ferme ou agisse dessus :
  * rien ne disparaît avant qu'il ait pu le lire, même pour un matériel conforme.
+ * Prise en compte d'un numéro qu'un autre agent vient de créer : le panneau montre ce matériel, sans doublon.
  * Utilisé par : features/scan/views/scan-view.vue
  */
 import {computed, ref} from 'vue';
@@ -92,17 +93,34 @@ export function useScanResult() {
         close();
     }
 
+    /** Un autre agent l'a déjà pris en compte : le panneau montre le matériel du serveur et son verdict. */
+    function showExisting(material: Material): void {
+        if (!outcome.value) return;
+        outcome.value = {...outcome.value, ...identify(outcome.value.reading, () => material, currentRoom.value)};
+        annotate(historyId, 'Déjà recensé', material.serialNumber);
+        if (currentRoom.value) markSeen(currentRoom.value.id, material.serialNumber);
+        show(`${material.serialNumber} a déjà été pris en compte par un autre agent.`, 'info');
+    }
+
     /** Prend en compte le matériel inconnu affiché, dans la salle courante. */
     async function registerMaterial(input: MaterialInput): Promise<void> {
         const room = currentRoom.value;
         const serialNumber = input.serialNumber.trim();
-        let result = 'saved' as FieldActionResult;
-        if (await run(async () => { result = await register(input, room); })) {
-            annotate(historyId, result === 'saved' ? 'Pris en compte' : 'Pris en compte (en attente)', serialNumber);
-            if (room) markSeen(room.id, serialNumber);
-            confirm(result, `${serialNumber} pris en compte`);
-            close();
-        }
+        let result = 'saved' as FieldActionResult | 'exists';
+        const ok = await run(async () => {
+            try {
+                result = await register(input, room);
+            } catch (error) {
+                if (!(error instanceof MaterialConflictError)) throw error;
+                result = 'exists';
+                showExisting(error.server);
+            }
+        });
+        if (!ok || result === 'exists') return;
+        annotate(historyId, result === 'saved' ? 'Pris en compte' : 'Pris en compte (en attente)', serialNumber);
+        if (room) markSeen(room.id, serialNumber);
+        confirm(result, `${serialNumber} pris en compte`);
+        close();
     }
 
     return {outcome, conflict, paused, busy, errorMessage, close, handleCode, changeRoom, registerMaterial};

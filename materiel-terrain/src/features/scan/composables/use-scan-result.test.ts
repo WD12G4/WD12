@@ -16,9 +16,21 @@ vi.mock('../../inventory/composables/use-inventory.ts', () => ({
         roomById: () => room10,
     }),
 }));
+const mocks = vi.hoisted(() => ({
+    register: vi.fn(),
+    /** Même forme que l'erreur réelle : le matériel du serveur. */
+    MaterialConflictError: class extends Error {
+        readonly server: unknown;
+        constructor(server: unknown) {
+            super('conflit');
+            this.server = server;
+        }
+    },
+}));
+
 vi.mock('../../inventory/composables/use-field-actions.ts', () => ({
-    useFieldActions: () => ({relocate: vi.fn(), register: vi.fn()}),
-    MaterialConflictError: class extends Error {},
+    useFieldActions: () => ({relocate: vi.fn(), register: mocks.register}),
+    MaterialConflictError: mocks.MaterialConflictError,
 }));
 vi.mock('../../location/composables/use-current-room.ts', () => ({
     useCurrentRoom: () => ({currentRoom: computed(() => room10)}),
@@ -53,5 +65,21 @@ describe("useScanResult : c'est l'agent qui ferme le résultat", () => {
 
         expect(outcome.value).toBeNull();
         expect(paused.value).toBe(false);
+    });
+});
+
+describe("useScanResult : numéro déjà pris en compte par un autre agent", () => {
+    it('montre le matériel du serveur et son verdict au lieu de créer un doublon', async () => {
+        const {useScanResult} = await import('./use-scan-result.ts');
+        const {outcome, handleCode, registerMaterial} = useScanResult();
+        handleCode('SS4SG0566', 'manual');
+        expect(outcome.value?.verdict).toBe('unknown');
+        const server: Material = {...inRoom10, id: 8, serialNumber: 'SS4SG0566'};
+        mocks.register.mockRejectedValue(new mocks.MaterialConflictError(server));
+
+        await registerMaterial({serialNumber: 'SS4SG0566', materialType: 'UC', endAvailabilityDate: '2030-01-01', roomId: 1});
+
+        expect(outcome.value?.verdict).toBe('conform');
+        expect(outcome.value?.material?.id).toBe(8);
     });
 });

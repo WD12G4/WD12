@@ -2,6 +2,7 @@
  * File des actions faites sans réseau, gardée sur le téléphone et rejouée vers l'API dans l'ordre.
  * Avant chaque relocalisation, le matériel est relu sur le serveur (room-conflict.ts) : s'il a été déplacé
  * entre-temps par quelqu'un d'autre, l'action passe en conflit au lieu d'écraser son travail.
+ * Avant chaque prise en compte, le parc est relu : un numéro déjà créé par un autre agent n'est jamais créé en double.
  * Une action en conflit ou refusée par l'API n'est plus rejouée automatiquement : l'agent arbitre
  * depuis l'écran Synchronisation (use-conflicts.ts, retry, discard). Une session expirée (401) ou une API
  * injoignable n'est pas un refus : le rejeu s'arrête et l'action reste en attente.
@@ -88,7 +89,7 @@ function retargetPendingCreate(provisionalId: number, roomId: number | null): vo
     if (action?.request) updateAction(action.id, {roomId, request: {...action.request, roomId}});
 }
 
-/** Prise en compte refusée : si le numéro existe désormais sur le serveur, un autre agent l'a créé (conflit). */
+/** Recharge le parc et cherche un matériel du serveur portant ce numéro (insensible à la casse). */
 async function findCreatedElsewhere(serialNumber: string): Promise<Material | null> {
     await inventory.download();
     return inventory.materials.value.find((material) =>
@@ -97,17 +98,16 @@ async function findCreatedElsewhere(serialNumber: string): Promise<Material | nu
 
 /**
  * Envoie une action à l'API, après avoir vérifié que le serveur ne la contredit pas.
+ * Prise en compte d'un numéro qu'un autre agent a déjà créé : rien n'est créé ; s'il l'a placé dans la même salle,
+ * l'action est faite, sinon elle passe en conflit.
  * @throws MaterialConflictError si quelqu'un a modifié le matériel entre-temps, ApiError sinon
  */
 async function send(action: PendingAction): Promise<Material> {
     if (action.kind === 'create' && action.request) {
-        try {
-            return await materialsServices.create(action.request);
-        } catch (error) {
-            const existing = isUnreachable(error) || isSessionExpired(error)
-                ? null : await findCreatedElsewhere(action.serialNumber);
-            throw existing ? new MaterialConflictError(existing) : error;
-        }
+        const existing = await findCreatedElsewhere(action.serialNumber);
+        if (existing === null) return materialsServices.create(action.request);
+        if (!existing.archived && (existing.room?.id ?? null) === action.roomId) return existing;
+        throw new MaterialConflictError(existing);
     }
     const server = await materialsServices.findById(action.materialId);
     const check = checkRoom(server, action.baseRoomId, action.roomId);

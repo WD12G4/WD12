@@ -77,12 +77,15 @@ function moveMaterial(id: number, room: Room | null): void {
 }
 
 /**
- * Télécharge le parc complet. Les matériels pris en compte hors ligne et pas encore envoyés sont conservés.
+ * Télécharge le parc complet. Les matériels pris en compte hors ligne et pas encore envoyés sont conservés,
+ * sauf si le serveur connaît déjà leur numéro (créé entre-temps) : jamais deux fiches pour un même numéro.
  * @throws ApiError si l'API répond en erreur ou ne répond pas
  */
 async function download(): Promise<void> {
     const [apiMaterials, apiRooms] = await Promise.all([materialsServices.findAll(), roomsServices.findAll()]);
-    materials.value = [...apiMaterials, ...materials.value.filter(isProvisional)];
+    const onServer = new Set(apiMaterials.map((material) => serialKey(material.serialNumber)));
+    materials.value = [...apiMaterials, ...materials.value.filter((material) =>
+        isProvisional(material) && !onServer.has(serialKey(material.serialNumber)))];
     rooms.value = apiRooms;
     syncedAt.value = new Date();
     save();

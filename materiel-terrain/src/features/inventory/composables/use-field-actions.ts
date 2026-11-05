@@ -2,12 +2,13 @@
  * Actions de terrain : changer la salle d'un matériel (ou le mettre en stock), prendre en compte un matériel inconnu.
  * Chaque action part tout de suite vers l'API si elle est joignable ; sinon elle est gardée dans la file
  * (use-sync-queue.ts) et le cache est mis à jour pour que l'agent voie déjà le résultat.
- * En ligne comme au rejeu, un changement de salle relit d'abord le matériel (room-conflict.ts).
+ * En ligne comme au rejeu, un changement de salle relit d'abord le matériel (room-conflict.ts), et une prise
+ * en compte relit d'abord le parc : un numéro déjà créé par un autre agent n'est pas créé en double.
  * Utilisé par : features/scan/views/scan-view.vue
  * RG : RG-07 (affectation, null = en stock), RG-17 (réservé à MANAGER et ADMIN, vérifié par le backend)
  */
 import {isProvisional, type Material, type MaterialInput} from '../../../models/material.model.ts';
-import {materialFromDto, materialToRequest} from '../../../models/material.dto.ts';
+import {materialFromDto, type MaterialRequestDto, materialToRequest} from '../../../models/material.dto.ts';
 import type {Room} from '../../../models/room.model.ts';
 import {roomToDto} from '../../../models/room.dto.ts';
 import {isSessionExpired, isUnreachable} from '../../../services/api-error.ts';
@@ -24,7 +25,7 @@ type FieldActionResult = 'saved' | 'queued';
 //------------------ DATAS -----------------------------------
 const {reconnect} = useAuth();
 const {markReachable} = useNetwork();
-const {upsertMaterial, moveMaterial, download} = useInventory();
+const {upsertMaterial, moveMaterial, download, findBySerial} = useInventory();
 const {readyActions, enqueue, flush, retargetPendingCreate} = useSyncQueue();
 
 //------------------ FUNCTIONS -------------------------------
@@ -70,6 +71,17 @@ async function assignIfUnchanged(material: Material, roomId: number | null): Pro
 }
 
 /**
+ * Relit le parc, puis crée le matériel si aucun agent ne l'a pris en compte entre-temps.
+ * @throws MaterialConflictError avec le matériel du serveur s'il existe déjà (le cache est à jour)
+ */
+async function createUnlessExists(request: MaterialRequestDto): Promise<Material> {
+    await download();
+    const existing = findBySerial(request.serialNumber);
+    if (existing && !isProvisional(existing)) throw new MaterialConflictError(existing);
+    return materialsServices.create(request);
+}
+
+/**
  * Change la salle d'un matériel : salle où il a été trouvé, autre salle, ou stock.
  * Pour forcer après un conflit, rappeler avec le matériel du serveur (MaterialConflictError.server).
  * @param material matériel identifié, tel que l'agent le voit
@@ -97,6 +109,7 @@ async function relocate(material: Material, room: Room | null): Promise<FieldAct
  * Prend en compte un matériel non recensé, dans la salle où il a été trouvé.
  * @param input saisie du formulaire
  * @param room salle courante, ou null (en stock)
+ * @throws MaterialConflictError si un autre agent l'a déjà pris en compte
  */
 async function register(input: MaterialInput, room: Room | null): Promise<FieldActionResult> {
     const request = materialToRequest({...input, roomId: room?.id ?? null});
@@ -107,12 +120,12 @@ async function register(input: MaterialInput, room: Room | null): Promise<FieldA
     try {
         return await runOrQueue(
             {kind: 'create', serialNumber: request.serialNumber, materialId: provisional.id, roomId: request.roomId, request},
-            () => materialsServices.create(request),
+            () => createUnlessExists(request),
             () => upsertMaterial(provisional),
         );
     } catch (error) {
-        // Refus (ex. numéro créé entre-temps par un autre agent) : le parc est rechargé pour qu'un nouveau scan le montre.
-        void download().catch(() => undefined);
+        // Refus : le parc est rechargé pour qu'un nouveau scan montre l'état du serveur.
+        if (!(error instanceof MaterialConflictError)) void download().catch(() => undefined);
         throw error;
     }
 }

@@ -1,6 +1,7 @@
 /**
  * Synchronisation complète avec le serveur : envoi des actions en attente, puis parc à jour.
- * Utilisé par : App.vue (connexion, retour du réseau, retour au premier plan), features/inventory/views/sync-view.vue
+ * Utilisé par : App.vue (connexion, retour du réseau, retour au premier plan, rafraîchissement régulier),
+ * features/inventory/views/sync-view.vue
  */
 import {isSessionExpired, isUnreachable} from '../../../services/api-error.ts';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
@@ -24,13 +25,22 @@ const {reconnect} = useAuth();
 const {markReachable} = useNetwork();
 const inventory = useInventory();
 const {readyActions, flush} = useSyncQueue();
+/** Synchronisation en cours, partagée : un appel pendant qu'une autre tourne attend la même. */
+let running: Promise<SyncOutcome> | null = null;
 
 //------------------ FUNCTIONS -------------------------------
 /**
  * Rejoue la file, puis recharge le parc depuis l'API.
  * Les relocalisations encore en attente sont réappliquées au cache pour ne pas les perdre de vue.
  */
-async function synchronize(): Promise<SyncOutcome> {
+function synchronize(): Promise<SyncOutcome> {
+    running ??= run().finally(() => {
+        running = null;
+    });
+    return running;
+}
+
+async function run(): Promise<SyncOutcome> {
     await flush();
     try {
         const session = await reconnect();

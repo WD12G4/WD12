@@ -68,13 +68,26 @@ du réseau, et son sort final (envoyée, refusée, en conflit) se lit dans *Sync
 
 | État | Signification | Choix |
 |---|---|---|
-| En attente | Sera envoyée automatiquement (retour du réseau, retour au premier plan, puis toutes les 20 s) | Abandonner |
+| En attente | Sera envoyée automatiquement (retour du réseau, retour au premier plan, puis toutes les 15 s) | Abandonner |
 | Refusé | Le serveur a refusé (droits, règle métier) | Réessayer, Abandonner |
 | Conflit | Le serveur a changé entre-temps (voir ci-dessous) | Garder ma version, Garder le serveur |
 
 **Fiche** : badge *en attente d'envoi* = matériel pris en compte hors ligne, pas encore créé sur le serveur ;
 fin de disponibilité *dépassée* ou *dans N j* (30 jours ou moins). **Bilan de salle** : *Déclarés* (dans la salle selon le
 parc), *Vus* (scannés dans cette salle), *Manquants* (déclarés mais pas encore vus).
+
+## Plusieurs téléphones
+
+Chaque téléphone travaille sur son propre cache du parc. Pour qu'une prise en compte ou un déplacement fait sur un
+téléphone apparaisse sur les autres, chaque téléphone ouvert et en ligne **se synchronise seul toutes les 15 s** (envoi de
+ses actions, puis parc rechargé), et aussi au retour du réseau ou au premier plan. Le backend ne pousse rien vers les
+téléphones : c'est eux qui viennent voir, d'où ce délai de 15 s au plus.
+
+Un même numéro n'est **jamais créé deux fois**, même si un téléphone n'a pas encore vu la prise en compte de l'autre :
+avant de créer, la PWA relit le parc (sans tenir compte des majuscules). En ligne, la fiche montre alors le matériel
+existant avec son verdict (« déjà pris en compte par un autre agent ») ; hors ligne, voir le tableau ci-dessous.
+
+Le bilan *Vus* reste propre à chaque téléphone : le backend n'a rien pour enregistrer qu'un matériel a été vu.
 
 ## Conflits entre agents
 
@@ -88,7 +101,8 @@ sa salle actuelle à celle que l'agent avait sous les yeux (`src/features/invent
 | Salle inchangée sur le serveur | Envoi normal |
 | Le serveur est déjà dans la salle visée | Rien à envoyer, l'action est close |
 | Déplacé ou archivé par quelqu'un d'autre | **Conflit** : rien n'est écrasé. En ligne, la fiche montre la salle actuelle et propose « Relocaliser quand même » ; hors ligne, l'action attend dans *Synchronisation* (« Garder ma version » / « Garder le serveur ») |
-| Prise en compte d'un numéro créé entre-temps par un autre | **Conflit** : pas de doublon. « Le placer : *ma salle* » déplace le matériel existant, « Garder le serveur » abandonne la prise en compte |
+| Prise en compte d'un numéro créé entre-temps par un autre, dans la même salle | Rien n'est créé, l'action est close |
+| Prise en compte d'un numéro créé entre-temps par un autre, ailleurs | **Conflit** : pas de doublon. « Le placer : *ma salle* » déplace le matériel existant, « Garder le serveur » abandonne la prise en compte |
 
 Seule la salle est comparée : une autre modification (date, type) ne bloque pas un changement de salle.
 
@@ -153,7 +167,7 @@ Comptes de démonstration (créés par `docker/initdb/02-data.sql`) : `manager` 
 3. Rescanner → *Conforme* (bip) → **Suivant** pour enchaîner.
 4. Changer de position (Bât. 102 – Salle 20), rescanner → *Déplacé* → **Relocaliser en Bât. 102 – Salle 20**.
 5. Couper le Wi-Fi (ou arrêter le backend), relocaliser un autre matériel → *HORS LIGNE*, 1 action en attente ;
-   rétablir le réseau → l'action part seule (relance au retour du réseau, au retour au premier plan, puis toutes les 20 s).
+   rétablir le réseau → l'action part seule (relance au retour du réseau, au retour au premier plan, puis toutes les 15 s).
 6. Ouvrir le bilan de salle : déclarés / vus / **manquants** (déclarés ici mais pas scannés).
 
 ## Vérifier avant de pousser
