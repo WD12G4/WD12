@@ -31,7 +31,7 @@ permissions:
 
 jobs:
   # --------------------------------------------------------------------------
-  # 1. CI : Vérification TypeScript & Build
+  # 1. CI : Vérification TypeScript, Build & Analyse SonarQube
   # --------------------------------------------------------------------------
   frontend-build-test:
     name: Frontend Build & Type Check
@@ -50,6 +50,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js 24
         uses: actions/setup-node@v6
@@ -68,6 +70,12 @@ jobs:
 
       - name: Type Check & Build
         run: npm run build
+
+      - name: SonarQube Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: npx --yes @sonar/scan
 
   # --------------------------------------------------------------------------
   # 2. CD : Construction et publication de l'image Docker sur GHCR

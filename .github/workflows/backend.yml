@@ -31,7 +31,7 @@ permissions:
 
 jobs:
   # --------------------------------------------------------------------------
-  # 1. CI : Compilation & Tests unitaires / intégration
+  # 1. CI : Compilation & Tests unitaires / intégration & Analyse SonarQube
   # --------------------------------------------------------------------------
   backend-build-test:
     name: Backend Build & Test
@@ -63,6 +63,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v6
@@ -79,12 +81,18 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build -x test --no-daemon
 
-      - name: Run Tests
+      - name: Run Tests & Coverage
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/materiel_db
           SPRING_DATASOURCE_USERNAME: postgres
           SPRING_DATASOURCE_PASSWORD: postgres
-        run: ./gradlew test --no-daemon
+        run: ./gradlew test jacocoTestReport --no-daemon
+
+      - name: SonarQube Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: ./gradlew sonar --no-daemon
 
   # --------------------------------------------------------------------------
   # 2. CD : Construction et publication de l'image Docker sur GHCR
