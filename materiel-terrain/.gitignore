@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+# Service worker généré par npm run dev (devOptions de vite-plugin-pwa)
+dev-dist
 *.local
 
 # Editor directories and files

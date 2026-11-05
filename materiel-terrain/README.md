@@ -47,14 +47,15 @@ Sont aussi relevés : l'adresse MAC probable (`2CF05DC90096`) et le numéro OTAN
 
 | Statut | Signification | Action proposée (gestionnaire, admin) |
 |---|---|---|
-| **Conforme** | Connu, déclaré dans la salle où se trouve l'agent | Aucune : la fiche se ferme seule. « Changer de salle… » reste possible |
+| **Conforme** | Connu, déclaré dans la salle où se trouve l'agent | Aucune : « Suivant » ferme la fiche. « Changer de salle… » reste possible |
 | **Déplacé** | Connu, déclaré dans une **autre** salle | « Relocaliser en *salle courante* », ou une autre salle / le stock |
 | **Déclaré en stock** | Connu, déclaré sans salle, mais trouvé dans la salle de l'agent | Idem |
 | **Archivé** | Connu mais archivé (suppression logique) : il ne peut plus être affecté (RG-06) | Aucune : à signaler |
 | **Identifié** | Connu, mais l'agent n'a pas choisi sa position : impossible de dire s'il est à sa place | « Choisir ma salle », ou changer sa salle |
 | **Non recensé** | Numéro absent du parc | « Prendre en compte » (formulaire pré-rempli) |
 
-Un formateur (`USER`) voit les mêmes verdicts, sans les actions.
+La fiche reste affichée, lecture suspendue, jusqu'à ce que l'agent la ferme (« Suivant », « Ignorer », ×) ou agisse :
+un autre code dans le champ ne la remplace pas. Un formateur (`USER`) voit les mêmes verdicts, sans les actions.
 
 **Historique « Dernières lectures »** : le verdict, ou l'action menée — *Relocalisé*, *Mis en stock*, *Pris en compte*.
 Le suffixe **(en attente)** signifie que l'action est seulement sur le téléphone (pas de réseau) : elle partira au retour
@@ -149,7 +150,7 @@ Comptes de démonstration (créés par `docker/initdb/02-data.sql`) : `manager` 
 
 1. Se connecter en `manager`, choisir sa **position** (ex. Bât. 101 – Salle 10).
 2. **Démarrer le scan** et viser l'étiquette `SS4SG0548` → *Non recensé* → date de fin de disponibilité → **Prendre en compte**.
-3. Rescanner → *Conforme* (bip, le panneau se ferme seul : on enchaîne).
+3. Rescanner → *Conforme* (bip) → **Suivant** pour enchaîner.
 4. Changer de position (Bât. 102 – Salle 20), rescanner → *Déplacé* → **Relocaliser en Bât. 102 – Salle 20**.
 5. Couper le Wi-Fi (ou arrêter le backend), relocaliser un autre matériel → *HORS LIGNE*, 1 action en attente ;
    rétablir le réseau → l'action part seule (relance au retour du réseau, au retour au premier plan, puis toutes les 20 s).

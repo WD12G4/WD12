@@ -27,7 +27,7 @@ const {currentRoom} = useCurrentRoom();
 const {expected, missing, seenCount, resetRoom} = useRoomCheck(currentRoom);
 const {entries} = useScanHistory();
 const {
-  outcome, conflict, paused, busy, errorMessage, close, hold, handleCode, changeRoom, registerMaterial,
+  outcome, conflict, paused, busy, errorMessage, close, handleCode, changeRoom, registerMaterial,
 } = useScanResult();
 
 //------------------ COMPUTED --------------------------------
@@ -55,7 +55,7 @@ function pickRoom(): void {
           v-if="outcome"
           :outcome="outcome" :current-room="currentRoom" :rooms="rooms" :conflict="conflict"
           :can-edit="canEdit" :busy="busy" :error-message="errorMessage"
-          @relocate="changeRoom" @hold="hold" @register="registerMaterial" @pick-room="pickRoom" @close="close"
+          @relocate="changeRoom" @register="registerMaterial" @pick-room="pickRoom" @close="close"
       />
     </Transition>
   </div>

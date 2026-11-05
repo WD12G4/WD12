@@ -27,8 +27,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   /** Salle choisie, ou null pour mettre en stock. */
   relocate: [roomId: number | null];
-  /** L'agent a commencé à choisir : le panneau ne doit plus se fermer seul. */
-  hold: [];
 }>();
 
 //------------------ DATAS -----------------------------------
@@ -43,12 +41,6 @@ const targetRoomId = computed(() => (target.value === STOCK ? null : target.valu
 /** Rien à valider si la cible est déjà la salle déclarée. */
 const canValidate = computed(() => !props.busy && targetRoomId.value !== (props.material.room?.id ?? null));
 const force = computed(() => (props.conflict ? ' quand même' : ''));
-
-//------------------ FUNCTIONS -------------------------------
-function openList(): void {
-  listOpen.value = true;
-  emit('hold');
-}
 </script>
 
 <template>
@@ -65,7 +57,7 @@ function openList(): void {
         {{ busy ? 'Enregistrement…' : `Relocaliser${force} en ${roomLabel(currentRoom)}` }}
       </button>
 
-      <button v-if="!listOpen" type="button" class="secondary" @click="openList">Changer de salle…</button>
+      <button v-if="!listOpen" type="button" class="secondary" @click="listOpen = true">Changer de salle…</button>
       <div v-else class="row">
         <select v-model="target" aria-label="Nouvelle salle">
           <option :value="STOCK">En stock (aucune salle)</option>

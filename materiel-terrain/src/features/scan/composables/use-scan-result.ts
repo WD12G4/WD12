@@ -1,10 +1,10 @@
 /**
  * Résultat de la lecture en cours et actions de l'agent dessus : changement de salle, prise en compte.
- * Un matériel conforme ne demande rien : le panneau se ferme seul et la lecture continue (cadence),
- * sauf si l'agent commence à agir dessus (hold).
+ * Le résultat reste affiché, lecture suspendue, jusqu'à ce que l'agent le ferme ou agisse dessus :
+ * rien ne disparaît avant qu'il ait pu le lire, même pour un matériel conforme.
  * Utilisé par : features/scan/views/scan-view.vue
  */
-import {computed, onBeforeUnmount, ref} from 'vue';
+import {computed, ref} from 'vue';
 import type {Material, MaterialInput} from '../../../models/material.model.ts';
 import type {ScanOutcome, ScanSource} from '../../../models/scan.model.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
@@ -21,9 +21,6 @@ import {playTone} from '../lib/feedback.ts';
 import {useRoomCheck} from './use-room-check.ts';
 import {useScanHistory} from './use-scan-history.ts';
 
-/** Durée d'affichage d'un résultat conforme avant fermeture automatique. */
-const CONFORM_DISPLAY_MS = 1800;
-
 /**
  * État du résultat affiché et ses actions, propre à la vue de scan.
  * @returns le résultat, son état et les actions de l'agent
@@ -39,25 +36,15 @@ export function useScanResult() {
     const outcome = ref<ScanOutcome | null>(null);
     /** État du serveur quand il contredit ce que l'agent voyait. */
     const conflict = ref<Material | null>(null);
-    const holding = ref(false);
     let historyId = 0;
-    let closeTimer: ReturnType<typeof setTimeout> | undefined;
 
-    /** La lecture est suspendue tant qu'un résultat attend une décision. */
-    const paused = computed(() => outcome.value !== null && (outcome.value.verdict !== 'conform' || holding.value));
+    /** La lecture est suspendue tant qu'un résultat est affiché : l'agent décide quand passer au suivant. */
+    const paused = computed(() => outcome.value !== null);
 
     function close(): void {
-        clearTimeout(closeTimer);
         outcome.value = null;
         conflict.value = null;
-        holding.value = false;
         errorMessage.value = null;
-    }
-
-    /** L'agent agit sur le résultat : il reste affiché. */
-    function hold(): void {
-        holding.value = true;
-        clearTimeout(closeTimer);
     }
 
     /** Analyse un code lu ou saisi et affiche le verdict. */
@@ -70,7 +57,6 @@ export function useScanResult() {
         historyId = record(outcome.value);
         if (currentRoom.value && material) markSeen(currentRoom.value.id, material.serialNumber);
         playTone(verdict === 'conform' ? 'ok' : 'alert');
-        if (verdict === 'conform') closeTimer = setTimeout(close, CONFORM_DISPLAY_MS);
     }
 
     /** Message de fin d'action, selon que l'API a enregistré ou que l'action attend le réseau. */
@@ -95,7 +81,6 @@ export function useScanResult() {
             } catch (error) {
                 if (!(error instanceof MaterialConflictError)) throw error;
                 result = 'conflict';
-                hold();
                 conflict.value = error.server;
                 if (outcome.value) outcome.value = {...outcome.value, material: error.server};
             }
@@ -120,7 +105,5 @@ export function useScanResult() {
         }
     }
 
-    onBeforeUnmount(() => clearTimeout(closeTimer));
-
-    return {outcome, conflict, paused, busy, errorMessage, close, hold, handleCode, changeRoom, registerMaterial};
+    return {outcome, conflict, paused, busy, errorMessage, close, handleCode, changeRoom, registerMaterial};
 }

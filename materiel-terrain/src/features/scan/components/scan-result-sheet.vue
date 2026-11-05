@@ -34,8 +34,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   /** Nouvelle salle, ou null pour mettre en stock. */
   relocate: [roomId: number | null];
-  /** L'agent interagit : ne plus fermer seul ni lire d'autre code. */
-  hold: [];
   register: [input: MaterialInput];
   pickRoom: [];
   close: [];
@@ -93,12 +91,14 @@ const message = computed(() => {
         <MaterialRelocation
             :material="outcome.material" :current-room="currentRoom" :rooms="rooms"
             :quick="quick" :busy="busy" :conflict="conflict"
-            @relocate="emit('relocate', $event)" @hold="emit('hold')"
+            @relocate="emit('relocate', $event)"
         />
         <FormError :message="errorMessage" />
       </template>
       <button v-if="verdict === 'known'" type="button" class="primary" @click="emit('pickRoom')">Choisir ma salle</button>
-      <button type="button" class="secondary" @click="emit('close')">{{ verdict === 'conform' ? 'Suivant' : 'Ignorer' }}</button>
+      <button type="button" :class="verdict === 'conform' ? 'primary' : 'secondary'" @click="emit('close')">
+        {{ verdict === 'conform' ? 'Suivant' : 'Ignorer' }}
+      </button>
     </div>
 
     <ReadingDetails :reading="outcome.reading" />
