@@ -10,8 +10,9 @@ Application terrain de l'opération **RECON** : un agent passe de salle en salle
 | Actualiser | Changer la salle d'un matériel (salle courante en un geste, autre salle ou stock) et « Prendre en compte » (inconnu) |
 | Réseau dégradé | Parc gardé sur le téléphone, actions mises en file et rejouées au retour du réseau |
 
-Vue 3 + TypeScript + Vite, mêmes conventions que `materiel-frontend`. **Le backend n'est pas modifié** :
-la PWA n'utilise que les routes existantes.
+Vue 3 + TypeScript + Vite, mêmes conventions que `materiel-frontend`. **Le backend existant n'est pas modifié** ;
+une seule ressource lui est **ajoutée**, les constats (`/api/v1/sightings`, table `sightings`), pour que ce qui a été
+vu sur place par un agent le soit pour tous. Aucune route ni table existante n'est touchée.
 
 | Route du backend | Usage |
 |---|---|
@@ -21,6 +22,9 @@ la PWA n'utilise que les routes existantes.
 | `GET /api/v1/materials/{id}` | Relecture avant chaque changement de salle (détection de conflit) |
 | `PATCH /api/v1/materials/{id}/room` | Changement de salle, ou mise en stock avec `roomId: null` (MANAGER, ADMIN) |
 | `POST /api/v1/materials` | Prise en compte d'un matériel non recensé (MANAGER, ADMIN) |
+| `GET /api/v1/sightings` *(ajout)* | Constats de tous les agents : numéro scanné, salle, date, agent |
+| `POST /api/v1/sightings` *(ajout)* | Constat d'un scan dans une salle (tout agent connecté : constater ne modifie pas le parc) |
+| `DELETE /api/v1/sightings?roomId=` *(ajout)* | « Recommencer cette salle » : constats de la salle effacés pour tous (MANAGER, ADMIN) |
 
 ## Lecture du Data Matrix
 
@@ -64,7 +68,8 @@ du réseau, et son sort final (envoyée, refusée, en conflit) se lit dans *Sync
 **Barre du haut** : *EN LIGNE* / *HORS LIGNE* (serveur joignable ou non) ; **⇅ n** = actions pas encore sur le serveur
 (gris : aucune, ambre : en attente d'envoi, rouge : au moins une refusée ou en conflit).
 
-**Écran Synchronisation**, état de chaque action gardée sur le téléphone :
+**Écran Synchronisation**, état de chaque action gardée sur le téléphone (relocalisation, prise en compte, et
+*Constat* : un scan dans une salle, envoyé pour être partagé ; un constat refusé est simplement abandonné) :
 
 | État | Signification | Choix |
 |---|---|---|
@@ -74,7 +79,7 @@ du réseau, et son sort final (envoyée, refusée, en conflit) se lit dans *Sync
 
 **Fiche** : badge *en attente d'envoi* = matériel pris en compte hors ligne, pas encore créé sur le serveur ;
 fin de disponibilité *dépassée* ou *dans N j* (30 jours ou moins). **Bilan de salle** : *Déclarés* (dans la salle selon le
-parc), *Vus* (scannés dans cette salle, recensés ou non), *Manquants* (déclarés mais pas encore vus).
+parc), *Vus* (scannés dans cette salle par n'importe quel agent, recensés ou non), *Manquants* (déclarés mais pas encore vus).
 
 ## Situation des salles
 
@@ -88,8 +93,9 @@ pour chaque salle, ce que le parc déclare et ce qui a été constaté au scan :
 | Liste *En stock* (matériels sans salle) | Un appui sur un matériel déplie ses informations (type, salle déclarée, fin de disponibilité, date du scan) |
 
 Un numéro non recensé scanné dans une salle y est noté : le compte rendu le signale tant qu'il n'est pas pris en compte.
-Le « réellement sur place » vient des scans **de ce téléphone** (le backend n'a rien pour enregistrer un constat) ;
-le « théoriquement » vient du parc, mis à jour pour tous toutes les 15 s.
+Le « réellement sur place » vient des **constats de tous les agents** : un matériel confirmé une fois sur un téléphone
+l'est pour tout le monde (avec la date et l'agent du dernier scan). Comme le parc, les constats sont rechargés
+toutes les 15 s ; un scan hors réseau part avec la file et garde sa date de scan.
 
 ## Plusieurs téléphones
 
@@ -102,7 +108,8 @@ Un même numéro n'est **jamais créé deux fois**, même si un téléphone n'a 
 avant de créer, la PWA relit le parc (sans tenir compte des majuscules). En ligne, la fiche montre alors le matériel
 existant avec son verdict (« déjà pris en compte par un autre agent ») ; hors ligne, voir le tableau ci-dessous.
 
-Le bilan *Vus* reste propre à chaque téléphone : le backend n'a rien pour enregistrer qu'un matériel a été vu.
+Les **constats** sont partagés de la même façon : un matériel vu dans une salle par un agent est *vu* pour tous
+(bilan de salle, page Salles). « Recommencer cette salle » (gestionnaire) efface ses constats pour tous, après confirmation.
 
 ## Conflits entre agents
 
@@ -212,7 +219,7 @@ src/
 ├── shared/        use-auth (session + profil hors ligne), use-network, status-bar, tab-bar, flash-message…
 └── features/
     ├── scan/       lib/ (parse-scan, identify, barcode-reader, feedback), composables/ (caméra, bilan, historique), vue principale
-    ├── inventory/  parc en cache, file d'attente, actions terrain, synchronisation, écran Synchronisation
+    ├── inventory/  parc en cache, constats partagés (use-sightings), file d'attente, actions terrain, synchronisation
     ├── location/   salle courante et écran de choix
     ├── rooms/      situation des salles (consultation) : lib/room-report (théorique / réel, testé), liste et compte rendu
     └── auth/       connexion
@@ -226,8 +233,7 @@ src/
 - **Conflits** : la relecture précède l'écriture de quelques millisecondes ; deux écritures exactement simultanées
   restent possibles. Seul un contrôle de version côté backend (`PATCH` avec version) fermerait ce créneau.
 - **Taille du parc** : une page de 1000 matériels (pas de recherche par numéro côté API).
-- **Matériel inconnu pour un formateur** : le backend n'a pas de route de signalement ; il est invité à noter le numéro
-  (il reste signalé *non recensé* dans le compte rendu de la salle, sur son téléphone).
-- **Constat propre à chaque téléphone** : le « réellement sur place » de la page Salles ne regroupe pas les scans
-  de plusieurs téléphones (rien côté backend pour l'enregistrer).
+- **Matériel inconnu pour un formateur** : il ne peut pas le prendre en compte, mais son scan est un constat :
+  le numéro est signalé *non recensé* dans le compte rendu de la salle, pour tous.
+- **Un constat par numéro et par salle** : seul le dernier scan est gardé (date, agent), pas l'historique.
 - **HTTPS local** : certificat signé par une autorité de développement, à installer sur chaque téléphone de démonstration.

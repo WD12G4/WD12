@@ -1,5 +1,5 @@
 /**
- * Synchronisation complète avec le serveur : envoi des actions en attente, puis parc à jour.
+ * Synchronisation complète avec le serveur : envoi des actions en attente, puis parc et constats à jour.
  * Utilisé par : App.vue (connexion, retour du réseau, retour au premier plan, rafraîchissement régulier),
  * features/inventory/views/sync-view.vue
  */
@@ -8,6 +8,7 @@ import {useAuth} from '../../../shared/composables/use-auth.ts';
 import {toErrorMessage} from '../../../shared/composables/use-async-state.ts';
 import {useNetwork} from '../../../shared/composables/use-network.ts';
 import {useInventory} from './use-inventory.ts';
+import {useSightings} from './use-sightings.ts';
 import {useSyncQueue} from './use-sync-queue.ts';
 
 /**
@@ -24,6 +25,7 @@ type SyncOutcome =
 const {reconnect} = useAuth();
 const {markReachable} = useNetwork();
 const inventory = useInventory();
+const sightings = useSightings();
 const {readyActions, flush} = useSyncQueue();
 /** Synchronisation en cours, partagée : un appel pendant qu'une autre tourne attend la même. */
 let running: Promise<SyncOutcome> | null = null;
@@ -40,6 +42,15 @@ function synchronize(): Promise<SyncOutcome> {
     return running;
 }
 
+/** Constats partagés ; un serveur qui ne les connaît pas encore (ancienne image) ne bloque pas la synchro. */
+async function downloadSightings(): Promise<void> {
+    try {
+        await sightings.download();
+    } catch (error) {
+        if (isUnreachable(error) || isSessionExpired(error)) throw error;
+    }
+}
+
 async function run(): Promise<SyncOutcome> {
     await flush();
     try {
@@ -49,6 +60,7 @@ async function run(): Promise<SyncOutcome> {
             return {status: session};
         }
         await inventory.download();
+        await downloadSightings();
         // Les actions en conflit ou refusées ne sont pas réappliquées : le cache montre l'état du serveur.
         readyActions.value.filter((action) => action.kind === 'relocate').forEach((action) => {
             inventory.moveMaterial(action.materialId, action.roomId === null ? null : inventory.roomById(action.roomId));

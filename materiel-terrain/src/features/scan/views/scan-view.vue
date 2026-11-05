@@ -38,13 +38,20 @@ function pickRoom(): void {
   close();
   void router.push({name: 'position'});
 }
+
+/** Efface les constats de la salle pour tous les agents, après confirmation. */
+function restartRoom(): void {
+  if (currentRoom.value && window.confirm('Effacer les constats de cette salle pour tous les agents ?')) {
+    resetRoom(currentRoom.value.id);
+  }
+}
 </script>
 
 <template>
   <div class="scan-view">
     <RoomCheckPanel
-        :room="currentRoom" :expected="expected" :missing="missing" :seen-count="seenCount"
-        @change="pickRoom" @reset="currentRoom && resetRoom(currentRoom.id)"
+        :room="currentRoom" :expected="expected" :missing="missing" :seen-count="seenCount" :can-reset="canEdit"
+        @change="pickRoom" @reset="restartRoom"
     />
     <CameraViewfinder :paused="paused" @code="handleCode" />
     <ManualEntry @submit="handleCode($event, 'manual')" />

@@ -1,6 +1,6 @@
 /**
  * Compte rendu d'une salle : ce que le parc déclare (théoriquement sur place) face à ce qui a été scanné
- * dans la salle (réellement sur place). Simple lecture : rien n'est vérifié ni modifié ici.
+ * dans la salle par n'importe quel agent (réellement sur place). Simple lecture : rien n'est vérifié ni modifié ici.
  * Fonctions pures, testées dans room-report.test.ts.
  * Utilisé par : features/rooms
  * RG : RG-06 (archivé), RG-07 (sans salle = en stock)
@@ -24,6 +24,8 @@ interface ReportLine {
     status: LineStatus;
     /** Dernier scan dans la salle, ou null s'il n'y a pas été scanné. */
     seenAt: Date | null;
+    /** Agent du dernier scan, ou null s'il n'est pas connu. */
+    seenBy: string | null;
 }
 
 /** Compte rendu complet d'une salle. */
@@ -43,8 +45,8 @@ interface RoomReport {
 /** État d'une salle dans la liste : jamais reconnue, conforme, ou avec écarts. */
 type RoomState = 'unchecked' | 'conform' | 'gaps';
 
-/** Numéros scannés dans une salle, avec la date du dernier scan (ISO) : { "SS4SG0548": "2026-11-05T…" }. */
-type SeenInRoom = Record<string, string>;
+/** Numéros scannés dans une salle, avec la date (ISO) et l'agent du dernier scan. */
+type SeenInRoom = Readonly<Record<string, {at: string; by: string | null}>>;
 
 /** Ordre d'affichage : les écarts d'abord. */
 const STATUS_ORDER: LineStatus[] = ['unknown', 'archived', 'elsewhere', 'stock', 'missing', 'present'];
@@ -70,20 +72,22 @@ function observedStatus(material: Material | null, roomId: number): LineStatus {
  */
 export function buildRoomReport(roomId: number, materials: Material[], seenInRoom: SeenInRoom): RoomReport {
     const bySerial = new Map(materials.map((material) => [serialKey(material.serialNumber), material]));
-    const seenAt = (serial: string) => (seenInRoom[serialKey(serial)] ? new Date(seenInRoom[serialKey(serial)]) : null);
 
     const declared = materials
         .filter((material) => !material.archived && material.room?.id === roomId)
         .map((material): ReportLine => {
-            const at = seenAt(material.serialNumber);
-            return {serialNumber: material.serialNumber, material, status: at ? 'present' : 'missing', seenAt: at};
+            const seen = seenInRoom[serialKey(material.serialNumber)];
+            return {
+                serialNumber: material.serialNumber, material, status: seen ? 'present' : 'missing',
+                seenAt: seen ? new Date(seen.at) : null, seenBy: seen?.by ?? null,
+            };
         })
         .sort(byStatusThenSerial);
     const observed = Object.entries(seenInRoom)
-        .map(([key, at]): ReportLine => {
+        .map(([key, seen]): ReportLine => {
             const material = bySerial.get(key) ?? null;
             const status = observedStatus(material, roomId);
-            return {serialNumber: material?.serialNumber ?? key, material, status, seenAt: new Date(at)};
+            return {serialNumber: material?.serialNumber ?? key, material, status, seenAt: new Date(seen.at), seenBy: seen.by};
         })
         .sort(byStatusThenSerial);
     const times = observed.map((line) => line.seenAt!.getTime());
@@ -110,6 +114,7 @@ export function roomState(report: RoomReport): RoomState {
 interface Sighting {
     roomId: number;
     at: Date;
+    by: string | null;
 }
 
 /**
@@ -124,7 +129,10 @@ export function locateMaterial(material: Material, sightings: Sighting[]): Repor
     if (last !== null) status = observedStatus(material, last.roomId);
     else if (material.archived) status = 'archived';
     else status = material.room === null ? 'stock' : 'missing';
-    return {serialNumber: material.serialNumber, material, status, seenAt: last?.at ?? null, lastRoomId: last?.roomId ?? null};
+    return {
+        serialNumber: material.serialNumber, material, status,
+        seenAt: last?.at ?? null, seenBy: last?.by ?? null, lastRoomId: last?.roomId ?? null,
+    };
 }
 
 export type {LineStatus, ReportLine, RoomReport, RoomState, SeenInRoom, Sighting};

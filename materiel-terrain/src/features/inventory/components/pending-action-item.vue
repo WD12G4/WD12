@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * Une action gardée sur le téléphone : en attente, refusée par l'API, ou en conflit avec le serveur.
+ * Une action gardée sur le téléphone (relocalisation, prise en compte, constat) : en attente, refusée par l'API,
+ * ou en conflit avec le serveur.
  * En conflit, les deux versions sont montrées et l'agent choisit laquelle garder.
  * Utilisé par : features/inventory/views/sync-view.vue
  */
@@ -38,7 +39,10 @@ const conflictTitle = computed(() => (props.action.kind === 'create'
 
 <template>
   <li class="panel" :class="{blocked: action.error || action.conflict}">
-    <p><strong>{{ pendingActionLabels[action.kind] }}</strong> · <span class="mono">{{ action.serialNumber }}</span></p>
+    <p>
+      <strong>{{ pendingActionLabels[action.kind] }}</strong>
+      <template v-if="action.serialNumber"> · <span class="mono">{{ action.serialNumber }}</span></template>
+    </p>
     <p class="muted small">→ {{ target }} · {{ formatTime(new Date(action.createdAt)) }}</p>
 
     <template v-if="server">

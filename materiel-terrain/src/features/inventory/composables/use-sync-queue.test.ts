@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
     assignRoom: vi.fn(),
     create: vi.fn(),
     findAll: vi.fn(),
+    record: vi.fn(),
     storedQueue: [] as unknown[],
 }));
 
@@ -18,6 +19,7 @@ vi.mock('../../../services/materials.services.ts', () => ({
     materialsServices: {findById: mocks.findById, assignRoom: mocks.assignRoom, create: mocks.create, findAll: mocks.findAll},
 }));
 vi.mock('../../../services/rooms.services.ts', () => ({roomsServices: {findAll: vi.fn().mockResolvedValue([])}}));
+vi.mock('../../../services/sightings.services.ts', () => ({sightingsServices: {record: mocks.record, clearRoom: vi.fn()}}));
 vi.mock('../../../services/local-store.ts', () => ({
     readStored: (key: string, fallback: unknown) => (key === 'queue' ? mocks.storedQueue : fallback),
     writeStored: vi.fn(),
@@ -169,5 +171,59 @@ describe("useSyncQueue : prise en compte d'un numéro déjà créé par un autre
         await inventory.download();
 
         expect(inventory.materials.value.map((material) => material.id)).toEqual([8]);
+    });
+});
+
+describe('useSyncQueue : constats', () => {
+    beforeEach(() => {
+        vi.resetModules();
+        vi.clearAllMocks();
+        mocks.storedQueue = [];
+        mocks.reconnect.mockResolvedValue('ok');
+        mocks.findById.mockResolvedValue(serverMaterial);
+    });
+
+    /** Scan de SS4SG0548 en salle 1, corrigé depuis le numéro lu SGY12. */
+    const sight = {
+        kind: 'sight', serialNumber: 'SS4SG0548', materialId: 0, roomId: 1, request: null,
+        seenAt: '2026-11-05T01:00:00.000Z', replaces: 'SGY12',
+    } as const;
+
+    it('envoie un constat avec sa date de scan, sans toucher au parc', async () => {
+        mocks.record.mockResolvedValue(undefined);
+        const {enqueue, flush, queue, inventory} = await loadQueue();
+        enqueue(sight);
+
+        await flush();
+
+        expect(mocks.record).toHaveBeenCalledWith({
+            serialNumber: 'SS4SG0548', roomId: 1, seenAt: '2026-11-05T01:00:00.000Z', replaces: 'SGY12',
+        });
+        expect(queue.value).toHaveLength(0);
+        expect(inventory.materials.value).toHaveLength(0);
+    });
+
+    it('abandonne un constat refusé au lieu de le bloquer', async () => {
+        const {enqueue, flush, queue, LoadedApiError} = await loadQueue();
+        mocks.record.mockRejectedValue(new LoadedApiError(404, 'Salle introuvable'));
+        enqueue(sight);
+
+        await flush();
+
+        expect(queue.value).toHaveLength(0);
+    });
+
+    it("envoie dans la même synchro une action ajoutée pendant l'envoi", async () => {
+        const loaded = await loadQueue();
+        mocks.record.mockImplementation(async () => {
+            if (loaded.queue.value.length === 1) loaded.enqueue(relocation);
+        });
+        mocks.assignRoom.mockResolvedValue(serverMaterial);
+        loaded.enqueue(sight);
+
+        await loaded.flush();
+
+        expect(mocks.assignRoom).toHaveBeenCalledOnce();
+        expect(loaded.queue.value).toHaveLength(0);
     });
 });

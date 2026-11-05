@@ -11,15 +11,15 @@ import type {Room} from '../../../models/room.model.ts';
 import {formatDate, formatTime} from '../../../shared/composables/use-dates.ts';
 import {roomLabel} from '../../../shared/composables/use-room-label.ts';
 import {useInventory} from '../../inventory/composables/use-inventory.ts';
+import {useSightings} from '../../inventory/composables/use-sightings.ts';
 import {groupRoomsByBuilding} from '../../location/lib/room-groups.ts';
-import {useSeenRecords} from '../../scan/composables/use-room-check.ts';
 import {serialKey} from '../../scan/lib/identify.ts';
 import ReportLine from '../components/report-line.vue';
 import {buildRoomReport, locateMaterial, type RoomReport, roomState, type Sighting} from '../lib/room-report.ts';
 
 //------------------ DATAS -----------------------------------
 const {materials, rooms, roomById} = useInventory();
-const {seenInRoom} = useSeenRecords();
+const {seenInRoom} = useSightings();
 const search = ref('');
 /** Nombre de caractères à partir duquel la recherche porte aussi sur les numéros de série. */
 const SERIAL_SEARCH_MIN = 3;
@@ -43,14 +43,15 @@ const stock = computed(() => materials.value.filter((material) => !material.arch
 /** Situation d'un matériel d'après ses scans dans toutes les salles. */
 function locate(material: Material) {
   const sightings: Sighting[] = rooms.value.flatMap((room) => {
-    const at = seenInRoom(room.id)[serialKey(material.serialNumber)];
-    return at ? [{roomId: room.id, at: new Date(at)}] : [];
+    const seen = seenInRoom(room.id)[serialKey(material.serialNumber)];
+    return seen ? [{roomId: room.id, at: new Date(seen.at), by: seen.by}] : [];
   });
   const line = locateMaterial(material, sightings);
   const room = line.lastRoomId === null ? null : roomById(line.lastRoomId);
+  const by = line.seenBy ? ` par ${line.seenBy}` : '';
   const seenLabel = line.seenAt && room
-    ? `Scanné en ${roomLabel(room)} le ${formatDate(line.seenAt)} à ${formatTime(line.seenAt)}.`
-    : 'Jamais scanné avec ce téléphone.';
+    ? `Constaté en ${roomLabel(room)} le ${formatDate(line.seenAt)} à ${formatTime(line.seenAt)}${by}.`
+    : 'Jamais constaté.';
   return {line, seenLabel};
 }
 
@@ -76,7 +77,7 @@ function counts(room: Room): string {
     <div>
       <p class="mono small">SITUATION DES SALLES</p>
       <h1>Salles</h1>
-      <p class="muted small">Ce que le parc déclare face à ce qui a été scanné sur place. Consultation seule.</p>
+      <p class="muted small">Ce que le parc déclare face à ce que les agents ont constaté sur place. Consultation seule.</p>
     </div>
     <input v-model="search" type="search" placeholder="Salle (ex. 101 10) ou n° de série"
            aria-label="Rechercher une salle ou un matériel">

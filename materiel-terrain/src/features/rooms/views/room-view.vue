@@ -9,8 +9,8 @@ import {useRoute, useRouter} from 'vue-router';
 import {formatDate, formatTime} from '../../../shared/composables/use-dates.ts';
 import {roomLabel} from '../../../shared/composables/use-room-label.ts';
 import {useInventory} from '../../inventory/composables/use-inventory.ts';
+import {useSightings} from '../../inventory/composables/use-sightings.ts';
 import {useCurrentRoom} from '../../location/composables/use-current-room.ts';
-import {useSeenRecords} from '../../scan/composables/use-room-check.ts';
 import ReportLine from '../components/report-line.vue';
 import {buildRoomReport} from '../lib/room-report.ts';
 
@@ -19,14 +19,14 @@ const route = useRoute();
 const router = useRouter();
 const {materials, roomById} = useInventory();
 const {selectRoom} = useCurrentRoom();
-const {seenInRoom} = useSeenRecords();
+const {seenInRoom} = useSightings();
 
 //------------------ COMPUTED --------------------------------
 const room = computed(() => roomById(Number(route.params.id)));
 const report = computed(() => (room.value ? buildRoomReport(room.value.id, materials.value, seenInRoom(room.value.id)) : null));
 const lastScan = computed(() => {
   const at = report.value?.lastSeenAt;
-  return at ? `Dernier scan ici le ${formatDate(at)} à ${formatTime(at)}.` : 'Pas encore reconnue sur ce téléphone.';
+  return at ? `Dernier constat ici le ${formatDate(at)} à ${formatTime(at)}.` : 'Pas encore reconnue.';
 });
 
 //------------------ FUNCTIONS -------------------------------
@@ -68,7 +68,7 @@ function reconnoitre(): void {
 
       <section class="panel">
         <h2>Réellement sur place</h2>
-        <p class="muted small">Scanné dans cette salle avec ce téléphone, recensé ou non.</p>
+        <p class="muted small">Constaté par scan dans cette salle, par n'importe quel agent, recensé ou non.</p>
         <p v-if="report.observed.length === 0" class="small">Rien n'a encore été scanné ici.</p>
         <ul v-else class="plain-list report-list">
           <ReportLine v-for="line in report.observed" :key="line.serialNumber" :line="line" />

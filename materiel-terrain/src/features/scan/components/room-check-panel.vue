@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Position de l'agent et bilan de la salle : déclarés, vus, manquants (déclarés mais pas encore scannés).
+ * Position de l'agent et bilan de la salle : déclarés, vus (par n'importe quel agent), manquants (déclarés, pas encore vus).
  * Utilisé par : features/scan/views/scan-view.vue
  */
 import type {Material} from '../../../models/material.model.ts';
@@ -13,6 +13,8 @@ defineProps<{
   expected: Material[];
   missing: Material[];
   seenCount: number;
+  /** Vrai pour MANAGER et ADMIN : effacer les constats de la salle, pour tous. */
+  canReset: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -45,7 +47,7 @@ const emit = defineEmits<{
       </ul>
       <div class="row">
         <RouterLink :to="{name: 'room', params: {id: room.id}}" class="small">Compte rendu de la salle →</RouterLink>
-        <button type="button" class="ghost small" @click="emit('reset')">Recommencer cette salle</button>
+        <button v-if="canReset" type="button" class="ghost small" @click="emit('reset')">Recommencer cette salle</button>
       </div>
     </details>
     <p v-else class="muted small">Sans salle, les matériels sont seulement identifiés.</p>

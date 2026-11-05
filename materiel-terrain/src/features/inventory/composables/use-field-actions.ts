@@ -11,6 +11,7 @@ import {isProvisional, type Material, type MaterialInput} from '../../../models/
 import {materialFromDto, type MaterialRequestDto, materialToRequest} from '../../../models/material.dto.ts';
 import type {Room} from '../../../models/room.model.ts';
 import {roomToDto} from '../../../models/room.dto.ts';
+import {isMaterialAction} from '../../../models/sync.model.ts';
 import {isSessionExpired, isUnreachable} from '../../../services/api-error.ts';
 import {materialsServices} from '../../../services/materials.services.ts';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
@@ -32,7 +33,8 @@ const {readyActions, enqueue, flush, retargetPendingCreate} = useSyncQueue();
 /**
  * Envoie l'action à l'API, ou la met en file si l'API est injoignable ou si la session a expiré
  * (l'agent est alors renvoyé vers la connexion ; l'action partira après).
- * S'il reste des actions en attente, la nouvelle passe derrière elles pour garder l'ordre du terrain.
+ * S'il reste des actions sur le parc en attente, la nouvelle passe derrière elles pour garder l'ordre du terrain
+ * (les constats, indépendants, ne la retardent pas).
  * @param action action à garder si besoin
  * @param direct appel direct à l'API
  * @param applyLocally mise à jour du cache quand l'action est mise en file
@@ -40,7 +42,7 @@ const {readyActions, enqueue, flush, retargetPendingCreate} = useSyncQueue();
  */
 async function runOrQueue(action: NewAction,
                           direct: () => Promise<Material>, applyLocally: () => void): Promise<FieldActionResult> {
-    if (readyActions.value.length === 0 && (await reconnect()) === 'ok') {
+    if (!readyActions.value.some(isMaterialAction) && (await reconnect()) === 'ok') {
         try {
             upsertMaterial(await direct());
             markReachable(true);

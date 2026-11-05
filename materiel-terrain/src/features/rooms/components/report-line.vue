@@ -33,7 +33,8 @@ const badge = computed(() => badges[props.line.status]);
 const seen = computed(() => {
   if (props.seenLabel !== undefined) return props.seenLabel;
   const at = props.line.seenAt;
-  return at ? `Scanné ici le ${formatDate(at)} à ${formatTime(at)}.` : 'Pas encore scanné dans cette salle.';
+  const by = props.line.seenBy ? ` par ${props.line.seenBy}` : '';
+  return at ? `Constaté ici le ${formatDate(at)} à ${formatTime(at)}${by}.` : 'Pas encore constaté dans cette salle.';
 });
 </script>
 

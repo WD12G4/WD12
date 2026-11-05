@@ -3,6 +3,7 @@
  * Avant chaque relocalisation, le matériel est relu sur le serveur (room-conflict.ts) : s'il a été déplacé
  * entre-temps par quelqu'un d'autre, l'action passe en conflit au lieu d'écraser son travail.
  * Avant chaque prise en compte, le parc est relu : un numéro déjà créé par un autre agent n'est jamais créé en double.
+ * Les constats (scans dans une salle) passent aussi par la file ; un constat refusé est abandonné sans bloquer.
  * Une action en conflit ou refusée par l'API n'est plus rejouée automatiquement : l'agent arbitre
  * depuis l'écran Synchronisation (use-conflicts.ts, retry, discard). Une session expirée (401) ou une API
  * injoignable n'est pas un refus : le rejeu s'arrête et l'action reste en attente.
@@ -14,6 +15,7 @@ import {materialToDto} from '../../../models/material.dto.ts';
 import type {PendingAction} from '../../../models/sync.model.ts';
 import {ApiError, isSessionExpired, isUnreachable} from '../../../services/api-error.ts';
 import {materialsServices} from '../../../services/materials.services.ts';
+import {sightingsServices} from '../../../services/sightings.services.ts';
 import {readStored, writeStored} from '../../../services/local-store.ts';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
 import {toErrorMessage} from '../../../shared/composables/use-async-state.ts';
@@ -96,13 +98,26 @@ async function findCreatedElsewhere(serialNumber: string): Promise<Material | nu
         !isProvisional(material) && serialKey(material.serialNumber) === serialKey(serialNumber)) ?? null;
 }
 
+/** Envoie un constat : scan dans une salle, ou constats de la salle effacés. */
+async function sendSighting(action: PendingAction, roomId: number): Promise<void> {
+    if (action.kind === 'clear-room') return sightingsServices.clearRoom(roomId);
+    return sightingsServices.record({
+        serialNumber: action.serialNumber, roomId, seenAt: action.seenAt ?? action.createdAt, replaces: action.replaces ?? null,
+    });
+}
+
 /**
  * Envoie une action à l'API, après avoir vérifié que le serveur ne la contredit pas.
  * Prise en compte d'un numéro qu'un autre agent a déjà créé : rien n'est créé ; s'il l'a placé dans la même salle,
  * l'action est faite, sinon elle passe en conflit.
+ * @returns le matériel enregistré, ou null pour un constat
  * @throws MaterialConflictError si quelqu'un a modifié le matériel entre-temps, ApiError sinon
  */
-async function send(action: PendingAction): Promise<Material> {
+async function send(action: PendingAction): Promise<Material | null> {
+    if (action.kind === 'sight' || action.kind === 'clear-room') {
+        if (action.roomId !== null) await sendSighting(action, action.roomId);
+        return null;
+    }
     if (action.kind === 'create' && action.request) {
         const existing = await findCreatedElsewhere(action.serialNumber);
         if (existing === null) return materialsServices.create(action.request);
@@ -115,26 +130,37 @@ async function send(action: PendingAction): Promise<Material> {
     return check === 'already-done' ? server : materialsServices.assignRoom(action.materialId, action.roomId);
 }
 
-/** Rejoue les actions prêtes, dans l'ordre. S'arrête dès que l'API est injoignable. */
+/**
+ * Rejoue les actions prêtes, dans l'ordre, y compris celles ajoutées pendant l'envoi (un scan pendant la synchro).
+ * S'arrête dès que l'API est injoignable.
+ */
 async function flush(): Promise<void> {
     if (flushing.value || readyActions.value.length === 0) return;
     flushing.value = true;
     let conflicts = 0;
+    const tried = new Set<string>();
+    const next = () => readyActions.value.find((action) => !tried.has(action.id));
     try {
         const session = await reconnect();
         // Session expirée : l'agent est renvoyé vers la connexion, la file repartira après.
         if (session !== 'ok') return markReachable(session !== 'unreachable');
-        for (const action of [...readyActions.value]) {
+        for (let action = next(); action; action = next()) {
+            tried.add(action.id);
             try {
                 const saved = await send(action);
                 if (action.kind === 'create') inventory.removeMaterial(action.materialId);
-                inventory.upsertMaterial(saved);
+                if (saved) inventory.upsertMaterial(saved);
                 remove(action.id);
                 markReachable(true);
             } catch (error) {
                 if (isUnreachable(error)) return markReachable(false);
                 // Session expirée en cours de route (déjà redirigé vers la connexion) : l'action reste en attente.
                 if (isSessionExpired(error)) return;
+                // Constat refusé (salle supprimée…) : rien à arbitrer, il est abandonné.
+                if (action.kind === 'sight') {
+                    remove(action.id);
+                    continue;
+                }
                 // Déjà créé par un autre : le matériel provisoire disparaît, le cache montre celui du serveur.
                 if (error instanceof MaterialConflictError && action.kind === 'create') {
                     inventory.removeMaterial(action.materialId);
