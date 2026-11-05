@@ -14,6 +14,7 @@ import {useSyncQueue} from './features/inventory/composables/use-sync-queue.ts';
 import {useSynchronize} from './features/inventory/composables/use-synchronize.ts';
 import FlashMessage from './shared/components/flash-message.vue';
 import StatusBar from './shared/components/status-bar.vue';
+import TabBar from './shared/components/tab-bar.vue';
 
 /** Intervalle du rafraîchissement automatique : envoi des actions en attente, puis parc à jour. */
 const AUTO_SYNC_MS = 15_000;
@@ -81,5 +82,6 @@ onBeforeUnmount(() => {
       <FlashMessage />
       <router-view />
     </main>
+    <TabBar v-if="currentUser" />
   </div>
 </template>

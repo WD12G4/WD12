@@ -56,7 +56,8 @@ export function useScanResult() {
         close();
         outcome.value = {reading, verdict, material, at: new Date()};
         historyId = record(outcome.value);
-        if (currentRoom.value && material) markSeen(currentRoom.value.id, material.serialNumber);
+        // Un numéro non recensé est noté aussi : le compte rendu de la salle le signale.
+        if (currentRoom.value) markSeen(currentRoom.value.id, material?.serialNumber ?? reading.serialNumber);
         playTone(verdict === 'conform' ? 'ok' : 'alert');
     }
 
@@ -98,7 +99,7 @@ export function useScanResult() {
         if (!outcome.value) return;
         outcome.value = {...outcome.value, ...identify(outcome.value.reading, () => material, currentRoom.value)};
         annotate(historyId, 'Déjà recensé', material.serialNumber);
-        if (currentRoom.value) markSeen(currentRoom.value.id, material.serialNumber);
+        if (currentRoom.value) markSeen(currentRoom.value.id, material.serialNumber, outcome.value.reading.serialNumber);
         show(`${material.serialNumber} a déjà été pris en compte par un autre agent.`, 'info');
     }
 
@@ -106,6 +107,7 @@ export function useScanResult() {
     async function registerMaterial(input: MaterialInput): Promise<void> {
         const room = currentRoom.value;
         const serialNumber = input.serialNumber.trim();
+        const scanned = outcome.value?.reading.serialNumber;
         let result = 'saved' as FieldActionResult | 'exists';
         const ok = await run(async () => {
             try {
@@ -118,7 +120,7 @@ export function useScanResult() {
         });
         if (!ok || result === 'exists') return;
         annotate(historyId, result === 'saved' ? 'Pris en compte' : 'Pris en compte (en attente)', serialNumber);
-        if (room) markSeen(room.id, serialNumber);
+        if (room) markSeen(room.id, serialNumber, scanned);
         confirm(result, `${serialNumber} pris en compte`);
         close();
     }

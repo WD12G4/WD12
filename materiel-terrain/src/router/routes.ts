@@ -27,6 +27,18 @@ export const routes: RouteRecordRaw[] = [
         meta: {roles: ['USER']},
     },
     {
+        path: '/salles',
+        name: 'rooms',
+        component: () => import('../features/rooms/views/rooms-view.vue'),
+        meta: {roles: ['USER']},
+    },
+    {
+        path: '/salles/:id',
+        name: 'room',
+        component: () => import('../features/rooms/views/room-view.vue'),
+        meta: {roles: ['USER']},
+    },
+    {
         path: '/synchro',
         name: 'sync',
         component: () => import('../features/inventory/views/sync-view.vue'),

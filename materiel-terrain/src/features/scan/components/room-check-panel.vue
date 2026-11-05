@@ -43,7 +43,10 @@ const emit = defineEmits<{
       <ul v-else class="plain-list">
         <li v-for="material in missing" :key="material.id" class="mono">{{ material.serialNumber }}</li>
       </ul>
-      <button type="button" class="ghost small" @click="emit('reset')">Recommencer cette salle</button>
+      <div class="row">
+        <RouterLink :to="{name: 'room', params: {id: room.id}}" class="small">Compte rendu de la salle →</RouterLink>
+        <button type="button" class="ghost small" @click="emit('reset')">Recommencer cette salle</button>
+      </div>
     </details>
     <p v-else class="muted small">Sans salle, les matériels sont seulement identifiés.</p>
   </section>

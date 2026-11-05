@@ -9,6 +9,8 @@ import {installGuards} from './guards.ts';
 export const router = createRouter({
     history: createWebHistory(),
     routes,
+    // Chaque page s'ouvre en haut ; retour arrière : position d'avant.
+    scrollBehavior: (_to, _from, saved) => saved ?? {top: 0},
 });
 
 installGuards(router);

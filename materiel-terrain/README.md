@@ -6,7 +6,7 @@ Application terrain de l'opération **RECON** : un agent passe de salle en salle
 | Effet recherché | Dans l'application |
 |---|---|
 | Reconnaître | Scan caméra en continu, photo du code, ou saisie manuelle → numéro de série extrait |
-| Rendre compte | Fiche connue (type, salle déclarée, fin de disponibilité) ou « Non recensé » |
+| Rendre compte | Fiche connue (type, salle déclarée, fin de disponibilité) ou « Non recensé » ; page **Salles** : matériel théoriquement et réellement sur place, salle par salle |
 | Actualiser | Changer la salle d'un matériel (salle courante en un geste, autre salle ou stock) et « Prendre en compte » (inconnu) |
 | Réseau dégradé | Parc gardé sur le téléphone, actions mises en file et rejouées au retour du réseau |
 
@@ -74,7 +74,22 @@ du réseau, et son sort final (envoyée, refusée, en conflit) se lit dans *Sync
 
 **Fiche** : badge *en attente d'envoi* = matériel pris en compte hors ligne, pas encore créé sur le serveur ;
 fin de disponibilité *dépassée* ou *dans N j* (30 jours ou moins). **Bilan de salle** : *Déclarés* (dans la salle selon le
-parc), *Vus* (scannés dans cette salle), *Manquants* (déclarés mais pas encore vus).
+parc), *Vus* (scannés dans cette salle, recensés ou non), *Manquants* (déclarés mais pas encore vus).
+
+## Situation des salles
+
+Onglet **Salles** (barre du bas) : une page de **consultation** qui ne vérifie et ne modifie rien. Elle met en regard,
+pour chaque salle, ce que le parc déclare et ce qui a été constaté au scan :
+
+| Liste des salles | Compte rendu d'une salle |
+|---|---|
+| Par bâtiment : nombre de matériels théoriques / constatés, état *non reconnue*, *conforme* ou *N écarts* | **Théoriquement sur place** : déclarés dans la salle (*sur place* ou *non constaté*) |
+| Recherche d'une salle (`101 10`) ou d'un **n° de série** : où il est déclaré, où et quand il a été scanné | **Réellement sur place** : scannés dans la salle (*sur place*, *déclaré ailleurs*, *déclaré en stock*, *non recensé*, *archivé*) |
+| Liste *En stock* (matériels sans salle) | Un appui sur un matériel déplie ses informations (type, salle déclarée, fin de disponibilité, date du scan) |
+
+Un numéro non recensé scanné dans une salle y est noté : le compte rendu le signale tant qu'il n'est pas pris en compte.
+Le « réellement sur place » vient des scans **de ce téléphone** (le backend n'a rien pour enregistrer un constat) ;
+le « théoriquement » vient du parc, mis à jour pour tous toutes les 15 s.
 
 ## Plusieurs téléphones
 
@@ -194,11 +209,12 @@ src/
 ├── router/        routes.ts, guards.ts (session en ligne ou hors ligne), index.ts
 ├── models/        <entite>.model.ts / .dto.ts (repris du front), scan.model.ts, sync.model.ts
 ├── services/      http-client.ts (délai 10 s, échec immédiat sans réseau), services par ressource, local-store.ts
-├── shared/        use-auth (session + profil hors ligne), use-network, status-bar, flash-message…
+├── shared/        use-auth (session + profil hors ligne), use-network, status-bar, tab-bar, flash-message…
 └── features/
     ├── scan/       lib/ (parse-scan, identify, barcode-reader, feedback), composables/ (caméra, bilan, historique), vue principale
     ├── inventory/  parc en cache, file d'attente, actions terrain, synchronisation, écran Synchronisation
     ├── location/   salle courante et écran de choix
+    ├── rooms/      situation des salles (consultation) : lib/room-report (théorique / réel, testé), liste et compte rendu
     └── auth/       connexion
 ```
 
@@ -210,5 +226,8 @@ src/
 - **Conflits** : la relecture précède l'écriture de quelques millisecondes ; deux écritures exactement simultanées
   restent possibles. Seul un contrôle de version côté backend (`PATCH` avec version) fermerait ce créneau.
 - **Taille du parc** : une page de 1000 matériels (pas de recherche par numéro côté API).
-- **Matériel inconnu pour un formateur** : le backend n'a pas de route de signalement ; il est invité à noter le numéro.
+- **Matériel inconnu pour un formateur** : le backend n'a pas de route de signalement ; il est invité à noter le numéro
+  (il reste signalé *non recensé* dans le compte rendu de la salle, sur son téléphone).
+- **Constat propre à chaque téléphone** : le « réellement sur place » de la page Salles ne regroupe pas les scans
+  de plusieurs téléphones (rien côté backend pour l'enregistrer).
 - **HTTPS local** : certificat signé par une autorité de développement, à installer sur chaque téléphone de démonstration.
