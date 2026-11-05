@@ -1,3 +1,8 @@
+# Projet distinct de docker-compose.yml (même dossier) : sans ce nom, les deux fichiers partageraient
+# le projet « wd12 », donc la même base (volume) et le même réseau, et un « down --remove-orphans »
+# lancé sur l'un supprimerait les conteneurs de l'autre.
+name: projet-terrain
+
 services:
   # -------------------------------------------------------------
   # 1. Base de données PostgreSQL
@@ -45,6 +50,8 @@ services:
       context: ./materiel-backend
       dockerfile: projet-terrain-backend.dockerfile
     image: ${BACKEND_IMAGE:-ghcr.io/wd12g4/projet-terrain-backend:latest}
+    # La CI ne construit que pour linux/amd64 : sur un Mac à puce Apple, Docker Desktop l'émule.
+    platform: linux/amd64
     container_name: projet_terrain_backend
     restart: unless-stopped
     depends_on:
@@ -65,6 +72,8 @@ services:
       context: ./materiel-terrain
       dockerfile: projet-terrain-frontend.dockerfile
     image: ${FRONTEND_IMAGE:-ghcr.io/wd12g4/projet-terrain-frontend:latest}
+    # La CI ne construit que pour linux/amd64 : sur un Mac à puce Apple, Docker Desktop l'émule.
+    platform: linux/amd64
     container_name: projet_terrain_frontend
     restart: unless-stopped
     depends_on:

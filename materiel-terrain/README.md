@@ -64,6 +64,11 @@ docker compose -f docker-compose.projet-terrain.yml --env-file .env.projet-terra
   la PWA est servie en **HTTPS sur le port 443**, et `http://<nom-du-mac>.local` y renvoie.
   Sans certificats, le conteneur démarre quand même, en HTTP seul (`https/40-recon-https.sh`).
 - Vérifier au démarrage : `docker logs projet_terrain_frontend` affiche `RECON : HTTPS activé`.
+- Le fichier a son propre projet (`name: projet-terrain`) : sa base (volume `projet-terrain_postgres_data`,
+  créée avec les comptes de démo) est distincte de celle de `docker-compose.yml`. Les deux piles utilisent
+  les mêmes ports (8080, 8081) : n'en lancer qu'une à la fois.
+- La CI construit les images pour `linux/amd64` : sur un Mac à puce Apple, Docker Desktop les émule
+  (`platform` dans le compose). Le `pull` demande d'être connecté à `ghcr.io` (images privées).
 
 ### Sur l'iPhone (une seule fois)
 
