@@ -40,6 +40,7 @@ export default defineConfig({
             // Les icônes sont déjà couvertes par globPatterns : pas de doublon dans le précache.
             includeManifestIcons: false,
             manifest: {
+                id: '/',
                 name: 'RECON — Reconnaissance du parc',
                 short_name: 'RECON',
                 description: 'Identifier, localiser et remettre à jour le matériel sur le terrain.',
@@ -51,9 +52,9 @@ export default defineConfig({
                 background_color: '#060b09',
                 theme_color: '#060b09',
                 icons: [
-                    {src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png'},
-                    {src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png'},
-                    {src: 'maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable'},
+                    {src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png'},
+                    {src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png'},
+                    {src: '/maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable'},
                 ],
             },
             workbox: {

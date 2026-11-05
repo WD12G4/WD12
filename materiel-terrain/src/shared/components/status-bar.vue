@@ -6,6 +6,7 @@
  */
 import {computed} from 'vue';
 import {roleLabels, type User} from '../../models/user.model.ts';
+import {usePwaInstall} from '../composables/use-pwa-install.ts';
 
 //------------------ PROPS / EMITS ---------------------------
 const props = defineProps<{
@@ -22,6 +23,9 @@ const emit = defineEmits<{
   logout: [];
 }>();
 
+//------------------ PWA INSTALL -----------------------------
+const {isInstallable, isInstalled, install} = usePwaInstall();
+
 //------------------ COMPUTED --------------------------------
 const syncKind = computed(() => (props.blockedCount > 0 ? 'danger' : props.pendingCount > 0 ? 'warn' : 'muted'));
 </script>
@@ -29,6 +33,15 @@ const syncKind = computed(() => (props.blockedCount > 0 ? 'danger' : props.pendi
 <template>
   <header class="status-bar">
     <RouterLink :to="{name: 'scan'}" class="brand mono">⌖ RECON</RouterLink>
+    <button
+        v-if="isInstallable && !isInstalled"
+        type="button"
+        class="pill ok"
+        title="Installer l'application sur cet appareil"
+        @click="install"
+    >
+      📥 INSTALLER
+    </button>
     <span class="pill" :class="online ? 'ok' : 'warn'">{{ online ? 'EN LIGNE' : 'HORS LIGNE' }}</span>
     <RouterLink :to="{name: 'sync'}" class="pill" :class="syncKind" :aria-label="`${pendingCount} action(s) en attente`">
       ⇅ {{ pendingCount }}

@@ -49,6 +49,12 @@ COPY --from=builder /app/dist .
 # Configuration Nginx adaptée SPA + PWA + Reverse Proxy
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+# Support HTTPS optionnel pour la PWA mobile (caméra + installation PWA hors localhost)
+COPY https/40-recon-https.sh /docker-entrypoint.d/40-recon-https.sh
+RUN chmod +x /docker-entrypoint.d/40-recon-https.sh
+RUN mkdir -p /etc/nginx/recon
+COPY https/nginx-https.conf /etc/nginx/recon/nginx-https.conf
+
+EXPOSE 80 443
 
 CMD ["nginx", "-g", "daemon off;"]

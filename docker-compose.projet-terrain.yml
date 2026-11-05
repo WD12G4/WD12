@@ -81,12 +81,8 @@ services:
     ports:
       - "${FRONTEND_PORT:-80}:80"
       - "${FRONTEND_HTTPS_PORT:-443}:443"
-    # HTTPS pour l'iPhone (caméra, service worker) sans reconstruire l'image : certificats créés sur le Mac
-    # par materiel-terrain/scripts/generate-certs.sh. Sans certificats, le site reste servi en HTTP seul.
     volumes:
       - ./materiel-terrain/certs:/etc/nginx/certs:ro
-      - ./materiel-terrain/https/nginx-https.conf:/etc/nginx/recon/nginx-https.conf:ro
-      - ./materiel-terrain/https/40-recon-https.sh:/docker-entrypoint.d/40-recon-https.sh:ro
     networks:
       - materiel_network
 

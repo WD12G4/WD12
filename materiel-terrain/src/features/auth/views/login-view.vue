@@ -6,6 +6,7 @@
 import {useRouter} from 'vue-router';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
+import {usePwaInstall} from '../../../shared/composables/use-pwa-install.ts';
 import {ApiError} from '../../../services/api-error.ts';
 import LoginForm from '../components/login-form.vue';
 
@@ -13,6 +14,7 @@ import LoginForm from '../components/login-form.vue';
 const router = useRouter();
 const {login} = useAuth();
 const {loading, errorMessage, run} = useAsyncState();
+const {isInstallable, isInstalled, isIos, install} = usePwaInstall();
 
 //------------------ FUNCTIONS -------------------------------
 /**
@@ -46,5 +48,13 @@ async function signIn(username: string, password: string): Promise<void> {
     <section class="panel">
       <LoginForm :submitting="loading" :error-message="errorMessage" @submit="signIn" />
     </section>
+    <div v-if="isInstallable && !isInstalled" style="margin-top: 1rem; text-align: center;">
+      <button type="button" class="btn secondary small" @click="install">
+        📲 Installer l'application sur l'appareil
+      </button>
+    </div>
+    <p v-else-if="isIos && !isInstalled" class="small muted" style="margin-top: 1rem; text-align: center;">
+      💡 Sur iPhone : appuyez sur Partager ⎋ puis « Sur l'écran d'accueil »
+    </p>
   </div>
 </template>
