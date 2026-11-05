@@ -56,3 +56,12 @@ export class ApiError extends Error {
 export function isUnreachable(error: unknown): boolean {
     return error instanceof ApiError && error.status === NETWORK_ERROR_STATUS;
 }
+
+/**
+ * Indique si l'appel a échoué parce que la session a expiré (401) : l'action elle-même n'est pas en cause,
+ * elle doit être gardée et renvoyée après la reconnexion de l'agent.
+ * @param error erreur attrapée
+ */
+export function isSessionExpired(error: unknown): boolean {
+    return error instanceof ApiError && error.status === 401;
+}

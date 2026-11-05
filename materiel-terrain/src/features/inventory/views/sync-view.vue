@@ -35,10 +35,16 @@ function targetLabel(roomId: number | null): string {
   return room ? roomLabel(room) : `Salle #${roomId}`;
 }
 
+/**
+ * Synchronise et dit exactement ce qui s'est passé.
+ * Session expirée : rien à afficher ici, l'agent est déjà renvoyé vers la connexion avec son message.
+ */
 async function syncNow(): Promise<void> {
   await run(async () => {
-    const ok = await synchronize();
-    show(ok ? 'Parc à jour.' : "Serveur injoignable : les actions restent sur le téléphone.", ok ? 'success' : 'error');
+    const outcome = await synchronize();
+    if (outcome.status === 'ok') show('Parc à jour.', 'success');
+    else if (outcome.status === 'unreachable') show('Serveur injoignable : les actions restent sur le téléphone.', 'error');
+    else if (outcome.status === 'failed') show(`Synchronisation interrompue : ${outcome.message}`, 'error');
   });
 }
 

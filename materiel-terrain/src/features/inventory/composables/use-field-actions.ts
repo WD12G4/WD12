@@ -10,7 +10,7 @@ import {isProvisional, type Material, type MaterialInput} from '../../../models/
 import {materialFromDto, materialToRequest} from '../../../models/material.dto.ts';
 import type {Room} from '../../../models/room.model.ts';
 import {roomToDto} from '../../../models/room.dto.ts';
-import {isUnreachable} from '../../../services/api-error.ts';
+import {isSessionExpired, isUnreachable} from '../../../services/api-error.ts';
 import {materialsServices} from '../../../services/materials.services.ts';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
 import {useNetwork} from '../../../shared/composables/use-network.ts';
@@ -29,7 +29,8 @@ const {readyActions, enqueue, flush, retargetPendingCreate} = useSyncQueue();
 
 //------------------ FUNCTIONS -------------------------------
 /**
- * Envoie l'action à l'API, ou la met en file si l'API est injoignable.
+ * Envoie l'action à l'API, ou la met en file si l'API est injoignable ou si la session a expiré
+ * (l'agent est alors renvoyé vers la connexion ; l'action partira après).
  * S'il reste des actions en attente, la nouvelle passe derrière elles pour garder l'ordre du terrain.
  * @param action action à garder si besoin
  * @param direct appel direct à l'API
@@ -38,14 +39,14 @@ const {readyActions, enqueue, flush, retargetPendingCreate} = useSyncQueue();
  */
 async function runOrQueue(action: NewAction,
                           direct: () => Promise<Material>, applyLocally: () => void): Promise<FieldActionResult> {
-    if (readyActions.value.length === 0 && (await reconnect())) {
+    if (readyActions.value.length === 0 && (await reconnect()) === 'ok') {
         try {
             upsertMaterial(await direct());
             markReachable(true);
             return 'saved';
         } catch (error) {
-            if (!isUnreachable(error)) throw error;
-            markReachable(false);
+            if (!isUnreachable(error) && !isSessionExpired(error)) throw error;
+            if (isUnreachable(error)) markReachable(false);
         }
     }
     enqueue(action);

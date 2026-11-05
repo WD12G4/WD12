@@ -2,11 +2,22 @@
  * Synchronisation complète avec le serveur : envoi des actions en attente, puis parc à jour.
  * Utilisé par : App.vue (connexion, retour du réseau, retour au premier plan), features/inventory/views/sync-view.vue
  */
-import {isUnreachable} from '../../../services/api-error.ts';
+import {isSessionExpired, isUnreachable} from '../../../services/api-error.ts';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
+import {toErrorMessage} from '../../../shared/composables/use-async-state.ts';
 import {useNetwork} from '../../../shared/composables/use-network.ts';
 import {useInventory} from './use-inventory.ts';
 import {useSyncQueue} from './use-sync-queue.ts';
+
+/**
+ * Issue d'une synchronisation, pour un message exact : serveur injoignable, session expirée
+ * (l'agent est renvoyé vers la connexion) ou autre échec (message de l'erreur).
+ */
+type SyncOutcome =
+    | {status: 'ok'}
+    | {status: 'unreachable'}
+    | {status: 'expired'}
+    | {status: 'failed'; message: string};
 
 //------------------ DATAS -----------------------------------
 const {reconnect} = useAuth();
@@ -18,14 +29,14 @@ const {readyActions, flush} = useSyncQueue();
 /**
  * Rejoue la file, puis recharge le parc depuis l'API.
  * Les relocalisations encore en attente sont réappliquées au cache pour ne pas les perdre de vue.
- * @returns vrai si le parc a été rechargé
  */
-async function synchronize(): Promise<boolean> {
+async function synchronize(): Promise<SyncOutcome> {
     await flush();
     try {
-        if (!(await reconnect())) {
-            markReachable(false);
-            return false;
+        const session = await reconnect();
+        if (session !== 'ok') {
+            markReachable(session !== 'unreachable');
+            return {status: session};
         }
         await inventory.download();
         // Les actions en conflit ou refusées ne sont pas réappliquées : le cache montre l'état du serveur.
@@ -33,10 +44,12 @@ async function synchronize(): Promise<boolean> {
             inventory.moveMaterial(action.materialId, action.roomId === null ? null : inventory.roomById(action.roomId));
         });
         markReachable(true);
-        return true;
+        return {status: 'ok'};
     } catch (error) {
         markReachable(!isUnreachable(error));
-        return false;
+        if (isUnreachable(error)) return {status: 'unreachable'};
+        if (isSessionExpired(error)) return {status: 'expired'};
+        return {status: 'failed', message: toErrorMessage(error)};
     }
 }
 
@@ -47,3 +60,5 @@ async function synchronize(): Promise<boolean> {
 export function useSynchronize() {
     return {synchronize};
 }
+
+export type {SyncOutcome};

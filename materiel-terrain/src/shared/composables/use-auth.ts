@@ -127,18 +127,19 @@ function restoreSession(): Promise<void> {
 
 /**
  * Au retour du réseau, remet une session hors ligne en ligne (nouveau jeton via le cookie).
- * Si le cookie a expiré, la session se termine et l'agent est renvoyé vers la connexion.
- * @returns vrai si un jeton valide est disponible
+ * Si le cookie a expiré, la session se termine et l'agent est renvoyé vers la connexion
+ * (les actions en attente sont conservées et partiront après sa reconnexion).
+ * @returns 'ok' (jeton valide), 'expired' (reconnexion nécessaire) ou 'unreachable' (pas de réseau)
  */
-async function reconnect(): Promise<boolean> {
-    if (accessToken.value !== null) return true;
-    if (currentUser.value === null) return false;
+async function reconnect(): Promise<RefreshResult> {
+    if (accessToken.value !== null) return 'ok';
+    if (currentUser.value === null) return 'expired';
     const result = await restoreOnline();
     if (result === 'expired') {
         clearSession();
         sessionExpiredHandler();
     }
-    return result === 'ok';
+    return result;
 }
 
 /**
@@ -178,3 +179,5 @@ export function useAuth() {
         login, logout, restoreSession, reconnect, hasRole, onSessionExpired,
     };
 }
+
+export type {RefreshResult};

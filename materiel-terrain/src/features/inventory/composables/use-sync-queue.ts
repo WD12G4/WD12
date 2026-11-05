@@ -3,14 +3,15 @@
  * Avant chaque relocalisation, le matériel est relu sur le serveur (room-conflict.ts) : s'il a été déplacé
  * entre-temps par quelqu'un d'autre, l'action passe en conflit au lieu d'écraser son travail.
  * Une action en conflit ou refusée par l'API n'est plus rejouée automatiquement : l'agent arbitre
- * depuis l'écran Synchronisation (use-conflicts.ts, retry, discard).
+ * depuis l'écran Synchronisation (use-conflicts.ts, retry, discard). Une session expirée (401) ou une API
+ * injoignable n'est pas un refus : le rejeu s'arrête et l'action reste en attente.
  * Utilisé par : App.vue, use-field-actions.ts, use-synchronize.ts, use-conflicts.ts, sync-view.vue
  */
 import {computed, ref} from 'vue';
 import {isProvisional, type Material} from '../../../models/material.model.ts';
 import {materialToDto} from '../../../models/material.dto.ts';
 import type {PendingAction} from '../../../models/sync.model.ts';
-import {isUnreachable} from '../../../services/api-error.ts';
+import {ApiError, isSessionExpired, isUnreachable} from '../../../services/api-error.ts';
 import {materialsServices} from '../../../services/materials.services.ts';
 import {readStored, writeStored} from '../../../services/local-store.ts';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
@@ -27,9 +28,22 @@ const QUEUE_KEY = 'queue';
 type NewAction = Omit<PendingAction, 'id' | 'createdAt' | 'error' | 'conflict'>;
 
 //------------------ DATAS -----------------------------------
-// Les actions d'une version précédente n'ont pas de champ conflict.
-const queue = ref<PendingAction[]>(readStored<PendingAction[]>(QUEUE_KEY, [])
-    .map((action) => ({...action, conflict: action.conflict ?? null})));
+/** Message d'une session expirée : une version précédente l'enregistrait à tort comme un refus. */
+const SESSION_EXPIRED_MESSAGE = new ApiError(401).message;
+
+/**
+ * Relit la file enregistrée. Répare les actions d'une version précédente : champ conflict absent,
+ * et actions marquées « Refusé » à cause d'une session expirée, remises en attente.
+ */
+function loadQueue(): PendingAction[] {
+    return readStored<PendingAction[]>(QUEUE_KEY, []).map((action) => ({
+        ...action,
+        conflict: action.conflict ?? null,
+        error: action.error === SESSION_EXPIRED_MESSAGE ? null : action.error,
+    }));
+}
+
+const queue = ref<PendingAction[]>(loadQueue());
 const flushing = ref(false);
 const {reconnect} = useAuth();
 const {markReachable} = useNetwork();
@@ -90,7 +104,8 @@ async function send(action: PendingAction): Promise<Material> {
         try {
             return await materialsServices.create(action.request);
         } catch (error) {
-            const existing = isUnreachable(error) ? null : await findCreatedElsewhere(action.serialNumber);
+            const existing = isUnreachable(error) || isSessionExpired(error)
+                ? null : await findCreatedElsewhere(action.serialNumber);
             throw existing ? new MaterialConflictError(existing) : error;
         }
     }
@@ -106,7 +121,9 @@ async function flush(): Promise<void> {
     flushing.value = true;
     let conflicts = 0;
     try {
-        if (!(await reconnect())) return markReachable(false);
+        const session = await reconnect();
+        // Session expirée : l'agent est renvoyé vers la connexion, la file repartira après.
+        if (session !== 'ok') return markReachable(session !== 'unreachable');
         for (const action of [...readyActions.value]) {
             try {
                 const saved = await send(action);
@@ -116,6 +133,8 @@ async function flush(): Promise<void> {
                 markReachable(true);
             } catch (error) {
                 if (isUnreachable(error)) return markReachable(false);
+                // Session expirée en cours de route (déjà redirigé vers la connexion) : l'action reste en attente.
+                if (isSessionExpired(error)) return;
                 // Déjà créé par un autre : le matériel provisoire disparaît, le cache montre celui du serveur.
                 if (error instanceof MaterialConflictError && action.kind === 'create') {
                     inventory.removeMaterial(action.materialId);
