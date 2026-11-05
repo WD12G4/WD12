@@ -37,8 +37,11 @@ export default defineConfig({
         vue(),
         VitePWA({
             registerType: 'autoUpdate',
-            // Les icônes sont déjà couvertes par globPatterns : pas de doublon dans le précache.
+            injectRegister: 'auto',
             includeManifestIcons: false,
+            devOptions: {
+                enabled: true,
+            },
             manifest: {
                 id: '/',
                 name: 'RECON — Reconnaissance du parc',
@@ -52,8 +55,8 @@ export default defineConfig({
                 background_color: '#060b09',
                 theme_color: '#060b09',
                 icons: [
-                    {src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png'},
-                    {src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png'},
+                    {src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any'},
+                    {src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any'},
                     {src: '/maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable'},
                 ],
             },
