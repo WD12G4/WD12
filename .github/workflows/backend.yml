@@ -2,14 +2,15 @@ name: Backend CI/CD
 
 on:
   push:
-    branches: [ "main", "proto-backend-frontend", "frontBase_ESL" ]
+    branches: [ "projet-terrain" ]
     paths:
       - 'materiel-backend/**'
       - '.github/workflows/backend.yml'
       - 'docker-compose.yml'
       - 'docker-compose.prod.yml'
+      - 'docker-compose.projet-terrain.yml'
   pull_request:
-    branches: [ "main", "proto-backend-frontend", "frontBase_ESL" ]
+    branches: [ "projet-terrain" ]
     paths:
       - 'materiel-backend/**'
       - '.github/workflows/backend.yml'
@@ -112,7 +113,7 @@ jobs:
         shell: bash
         run: |
           REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE_NAME="ghcr.io/${REPO_LOWER}-backend"
+          IMAGE_NAME="ghcr.io/wd12g4/projet-terrain-backend"
           TAG="${{ inputs.image_tag || 'latest' }}"
           SHA_TAG=$(echo "${{ github.sha }}" | cut -c1-7)
           BRANCH_TAG="${GITHUB_REF_NAME:-backend}"
@@ -129,7 +130,7 @@ jobs:
             -t "${IMAGE_NAME}:${TAG}" \
             -t "${IMAGE_NAME}:${BRANCH_TAG}" \
             -t "${IMAGE_NAME}:${SHA_TAG}" \
-            -f ./materiel-backend/materiel-backend.dockerfile \
+            -f ./materiel-backend/projet-terrain-backend.dockerfile \
             ./materiel-backend
 
           echo "=========================================================="
@@ -146,7 +147,7 @@ jobs:
           echo "Test de récupération (pull) de l'image Docker depuis GHCR"
           echo "=========================================================="
           REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE_NAME="ghcr.io/${REPO_LOWER}-backend"
+          IMAGE_NAME="ghcr.io/wd12g4/projet-terrain-backend"
           TAG="${{ inputs.image_tag || 'latest' }}"
           echo "Pulling image: ${IMAGE_NAME}:${TAG}..."
           docker pull "${IMAGE_NAME}:${TAG}"
