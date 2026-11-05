@@ -42,36 +42,49 @@ Sont aussi relevés : l'adresse MAC probable (`2CF05DC90096`) et le numéro OTAN
 
 ## Lancer pour la démonstration (Mac + iPhone)
 
-Prérequis : Node 22+, le backend sur le port 8080 (`docker compose up -d` à la racine).
-
-> L'image Docker `ghcr.io/wd12g4/wd12-backend:latest` peut être antérieure à la branche : un gestionnaire y reçoit
-> un 403 en création. Pour tourner sur le code de la branche : `docker compose up -d --build backend`.
+Les images sont construites par la CI GitHub (`projet-terrain-backend`, `projet-terrain-frontend`) :
+sur le Mac, on ne fait que `pull` et `up`. Seule étape locale, une fois : créer les certificats HTTPS.
 
 ```bash
-npm install
+sh materiel-terrain/scripts/generate-certs.sh
 ```
 
 ```bash
-npm run certs
+docker compose -f docker-compose.projet-terrain.yml --env-file .env.projet-terrain pull
 ```
 
 ```bash
-npm run terrain
+docker compose -f docker-compose.projet-terrain.yml --env-file .env.projet-terrain up -d
 ```
 
-- `npm run certs` crée une autorité locale et un certificat HTTPS pour `<nom-du-mac>.local` (dossier `certs/`,
-  jamais poussé). HTTPS est **obligatoire** : sans lui, Safari refuse la caméra et le service worker.
-  Ajouter des IP si besoin : `npm run certs -- 192.168.1.20`.
-- `npm run terrain` construit la PWA et la sert en HTTPS sur le port **5174**, avec le service worker (hors ligne).
-  `npm run dev` sert la même adresse en développement (rechargement à chaud, sans service worker).
+- Le script (openssl seulement, pas besoin de Node) crée une autorité locale et un certificat pour
+  `<nom-du-mac>.local` dans `materiel-terrain/certs/` (jamais poussé, jamais copié dans une image).
+  HTTPS est **obligatoire** : sans lui, Safari refuse la caméra et le service worker.
+- Le compose monte ces certificats et `https/nginx-https.conf` dans le conteneur `frontend` :
+  la PWA est servie en **HTTPS sur le port 443**, et `http://<nom-du-mac>.local` y renvoie.
+  Sans certificats, le conteneur démarre quand même, en HTTP seul (`https/40-recon-https.sh`).
+- Vérifier au démarrage : `docker logs projet_terrain_frontend` affiche `RECON : HTTPS activé`.
 
 ### Sur l'iPhone (une seule fois)
 
-1. Envoyer `certs/recon-ca.crt` sur l'iPhone (AirDrop), puis Réglages › *Profil téléchargé* › **Installer**.
-2. Réglages › Général › Informations › **Réglages des certificats** › activer **RECON Dev CA**.
-3. Le téléphone et le Mac sur le même réseau, ouvrir dans **Safari** `https://<nom-du-mac>.local:5174`
-   (affiché par `npm run certs`, ici `https://MacPaul.local:5174`). Autoriser `node` si le pare-feu du Mac le demande.
-4. Partager › **Sur l'écran d'accueil** : RECON s'ouvre ensuite en plein écran, comme une application.
+L'iPhone partage sa connexion avec le Mac : le Mac n'a alors que des adresses IPv6, qui changent à chaque
+connexion. On passe donc par son nom Bonjour `<nom-du-mac>.local`, couvert par le certificat.
+
+1. **Sur le Mac**, Réglages Système › Réseau › Coupe-feu › Options : décocher **« Bloquer toutes les connexions
+   entrantes »**. Tant que cette case est cochée, le Mac coupe toute connexion venue de l'iPhone (Docker compris).
+2. Envoyer `materiel-terrain/certs/recon-ca.crt` sur l'iPhone (AirDrop), puis Réglages › *Profil téléchargé* › **Installer**.
+3. Réglages › Général › Informations › **Réglages des certificats** › activer **RECON Dev CA**.
+4. Ouvrir dans **Safari** `https://<nom-du-mac>.local` (ici `https://MacPaul.local`).
+5. Partager › **Sur l'écran d'accueil** : RECON s'ouvre ensuite en plein écran, comme une application.
+
+Test de liaison si la page ne s'ouvre pas : `http://MacPaul.local:8081` (Adminer) dans Safari sur l'iPhone.
+
+### En développement
+
+`npm install` puis `npm run dev` dans `materiel-terrain` : même PWA en rechargement à chaud sur
+`https://<nom-du-mac>.local:5174` (mêmes certificats), qui relaie `/api` vers `http://localhost:8080`
+(autre cible : `RECON_API_TARGET=http://localhost:8092 npm run dev`). `npm run terrain` sert le build avec
+son service worker sur le même port.
 
 Comptes de démonstration (créés par `docker/initdb/02-data.sql`) : `manager` / `manager123` (gestionnaire),
 `admin` / `admin123`, `user` / `user123` (formateur : consultation seule).
@@ -102,6 +115,9 @@ npm test
 ## Organisation
 
 ```
+https/         nginx-https.conf + 40-recon-https.sh : HTTPS du conteneur frontend (montés par le compose)
+scripts/       generate-certs.sh : autorité locale + certificat <nom-du-mac>.local
+nginx.conf     configuration HTTP de l'image (projet-terrain-frontend.dockerfile)
 src/
 ├── main.ts, App.vue (synchronisation automatique), style.css (charte RECON)
 ├── router/        routes.ts, guards.ts (session en ligne ou hors ligne), index.ts
@@ -124,4 +140,4 @@ src/
   boucle : elle s'affiche en rouge dans *Synchronisation* (Réessayer / Abandonner).
 - **Taille du parc** : une page de 1000 matériels (pas de recherche par numéro côté API).
 - **Matériel inconnu pour un formateur** : le backend n'a pas de route de signalement ; il est invité à noter le numéro.
-- **Déploiement** : pas encore d'image Docker ; la PWA est servie par Vite depuis le Mac pour la démonstration.
+- **HTTPS local** : certificat signé par une autorité de développement, à installer sur chaque téléphone de démonstration.

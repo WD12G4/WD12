@@ -7,8 +7,9 @@
 #   1. une autorité locale « RECON Dev CA » (certs/recon-ca.crt), à installer UNE fois sur l'iPhone ;
 #   2. un certificat serveur signé par elle, valable pour <nom-du-mac>.local, localhost et les IP passées.
 #
-# Usage : npm run certs                (nom Bonjour du Mac + localhost)
-#         npm run certs -- 192.168.1.20 (ajoute une ou plusieurs IP)
+# Usage : sh scripts/generate-certs.sh               (nom Bonjour du Mac + localhost, sans Node)
+#         sh scripts/generate-certs.sh 192.168.1.20  (ajoute une ou plusieurs IP)
+# Les certificats servent à docker-compose.projet-terrain.yml (port 443) et à npm run dev (port 5174).
 # Relancer le script ne recrée pas l'autorité : l'iPhone n'a pas à la réinstaller.
 # ------------------------------------------------------------------------------
 set -eu
@@ -45,4 +46,4 @@ openssl x509 -req -in server.csr -CA recon-ca.crt -CAkey recon-ca.key -CAcreates
 rm -f server.csr server.ext
 
 echo "Certificat serveur : $DIR/server.crt ($SAN)"
-echo "Adresse à ouvrir sur le téléphone : https://$HOST:5174"
+echo "Adresse à ouvrir sur le téléphone : https://$HOST (docker compose) ou https://$HOST:5174 (npm run dev)"
