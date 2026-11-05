@@ -90,6 +90,7 @@ public class WebSecurityConfig {
      * Defines URL authorization and installs the JWT filter.
      */
     @Bean
+    @SuppressWarnings("java:S4502") // Désactivation CSRF intentionnelle : API REST Stateless basée sur des tokens JWT
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity, AuthJwtFilter authJwtFilter) throws Exception {
         httpSecurity
                 .cors(AbstractHttpConfigurer::disable)

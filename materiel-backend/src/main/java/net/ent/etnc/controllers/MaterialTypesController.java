@@ -14,9 +14,9 @@ import java.util.List;
 public class MaterialTypesController {
 
     /**
-     * Liste des types de matériels.
+     * Liste des types de matériels (accessible aux administrateurs et gestionnaires).
      */
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @GetMapping
     public List<String> getAll() {
         return Arrays.stream(EMaterialType.values()).map(Enum::name).toList();
