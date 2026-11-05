@@ -1,24 +1,30 @@
 <script setup lang="ts">
 /**
  * Résultat d'une lecture, en panneau bas d'écran : verdict, informations connues, action proposée.
- * - déplacé / en stock → « Relocaliser ici » ; inconnu → formulaire de prise en compte ;
+ * - matériel identifié → changement de salle (salle de l'agent en un geste si déplacé ou en stock, sinon liste) ;
+ * - inconnu → formulaire de prise en compte ;
  * - un formateur (USER) consulte seulement : les actions sont réservées à MANAGER et ADMIN (RG-17).
  * Utilisé par : features/scan/views/scan-view.vue
  */
 import {computed} from 'vue';
-import type {MaterialInput} from '../../../models/material.model.ts';
+import type {Material, MaterialInput} from '../../../models/material.model.ts';
 import type {Room} from '../../../models/room.model.ts';
 import {type ScanOutcome, verdictLabels} from '../../../models/scan.model.ts';
-import {locationLabel, roomLabel} from '../../../shared/composables/use-room-label.ts';
+import {locationLabel} from '../../../shared/composables/use-room-label.ts';
 import FormError from '../../../shared/components/form-error.vue';
 import MaterialFacts from './material-facts.vue';
 import MaterialCreateForm from './material-create-form.vue';
+import MaterialRelocation from './material-relocation.vue';
 import ReadingDetails from './reading-details.vue';
 
 //------------------ PROPS / EMITS ---------------------------
 const props = defineProps<{
   outcome: ScanOutcome;
   currentRoom: Room | null;
+  /** Toutes les salles du parc en cache, pour le changement de salle. */
+  rooms: Room[];
+  /** État du serveur s'il contredit ce que l'agent voyait (conflit), ou null. */
+  conflict: Material | null;
   /** Vrai pour MANAGER et ADMIN : relocalisation et prise en compte autorisées. */
   canEdit: boolean;
   busy: boolean;
@@ -26,7 +32,10 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  relocate: [];
+  /** Nouvelle salle, ou null pour mettre en stock. */
+  relocate: [roomId: number | null];
+  /** L'agent interagit : ne plus fermer seul ni lire d'autre code. */
+  hold: [];
   register: [input: MaterialInput];
   pickRoom: [];
   close: [];
@@ -39,8 +48,10 @@ const badgeKinds = {conform: 'ok', moved: 'warn', stock: 'warn', archived: 'dang
 //------------------ COMPUTED --------------------------------
 const verdict = computed(() => props.outcome.verdict);
 const serialNumber = computed(() => props.outcome.material?.serialNumber ?? props.outcome.reading.serialNumber);
-const canRelocate = computed(() => props.canEdit && props.currentRoom !== null
-    && (verdict.value === 'moved' || verdict.value === 'stock'));
+/** Changement de salle possible : matériel connu, non archivé, agent MANAGER ou ADMIN. */
+const canMove = computed(() => props.canEdit && props.outcome.material !== null && !props.outcome.material.archived);
+/** Bouton direct vers la salle de l'agent pour un matériel déplacé ou en stock. */
+const quick = computed(() => verdict.value === 'moved' || verdict.value === 'stock');
 
 /** Explication du verdict. */
 const message = computed(() => {
@@ -78,11 +89,13 @@ const message = computed(() => {
     />
 
     <div class="sheet-actions">
-      <template v-if="canRelocate && currentRoom">
+      <template v-if="canMove && outcome.material">
+        <MaterialRelocation
+            :material="outcome.material" :current-room="currentRoom" :rooms="rooms"
+            :quick="quick" :busy="busy" :conflict="conflict"
+            @relocate="emit('relocate', $event)" @hold="emit('hold')"
+        />
         <FormError :message="errorMessage" />
-        <button type="button" class="primary" :disabled="busy" @click="emit('relocate')">
-          {{ busy ? 'Enregistrement…' : `Relocaliser en ${roomLabel(currentRoom)}` }}
-        </button>
       </template>
       <button v-if="verdict === 'known'" type="button" class="primary" @click="emit('pickRoom')">Choisir ma salle</button>
       <button type="button" class="secondary" @click="emit('close')">{{ verdict === 'conform' ? 'Suivant' : 'Ignorer' }}</button>

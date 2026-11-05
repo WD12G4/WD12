@@ -7,7 +7,7 @@ Application terrain de l'opération **RECON** : un agent passe de salle en salle
 |---|---|
 | Reconnaître | Scan caméra en continu, photo du code, ou saisie manuelle → numéro de série extrait |
 | Rendre compte | Fiche connue (type, salle déclarée, fin de disponibilité) ou « Non recensé » |
-| Actualiser | « Relocaliser » dans la salle courante (matériel déplacé) et « Prendre en compte » (matériel inconnu) |
+| Actualiser | Changer la salle d'un matériel (salle courante en un geste, autre salle ou stock) et « Prendre en compte » (inconnu) |
 | Réseau dégradé | Parc gardé sur le téléphone, actions mises en file et rejouées au retour du réseau |
 
 Vue 3 + TypeScript + Vite, mêmes conventions que `materiel-frontend`. **Le backend n'est pas modifié** :
@@ -18,7 +18,8 @@ la PWA n'utilise que les routes existantes.
 | `POST /api/v1/auth/login/`, `refresh/`, `logout/`, `GET me/` | Session (jeton en mémoire, cookie HttpOnly) |
 | `GET /api/v1/materials?size=1000` | Parc complet, gardé sur le téléphone : l'API n'a pas de recherche par n° de série |
 | `GET /api/v1/rooms?size=1000` | Salles (avec leur bâtiment) pour choisir sa position |
-| `PATCH /api/v1/materials/{id}/room` | Relocalisation (MANAGER, ADMIN) |
+| `GET /api/v1/materials/{id}` | Relecture avant chaque changement de salle (détection de conflit) |
+| `PATCH /api/v1/materials/{id}/room` | Changement de salle, ou mise en stock avec `roomId: null` (MANAGER, ADMIN) |
 | `POST /api/v1/materials` | Prise en compte d'un matériel non recensé (MANAGER, ADMIN) |
 
 ## Lecture du Data Matrix
@@ -39,6 +40,56 @@ la 1re ligne après le point** et **ouvre la 2e ligne** → `SS4SG0548`. Si l'é
 lus sont essayés contre le parc ; pour un matériel inconnu, le numéro proposé reste modifiable.
 Sont aussi relevés : l'adresse MAC probable (`2CF05DC90096`) et le numéro OTAN (`7021-14-602-7780`), dont la classe
 7021 (unité centrale) pré-remplit le type à la prise en compte (simple suggestion).
+
+## Statuts affichés
+
+**Verdict d'un scan** (badge de la fiche), calculé sur le parc en cache et la position choisie :
+
+| Statut | Signification | Action proposée (gestionnaire, admin) |
+|---|---|---|
+| **Conforme** | Connu, déclaré dans la salle où se trouve l'agent | Aucune : la fiche se ferme seule. « Changer de salle… » reste possible |
+| **Déplacé** | Connu, déclaré dans une **autre** salle | « Relocaliser en *salle courante* », ou une autre salle / le stock |
+| **Déclaré en stock** | Connu, déclaré sans salle, mais trouvé dans la salle de l'agent | Idem |
+| **Archivé** | Connu mais archivé (suppression logique) : il ne peut plus être affecté (RG-06) | Aucune : à signaler |
+| **Identifié** | Connu, mais l'agent n'a pas choisi sa position : impossible de dire s'il est à sa place | « Choisir ma salle », ou changer sa salle |
+| **Non recensé** | Numéro absent du parc | « Prendre en compte » (formulaire pré-rempli) |
+
+Un formateur (`USER`) voit les mêmes verdicts, sans les actions.
+
+**Historique « Dernières lectures »** : le verdict, ou l'action menée — *Relocalisé*, *Mis en stock*, *Pris en compte*.
+Le suffixe **(en attente)** signifie que l'action est seulement sur le téléphone (pas de réseau) : elle partira au retour
+du réseau, et son sort final (envoyée, refusée, en conflit) se lit dans *Synchronisation*.
+
+**Barre du haut** : *EN LIGNE* / *HORS LIGNE* (serveur joignable ou non) ; **⇅ n** = actions pas encore sur le serveur
+(gris : aucune, ambre : en attente d'envoi, rouge : au moins une refusée ou en conflit).
+
+**Écran Synchronisation**, état de chaque action gardée sur le téléphone :
+
+| État | Signification | Choix |
+|---|---|---|
+| En attente | Sera envoyée automatiquement (retour du réseau, retour au premier plan, puis toutes les 20 s) | Abandonner |
+| Refusé | Le serveur a refusé (droits, règle métier) | Réessayer, Abandonner |
+| Conflit | Le serveur a changé entre-temps (voir ci-dessous) | Garder ma version, Garder le serveur |
+
+**Fiche** : badge *en attente d'envoi* = matériel pris en compte hors ligne, pas encore créé sur le serveur ;
+fin de disponibilité *dépassée* ou *dans N j* (30 jours ou moins). **Bilan de salle** : *Déclarés* (dans la salle selon le
+parc), *Vus* (scannés dans cette salle), *Manquants* (déclarés mais pas encore vus).
+
+## Conflits entre agents
+
+Cas typique : un agent fait le tour des salles hors réseau, pendant qu'un autre corrige en ligne, à la main.
+Le backend n'accepte pas de version sur `PATCH /materials/{id}/room` (il ne peut pas refuser une écriture périmée) :
+la PWA **relit le matériel juste avant chaque changement de salle**, en ligne comme au rejeu de la file, et compare
+sa salle actuelle à celle que l'agent avait sous les yeux (`src/features/inventory/lib/room-conflict.ts`, testé).
+
+| Situation au moment de l'envoi | Comportement |
+|---|---|
+| Salle inchangée sur le serveur | Envoi normal |
+| Le serveur est déjà dans la salle visée | Rien à envoyer, l'action est close |
+| Déplacé ou archivé par quelqu'un d'autre | **Conflit** : rien n'est écrasé. En ligne, la fiche montre la salle actuelle et propose « Relocaliser quand même » ; hors ligne, l'action attend dans *Synchronisation* (« Garder ma version » / « Garder le serveur ») |
+| Prise en compte d'un numéro créé entre-temps par un autre | **Conflit** : pas de doublon. « Le placer : *ma salle* » déplace le matériel existant, « Garder le serveur » abandonne la prise en compte |
+
+Seule la salle est comparée : une autre modification (date, type) ne bloque pas un changement de salle.
 
 ## Lancer pour la démonstration (Mac + iPhone)
 
@@ -115,7 +166,7 @@ npm test
 ```
 
 `vue-tsc` doit passer sans erreur ; les tests couvrent l'extraction du numéro de série, l'identification
-(conforme, déplacé, stock, archivé, inconnu) et le rafraîchissement de session unique.
+(conforme, déplacé, stock, archivé, inconnu), la détection de conflit sur la salle et le rafraîchissement de session unique.
 
 ## Organisation
 
@@ -141,8 +192,8 @@ src/
 - **Session** : sans réseau au démarrage, l'agent reprend son dernier profil (rôle) pour consulter et mettre en file ;
   au retour du réseau, si le cookie de session (2 h) a expiré, il doit se reconnecter (les actions restent en file).
 - **Une seule file par téléphone** : les actions en attente sont rejouées avec le compte connecté au moment de l'envoi.
-- **Conflits** : une action refusée par l'API (numéro déjà créé entre-temps, matériel archivé…) n'est pas rejouée en
-  boucle : elle s'affiche en rouge dans *Synchronisation* (Réessayer / Abandonner).
+- **Conflits** : la relecture précède l'écriture de quelques millisecondes ; deux écritures exactement simultanées
+  restent possibles. Seul un contrôle de version côté backend (`PATCH` avec version) fermerait ce créneau.
 - **Taille du parc** : une page de 1000 matériels (pas de recherche par numéro côté API).
 - **Matériel inconnu pour un formateur** : le backend n'a pas de route de signalement ; il est invité à noter le numéro.
 - **HTTPS local** : certificat signé par une autorité de développement, à installer sur chaque téléphone de démonstration.

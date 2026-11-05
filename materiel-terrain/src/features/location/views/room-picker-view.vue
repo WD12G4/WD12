@@ -8,12 +8,7 @@ import {useRouter} from 'vue-router';
 import type {Room} from '../../../models/room.model.ts';
 import {useInventory} from '../../inventory/composables/use-inventory.ts';
 import {useCurrentRoom} from '../composables/use-current-room.ts';
-
-/** Salles d'un même bâtiment. */
-interface BuildingGroup {
-  building: number;
-  rooms: Room[];
-}
+import {type BuildingGroup, groupRoomsByBuilding} from '../lib/room-groups.ts';
 
 //------------------ DATAS -----------------------------------
 const router = useRouter();
@@ -27,13 +22,7 @@ const groups = computed<BuildingGroup[]>(() => {
   const words = search.value.trim().split(/\s+/).filter(Boolean);
   const matches = (room: Room) => words.every((word) =>
       String(room.building.number).startsWith(word) || String(room.number).startsWith(word));
-  const byBuilding = new Map<number, Room[]>();
-  for (const room of rooms.value.filter(matches)) {
-    byBuilding.set(room.building.number, [...(byBuilding.get(room.building.number) ?? []), room]);
-  }
-  return [...byBuilding.entries()]
-      .sort(([a], [b]) => a - b)
-      .map(([building, list]) => ({building, rooms: list.sort((a, b) => a.number - b.number)}));
+  return groupRoomsByBuilding(rooms.value.filter(matches));
 });
 
 //------------------ FUNCTIONS -------------------------------

@@ -2,7 +2,7 @@
  * Actions faites hors réseau, gardées sur le téléphone puis rejouées vers l'API dans l'ordre.
  * Utilisé par : features/inventory
  */
-import type {MaterialRequestDto} from './material.dto.ts';
+import type {MaterialDto, MaterialRequestDto} from './material.dto.ts';
 
 //----------------- VALEURS ------------------------------
 /** Libellés des actions en attente. */
@@ -28,8 +28,15 @@ interface PendingAction {
     roomId: number | null;
     /** create : corps de la requête ; relocate : null. */
     request: MaterialRequestDto | null;
+    /**
+     * relocate : salle déclarée que l'agent avait sous les yeux quand il a agi (null = en stock).
+     * Sert à détecter un conflit au moment de l'envoi. Absente sur les actions d'une version précédente.
+     */
+    baseRoomId?: number | null;
     /** Message de l'API si elle a refusé l'action : elle n'est plus rejouée automatiquement. */
     error: string | null;
+    /** État du serveur quand il contredit l'action (modifié entre-temps par quelqu'un d'autre) : l'agent arbitre. */
+    conflict: MaterialDto | null;
 }
 
 export {pendingActionLabels};

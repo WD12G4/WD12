@@ -22,6 +22,12 @@ export const materialsServices = {
         return pageContent(page).map(materialFromDto);
     },
 
+    /** Relit un matériel sur le serveur (détection de conflit avant une relocalisation). Lève ApiError 404. */
+    findById: async (id: number): Promise<Material> => {
+        const dto = await apiRequest<MaterialDto>(`/materials/${id}`);
+        return materialFromDto(dto);
+    },
+
     /** Prend en compte un matériel non recensé (MANAGER, ADMIN). Lève ApiError 400 si le numéro existe déjà. */
     create: async (request: MaterialRequestDto): Promise<Material> => {
         const dto = await apiRequest<MaterialDto>('/materials', {

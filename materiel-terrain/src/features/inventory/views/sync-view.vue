@@ -1,22 +1,25 @@
 <script setup lang="ts">
 /**
- * Synchronisation : état du parc en cache, actions en attente d'envoi, actions refusées par l'API.
- * Une action refusée (ex. numéro déjà pris entre-temps) se réessaie ou s'abandonne ici.
+ * Synchronisation : état du parc en cache, actions en attente d'envoi, refusées par l'API ou en conflit.
+ * Une action refusée se réessaie ou s'abandonne ; un conflit (matériel modifié entre-temps par
+ * quelqu'un d'autre) s'arbitre : garder la version de l'agent ou celle du serveur.
  */
 import {computed} from 'vue';
-import {pendingActionLabels} from '../../../models/sync.model.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {useFlashMessage} from '../../../shared/composables/use-flash-message.ts';
 import {formatDate, formatTime} from '../../../shared/composables/use-dates.ts';
 import {roomLabel} from '../../../shared/composables/use-room-label.ts';
+import {useConflicts} from '../composables/use-conflicts.ts';
 import {useInventory} from '../composables/use-inventory.ts';
 import {useSyncQueue} from '../composables/use-sync-queue.ts';
 import {useSynchronize} from '../composables/use-synchronize.ts';
+import PendingActionItem from '../components/pending-action-item.vue';
 
 //------------------ DATAS -----------------------------------
 const {materials, rooms, syncedAt, roomById} = useInventory();
 const {queue, flushing, retry, discard} = useSyncQueue();
 const {synchronize} = useSynchronize();
+const {keepMine, keepServer} = useConflicts();
 const {show} = useFlashMessage();
 const {loading, run} = useAsyncState();
 
@@ -62,15 +65,11 @@ function abandon(id: string): void {
     <h2 class="mono small">ACTIONS EN ATTENTE ({{ queue.length }})</h2>
     <p v-if="queue.length === 0" class="muted">Rien en attente : tout est enregistré sur le serveur.</p>
     <ul v-else class="plain-list stack">
-      <li v-for="action in queue" :key="action.id" class="panel" :class="{blocked: action.error}">
-        <p><strong>{{ pendingActionLabels[action.kind] }}</strong> · <span class="mono">{{ action.serialNumber }}</span></p>
-        <p class="muted small">→ {{ targetLabel(action.roomId) }} · {{ formatTime(new Date(action.createdAt)) }}</p>
-        <p v-if="action.error" class="form-error">Refusé : {{ action.error }}</p>
-        <div class="row">
-          <button v-if="action.error" type="button" class="secondary" @click="retry(action.id)">Réessayer</button>
-          <button type="button" class="ghost" @click="abandon(action.id)">Abandonner</button>
-        </div>
-      </li>
+      <PendingActionItem
+          v-for="action in queue" :key="action.id" :action="action" :target="targetLabel(action.roomId)"
+          @retry="retry(action.id)" @abandon="abandon(action.id)"
+          @keep-mine="keepMine(action.id)" @keep-server="keepServer(action.id)"
+      />
     </ul>
   </section>
 </template>

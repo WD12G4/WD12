@@ -12,7 +12,7 @@ import {useSyncQueue} from './use-sync-queue.ts';
 const {reconnect} = useAuth();
 const {markReachable} = useNetwork();
 const inventory = useInventory();
-const {queue, flush} = useSyncQueue();
+const {readyActions, flush} = useSyncQueue();
 
 //------------------ FUNCTIONS -------------------------------
 /**
@@ -28,7 +28,8 @@ async function synchronize(): Promise<boolean> {
             return false;
         }
         await inventory.download();
-        queue.value.filter((action) => action.kind === 'relocate').forEach((action) => {
+        // Les actions en conflit ou refusées ne sont pas réappliquées : le cache montre l'état du serveur.
+        readyActions.value.filter((action) => action.kind === 'relocate').forEach((action) => {
             inventory.moveMaterial(action.materialId, action.roomId === null ? null : inventory.roomById(action.roomId));
         });
         markReachable(true);
