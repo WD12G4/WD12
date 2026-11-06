@@ -1,0 +1,147 @@
+name: Terrain (PWA) CI/CD
+
+on:
+  push:
+    branches: [ "main", "proto-backend-frontend", "frontBase_ESL", "feature/**", "projet-terrain" ]
+    paths:
+      - 'materiel-terrain/**'
+      - '.github/workflows/terrain.yml'
+      - 'docker-compose.projet-terrain.yml'
+  pull_request:
+    branches: [ "main", "proto-backend-frontend", "frontBase_ESL", "feature/**", "projet-terrain" ]
+    paths:
+      - 'materiel-terrain/**'
+      - '.github/workflows/terrain.yml'
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Tag de version pour l'image Docker terrain (ex: latest, v1.0.0)"
+        required: false
+        default: 'latest'
+      skip_tests:
+        description: "Passer les tests / build (push direct si coché)"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # --------------------------------------------------------------------------
+  # 1. CI : Vérification TypeScript, Build, Tests & Analyse SonarQube
+  # --------------------------------------------------------------------------
+  terrain-build-test:
+    name: Terrain Build, Test & Type Check
+    runs-on: self-hosted
+    if: ${{ !inputs.skip_tests }}
+
+    env:
+      HTTP_PROXY: "http://172.16.0.1:8080"
+      HTTPS_PROXY: "http://172.16.0.1:8080"
+      NO_PROXY: "localhost,127.0.0.1,*.internet.comsic,*.etrs.net,*.etrs.terre.defense.gouv.fr,192.168.*,172.16.*,10.10.*,*.pdi,*.etnc.terre.defense.gouv.fr"
+
+    defaults:
+      run:
+        working-directory: ./materiel-terrain
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: './materiel-terrain/package-lock.json'
+
+      - name: Configure npm proxy
+        run: |
+          npm config set proxy http://172.16.0.1:8080
+          npm config set https-proxy http://172.16.0.1:8080
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type Check & Build
+        run: npm run build
+
+      - name: Run Tests
+        run: npm run test
+
+      - name: SonarQube Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: npx --yes @sonar/scan
+
+  # --------------------------------------------------------------------------
+  # 2. CD : Construction et publication de l'image Docker sur GHCR
+  # Ne s'exécute JAMAIS sur les Pull Requests.
+  # En push / dispatch, s'exécute uniquement si le build a réussi (ou si skip_tests est coché).
+  # --------------------------------------------------------------------------
+  terrain-docker-publish:
+    name: Build & Push Terrain Docker Image to GHCR
+    runs-on: self-hosted
+    needs: [terrain-build-test]
+    if: always() && github.event_name != 'pull_request' && (inputs.skip_tests || needs.terrain-build-test.result == 'success')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker image
+        shell: bash
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_NAME="ghcr.io/${REPO_LOWER}-terrain"
+          TAG="${{ inputs.image_tag || 'latest' }}"
+          SHA_TAG=$(echo "${{ github.sha }}" | cut -c1-7)
+          BRANCH_TAG="${GITHUB_REF_NAME:-terrain}"
+
+          echo "=========================================================="
+          echo "Construction de l'image Docker : ${IMAGE_NAME}:${TAG}"
+          echo "=========================================================="
+
+          docker build \
+            --network=host \
+            --build-arg HTTP_PROXY="http://172.16.0.1:8080" \
+            --build-arg HTTPS_PROXY="http://172.16.0.1:8080" \
+            --build-arg NO_PROXY="localhost,127.0.0.1,*.internet.comsic,*.etrs.net,*.etrs.terre.defense.gouv.fr,192.168.*,172.16.*,10.10.*,*.pdi,*.etnc.terre.defense.gouv.fr" \
+            -t "${IMAGE_NAME}:${TAG}" \
+            -t "${IMAGE_NAME}:${BRANCH_TAG}" \
+            -t "${IMAGE_NAME}:${SHA_TAG}" \
+            -f ./materiel-terrain/projet-terrain-frontend.dockerfile \
+            ./materiel-terrain
+
+          echo "=========================================================="
+          echo "Publication de l'image sur GHCR"
+          echo "=========================================================="
+          docker push "${IMAGE_NAME}:${TAG}"
+          docker push "${IMAGE_NAME}:${BRANCH_TAG}"
+          docker push "${IMAGE_NAME}:${SHA_TAG}"
+
+      - name: Test Docker Pull from GHCR
+        shell: bash
+        run: |
+          echo "=========================================================="
+          echo "Test de récupération (pull) de l'image Docker depuis GHCR"
+          echo "=========================================================="
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_NAME="ghcr.io/${REPO_LOWER}-terrain"
+          TAG="${{ inputs.image_tag || 'latest' }}"
+          echo "Pulling image: ${IMAGE_NAME}:${TAG}..."
+          docker pull "${IMAGE_NAME}:${TAG}"
+          echo "Image récupérée avec succès :"
+          docker images | grep "${IMAGE_NAME}" || true

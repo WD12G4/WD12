@@ -1,0 +1,95 @@
+# Projet distinct de docker-compose.yml (même dossier) : sans ce nom, les deux fichiers partageraient
+# le projet « wd12 », donc la même base (volume) et le même réseau, et un « down --remove-orphans »
+# lancé sur l'un supprimerait les conteneurs de l'autre.
+name: projet-terrain
+
+services:
+  # -------------------------------------------------------------
+  # 1. Base de données PostgreSQL
+  # -------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: projet_terrain_db
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-materiel_db}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - materiel_network
+
+  # -------------------------------------------------------------
+  # 2. Interface web Adminer pour la base de données
+  # -------------------------------------------------------------
+  adminer:
+    image: adminer:latest
+    container_name: projet_terrain_adminer
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${ADMINER_PORT:-8081}:8080"
+    depends_on:
+      - postgres
+    networks:
+      - materiel_network
+
+  # -------------------------------------------------------------
+  # 3. Backend Spring Boot (Java 21) - Projet Terrain
+  # -------------------------------------------------------------
+  backend:
+    build:
+      context: ./materiel-backend
+      dockerfile: projet-terrain-backend.dockerfile
+    image: ${BACKEND_IMAGE:-ghcr.io/wd12g4/projet-terrain-backend:latest}
+    # La CI ne construit que pour linux/amd64 : sur un Mac à puce Apple, Docker Desktop l'émule.
+    platform: linux/amd64
+    container_name: projet_terrain_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    networks:
+      - materiel_network
+
+  # -------------------------------------------------------------
+  # 4. Frontend Vue 3 PWA (Vite + Nginx) - materiel-terrain
+  # -------------------------------------------------------------
+  frontend:
+    build:
+      context: ./materiel-terrain
+      dockerfile: projet-terrain-frontend.dockerfile
+    image: ${FRONTEND_IMAGE:-ghcr.io/wd12g4/projet-terrain-frontend:latest}
+    # La CI ne construit que pour linux/amd64 : sur un Mac à puce Apple, Docker Desktop l'émule.
+    platform: linux/amd64
+    container_name: projet_terrain_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+      - "${FRONTEND_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./materiel-terrain/certs:/etc/nginx/certs:ro
+    networks:
+      - materiel_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  materiel_network:
+    driver: bridge

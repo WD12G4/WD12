@@ -2,14 +2,14 @@ name: Frontend CI/CD
 
 on:
   push:
-    branches: [ "main", "proto-backend-frontend", "frontBase_ESL" ]
+    branches: [ "main", "proto-backend-frontend", "frontBase_ESL", "feature/**" ]
     paths:
       - 'materiel-frontend/**'
       - '.github/workflows/frontend.yml'
       - 'docker-compose.yml'
       - 'docker-compose.prod.yml'
   pull_request:
-    branches: [ "main", "proto-backend-frontend", "frontBase_ESL" ]
+    branches: [ "main", "proto-backend-frontend", "frontBase_ESL", "feature/**" ]
     paths:
       - 'materiel-frontend/**'
       - '.github/workflows/frontend.yml'

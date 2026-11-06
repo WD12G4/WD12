@@ -1,0 +1,203 @@
+/**
+ * File des actions faites sans réseau, gardée sur le téléphone et rejouée vers l'API dans l'ordre.
+ * Avant chaque relocalisation, le matériel est relu sur le serveur (room-conflict.ts) : s'il a été déplacé
+ * entre-temps par quelqu'un d'autre, l'action passe en conflit au lieu d'écraser son travail.
+ * Avant chaque prise en compte, le parc est relu : un numéro déjà créé par un autre agent n'est jamais créé en double.
+ * Les constats (scans dans une salle) passent aussi par la file ; un constat refusé est abandonné sans bloquer.
+ * Une action en conflit ou refusée par l'API n'est plus rejouée automatiquement : l'agent arbitre
+ * depuis l'écran Synchronisation (use-conflicts.ts, retry, discard). Une session expirée (401) ou une API
+ * injoignable n'est pas un refus : le rejeu s'arrête et l'action reste en attente.
+ * Utilisé par : App.vue, use-field-actions.ts, use-synchronize.ts, use-conflicts.ts, sync-view.vue
+ */
+import {computed, ref} from 'vue';
+import {isProvisional, type Material} from '../../../models/material.model.ts';
+import {materialToDto} from '../../../models/material.dto.ts';
+import type {PendingAction} from '../../../models/sync.model.ts';
+import {ApiError, isSessionExpired, isUnreachable} from '../../../services/api-error.ts';
+import {materialsServices} from '../../../services/materials.services.ts';
+import {sightingsServices} from '../../../services/sightings.services.ts';
+import {readStored, writeStored} from '../../../services/local-store.ts';
+import {useAuth} from '../../../shared/composables/use-auth.ts';
+import {toErrorMessage} from '../../../shared/composables/use-async-state.ts';
+import {useFlashMessage} from '../../../shared/composables/use-flash-message.ts';
+import {useNetwork} from '../../../shared/composables/use-network.ts';
+import {serialKey} from '../../scan/lib/identify.ts';
+import {checkRoom, MaterialConflictError} from '../lib/room-conflict.ts';
+import {useInventory} from './use-inventory.ts';
+
+const QUEUE_KEY = 'queue';
+
+/** Champs fournis par l'appelant ; les autres sont remplis à l'ajout. */
+type NewAction = Omit<PendingAction, 'id' | 'createdAt' | 'error' | 'conflict'>;
+
+//------------------ DATAS -----------------------------------
+/** Message d'une session expirée : une version précédente l'enregistrait à tort comme un refus. */
+const SESSION_EXPIRED_MESSAGE = new ApiError(401).message;
+
+/**
+ * Relit la file enregistrée. Répare les actions d'une version précédente : champ conflict absent,
+ * et actions marquées « Refusé » à cause d'une session expirée, remises en attente.
+ */
+function loadQueue(): PendingAction[] {
+    return readStored<PendingAction[]>(QUEUE_KEY, []).map((action) => ({
+        ...action,
+        conflict: action.conflict ?? null,
+        error: action.error === SESSION_EXPIRED_MESSAGE ? null : action.error,
+    }));
+}
+
+const queue = ref<PendingAction[]>(loadQueue());
+const flushing = ref(false);
+const {reconnect} = useAuth();
+const {markReachable} = useNetwork();
+const {show} = useFlashMessage();
+const inventory = useInventory();
+
+//------------------ COMPUTED --------------------------------
+/** Actions à rejouer automatiquement (ni refusées, ni en conflit). */
+const readyActions = computed(() => queue.value.filter((action) => action.error === null && action.conflict === null));
+const pendingCount = computed(() => queue.value.length);
+const blockedCount = computed(() => queue.value.length - readyActions.value.length);
+
+//------------------ FUNCTIONS -------------------------------
+function persist(): void {
+    writeStored(QUEUE_KEY, queue.value);
+}
+
+/** Identifiant unique ; randomUUID n'existe qu'en contexte sécurisé (HTTPS ou localhost). */
+function newId(): string {
+    return typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+}
+
+function enqueue(action: NewAction): void {
+    queue.value.push({...action, id: newId(), createdAt: new Date().toISOString(), error: null, conflict: null});
+    persist();
+}
+
+function remove(id: string): void {
+    queue.value = queue.value.filter((action) => action.id !== id);
+    persist();
+}
+
+/** Modifie une action (arbitrage d'un conflit, nouvelle tentative). */
+function updateAction(id: string, changes: Partial<PendingAction>): void {
+    queue.value = queue.value.map((action) => (action.id === id ? {...action, ...changes} : action));
+    persist();
+}
+
+/** Reporte un changement de salle sur la prise en compte en attente d'un matériel provisoire. */
+function retargetPendingCreate(provisionalId: number, roomId: number | null): void {
+    const action = queue.value.find((pending) => pending.kind === 'create' && pending.materialId === provisionalId);
+    if (action?.request) updateAction(action.id, {roomId, request: {...action.request, roomId}});
+}
+
+/** Recharge le parc et cherche un matériel du serveur portant ce numéro (insensible à la casse). */
+async function findCreatedElsewhere(serialNumber: string): Promise<Material | null> {
+    await inventory.download();
+    return inventory.materials.value.find((material) =>
+        !isProvisional(material) && serialKey(material.serialNumber) === serialKey(serialNumber)) ?? null;
+}
+
+/** Envoie un constat : scan dans une salle, ou constats de la salle effacés. */
+async function sendSighting(action: PendingAction, roomId: number): Promise<void> {
+    if (action.kind === 'clear-room') return sightingsServices.clearRoom(roomId);
+    return sightingsServices.record({
+        serialNumber: action.serialNumber, roomId, seenAt: action.seenAt ?? action.createdAt, replaces: action.replaces ?? null,
+    });
+}
+
+/**
+ * Envoie une action à l'API, après avoir vérifié que le serveur ne la contredit pas.
+ * Prise en compte d'un numéro qu'un autre agent a déjà créé : rien n'est créé ; s'il l'a placé dans la même salle,
+ * l'action est faite, sinon elle passe en conflit.
+ * @returns le matériel enregistré, ou null pour un constat
+ * @throws MaterialConflictError si quelqu'un a modifié le matériel entre-temps, ApiError sinon
+ */
+async function send(action: PendingAction): Promise<Material | null> {
+    if (action.kind === 'sight' || action.kind === 'clear-room') {
+        if (action.roomId !== null) await sendSighting(action, action.roomId);
+        return null;
+    }
+    if (action.kind === 'create' && action.request) {
+        const existing = await findCreatedElsewhere(action.serialNumber);
+        if (existing === null) return materialsServices.create(action.request);
+        if (!existing.archived && (existing.room?.id ?? null) === action.roomId) return existing;
+        throw new MaterialConflictError(existing);
+    }
+    const server = await materialsServices.findById(action.materialId);
+    const check = checkRoom(server, action.baseRoomId, action.roomId);
+    if (check === 'conflict') throw new MaterialConflictError(server);
+    return check === 'already-done' ? server : materialsServices.assignRoom(action.materialId, action.roomId);
+}
+
+/**
+ * Rejoue les actions prêtes, dans l'ordre, y compris celles ajoutées pendant l'envoi (un scan pendant la synchro).
+ * S'arrête dès que l'API est injoignable.
+ */
+async function flush(): Promise<void> {
+    if (flushing.value || readyActions.value.length === 0) return;
+    flushing.value = true;
+    let conflicts = 0;
+    const tried = new Set<string>();
+    const next = () => readyActions.value.find((action) => !tried.has(action.id));
+    try {
+        const session = await reconnect();
+        // Session expirée : l'agent est renvoyé vers la connexion, la file repartira après.
+        if (session !== 'ok') return markReachable(session !== 'unreachable');
+        for (let action = next(); action; action = next()) {
+            tried.add(action.id);
+            try {
+                const saved = await send(action);
+                if (action.kind === 'create') inventory.removeMaterial(action.materialId);
+                if (saved) inventory.upsertMaterial(saved);
+                remove(action.id);
+                markReachable(true);
+            } catch (error) {
+                if (isUnreachable(error)) return markReachable(false);
+                // Session expirée en cours de route (déjà redirigé vers la connexion) : l'action reste en attente.
+                if (isSessionExpired(error)) return;
+                // Constat refusé (salle supprimée…) : rien à arbitrer, il est abandonné.
+                if (action.kind === 'sight') {
+                    remove(action.id);
+                    continue;
+                }
+                // Déjà créé par un autre : le matériel provisoire disparaît, le cache montre celui du serveur.
+                if (error instanceof MaterialConflictError && action.kind === 'create') {
+                    inventory.removeMaterial(action.materialId);
+                }
+                conflicts += error instanceof MaterialConflictError ? 1 : 0;
+                updateAction(action.id, error instanceof MaterialConflictError
+                    ? {conflict: materialToDto(error.server)} : {error: toErrorMessage(error)});
+            }
+        }
+    } finally {
+        flushing.value = false;
+        if (conflicts > 0) show(`${conflicts} conflit(s) à arbitrer dans Synchronisation.`, 'error');
+    }
+}
+
+/** Remet une action refusée dans le circuit, puis tente de l'envoyer. */
+async function retry(id: string): Promise<void> {
+    updateAction(id, {error: null});
+    await flush();
+}
+
+/** Abandonne une action ; un matériel provisoire jamais créé disparaît du cache. */
+function discard(id: string): void {
+    const action = queue.value.find((pending) => pending.id === id);
+    if (action?.kind === 'create') inventory.removeMaterial(action.materialId);
+    remove(id);
+}
+
+/**
+ * Accès à la file partagée.
+ * @returns la file, ses compteurs et ses opérations
+ */
+export function useSyncQueue() {
+    return {
+        queue, flushing, readyActions, pendingCount, blockedCount,
+        enqueue, updateAction, retargetPendingCreate, flush, retry, discard,
+    };
+}
+
+export type {NewAction};

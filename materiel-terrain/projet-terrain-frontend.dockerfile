@@ -1,0 +1,60 @@
+# ==============================================================================
+# Multi-stage Dockerfile for Vue 3 + Vite PWA (materiel-terrain)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Étape de Build (Node 24 Alpine)
+# ------------------------------------------------------------------------------
+FROM node:24-alpine AS builder
+WORKDIR /app
+
+# Arguments de proxy (transmis par la CI/CD pour l'environnement ETNC)
+ARG HTTP_PROXY=""
+ARG HTTPS_PROXY=""
+ARG NO_PROXY=""
+
+ENV http_proxy=${HTTP_PROXY} \
+    https_proxy=${HTTPS_PROXY} \
+    HTTP_PROXY=${HTTP_PROXY} \
+    HTTPS_PROXY=${HTTPS_PROXY} \
+    no_proxy=${NO_PROXY} \
+    NO_PROXY=${NO_PROXY}
+
+# Copie des fichiers de dépendances
+COPY package*.json ./
+
+# Configuration proxy dynamique et installation propre des dépendances
+RUN if [ -n "$HTTP_PROXY" ]; then \
+      npm config set proxy "$HTTP_PROXY" && \
+      npm config set https-proxy "$HTTPS_PROXY"; \
+    fi && \
+    npm ci
+
+# Copie du code source et build de l'application (PWA)
+COPY . .
+RUN npm run build
+
+# ------------------------------------------------------------------------------
+# 2. Étape d'Exécution (Nginx Alpine)
+# ------------------------------------------------------------------------------
+FROM nginx:alpine
+WORKDIR /usr/share/nginx/html
+
+# Nettoyage des assets par défaut de Nginx
+RUN rm -rf ./*
+
+# Récupération du build (dossier dist incluant sw.js, wasm, etc.)
+COPY --from=builder /app/dist .
+
+# Configuration Nginx adaptée SPA + PWA + Reverse Proxy
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Support HTTPS optionnel pour la PWA mobile (caméra + installation PWA hors localhost)
+COPY https/40-recon-https.sh /docker-entrypoint.d/40-recon-https.sh
+RUN chmod +x /docker-entrypoint.d/40-recon-https.sh
+RUN mkdir -p /etc/nginx/recon
+COPY https/nginx-https.conf /etc/nginx/recon/nginx-https.conf
+
+EXPOSE 80 443
+
+CMD ["nginx", "-g", "daemon off;"]

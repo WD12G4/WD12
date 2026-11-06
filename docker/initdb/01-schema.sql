@@ -61,8 +61,22 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     CONSTRAINT fk__refresh_tokens__users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- 6. Table des constats de terrain (PWA RECON) : numéro scanné dans une salle, un seul par numéro et par salle.
+-- Le numéro peut être absent du parc (matériel non recensé) : pas de clé étrangère vers materials.
+CREATE TABLE IF NOT EXISTS sightings (
+    id BIGSERIAL PRIMARY KEY,
+    version BIGINT NOT NULL DEFAULT 0,
+    serial_number VARCHAR(100) NOT NULL,
+    room_id BIGINT NOT NULL,
+    seen_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    seen_by VARCHAR(100) NOT NULL,
+    CONSTRAINT uk__sighting__serial_number__room UNIQUE (serial_number, room_id),
+    CONSTRAINT fk__sightings__rooms FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
+);
+
 -- Index pour optimiser les requêtes fréquentes
 CREATE INDEX IF NOT EXISTS idx__rooms__building_id ON rooms(building_id);
 CREATE INDEX IF NOT EXISTS idx__materials__room_id ON materials(room_id);
 CREATE INDEX IF NOT EXISTS idx__materials__material_type ON materials(material_type);
 CREATE INDEX IF NOT EXISTS idx__refresh_tokens__user_id ON refresh_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx__sightings__room_id ON sightings(room_id);

@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-ssr
+.idea
+.vscode
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# Certificats HTTPS locaux : montés au lancement (docker-compose.projet-terrain.yml), jamais copiés dans l'image
+certs

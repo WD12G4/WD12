@@ -2,14 +2,15 @@ name: Backend CI/CD
 
 on:
   push:
-    branches: [ "main", "proto-backend-frontend", "frontBase_ESL" ]
+    branches: [ "main", "proto-backend-frontend", "frontBase_ESL", "feature/**", "projet-terrain" ]
     paths:
       - 'materiel-backend/**'
       - '.github/workflows/backend.yml'
       - 'docker-compose.yml'
       - 'docker-compose.prod.yml'
+      - 'docker-compose.projet-terrain.yml'
   pull_request:
-    branches: [ "main", "proto-backend-frontend", "frontBase_ESL" ]
+    branches: [ "main", "proto-backend-frontend", "frontBase_ESL", "feature/**", "projet-terrain" ]
     paths:
       - 'materiel-backend/**'
       - '.github/workflows/backend.yml'
