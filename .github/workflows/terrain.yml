@@ -108,7 +108,7 @@ jobs:
           IMAGE_NAME="ghcr.io/${REPO_LOWER}-terrain"
           TAG="${{ inputs.image_tag || 'latest' }}"
           SHA_TAG=$(echo "${{ github.sha }}" | cut -c1-7)
-          BRANCH_TAG="${GITHUB_REF_NAME:-terrain}"
+          BRANCH_TAG=$(echo "${GITHUB_REF_NAME:-terrain}" | sed 's/[^a-zA-Z0-9._-]/-/g')
 
           echo "=========================================================="
           echo "Construction de l'image Docker : ${IMAGE_NAME}:${TAG}"
