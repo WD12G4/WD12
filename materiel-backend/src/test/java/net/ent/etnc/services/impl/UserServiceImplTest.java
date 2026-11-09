@@ -21,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -93,6 +94,18 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("Doit lever ServiceException si le nom d'utilisateur est null")
+        void create_ThrowsException_WhenUsernameNull() {
+            sampleUser.setUsername(null);
+
+            assertThatThrownBy(() -> userService.create(sampleUser))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("Le nom d'utilisateur est obligatoire");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @Test
         @DisplayName("Doit lever ServiceException si le nom d'utilisateur existe déjà")
         void create_ThrowsException_WhenUsernameAlreadyExists() {
             when(repository.existsByUsername("testuser")).thenReturn(true);
@@ -109,6 +122,19 @@ class UserServiceImplTest {
         void create_ThrowsException_WhenPasswordBlank() {
             when(repository.existsByUsername("testuser")).thenReturn(false);
             sampleUser.setPassword("   ");
+
+            assertThatThrownBy(() -> userService.create(sampleUser))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("Le mot de passe est obligatoire");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @Test
+        @DisplayName("Doit lever ServiceException si le mot de passe est null")
+        void create_ThrowsException_WhenPasswordNull() {
+            when(repository.existsByUsername("testuser")).thenReturn(false);
+            sampleUser.setPassword(null);
 
             assertThatThrownBy(() -> userService.create(sampleUser))
                     .isInstanceOf(ServiceException.class)
@@ -154,6 +180,31 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("Ne doit pas encoder si le mot de passe est null ou vide lors de la mise à jour")
+        void update_WhenPasswordNullOrBlank_DoesNotEncode() {
+            sampleUser.setPassword(null);
+            when(repository.existsById(1L)).thenReturn(true);
+            when(repository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+            User updated = userService.update(sampleUser);
+
+            assertThat(updated).isNotNull();
+            verify(passwordEncoder, never()).encode(any());
+        }
+
+        @Test
+        @DisplayName("Doit lever ResourceNotFoundException si l'id est null")
+        void update_WhenIdNull_ThrowsException() {
+            sampleUser.setId(null);
+
+            assertThatThrownBy(() -> userService.update(sampleUser))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Utilisateur introuvable");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @Test
         @DisplayName("Doit lever ResourceNotFoundException si l'utilisateur n'existe pas")
         void update_WhenNotFound_ThrowsException() {
             when(repository.existsById(1L)).thenReturn(false);
@@ -196,7 +247,7 @@ class UserServiceImplTest {
     class CurrentUserTests {
 
         @Test
-        @DisplayName("Doit renvoyer l'utilisateur connecté depuis le SecurityContext")
+        @DisplayName("Doit renvoyer l'utilisateur connecté depuis le SecurityContext (principal User)")
         void currentUser_Authenticated_ReturnsUser() {
             Authentication auth = new UsernamePasswordAuthenticationToken(
                     sampleUser, null, sampleUser.getAuthorities());
@@ -210,6 +261,76 @@ class UserServiceImplTest {
 
             assertThat(result).isNotNull();
             assertThat(result.getUsername()).isEqualTo("testuser");
+        }
+
+        @Test
+        @DisplayName("Doit renvoyer l'utilisateur connecté quand le principal est un UserDetails Spring standard")
+        void currentUser_PrincipalIsUserDetails_ReturnsUser() {
+            UserDetails userDetails = org.springframework.security.core.userdetails.User
+                    .withUsername("testuser")
+                    .password("pass")
+                    .roles("USER")
+                    .build();
+
+            Authentication auth = new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities());
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(auth);
+            SecurityContextHolder.setContext(context);
+
+            when(repository.findByUsername("testuser")).thenReturn(Optional.of(sampleUser));
+
+            User result = userService.currentUser();
+
+            assertThat(result).isNotNull();
+            assertThat(result.getUsername()).isEqualTo("testuser");
+        }
+
+        @Test
+        @DisplayName("Doit renvoyer l'utilisateur connecté quand le principal est une simple chaîne de caractères")
+        void currentUser_PrincipalIsString_ReturnsUser() {
+            Authentication auth = new UsernamePasswordAuthenticationToken(
+                    "testuser", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(auth);
+            SecurityContextHolder.setContext(context);
+
+            when(repository.findByUsername("testuser")).thenReturn(Optional.of(sampleUser));
+
+            User result = userService.currentUser();
+
+            assertThat(result).isNotNull();
+            assertThat(result.getUsername()).isEqualTo("testuser");
+        }
+
+        @Test
+        @DisplayName("Doit lever AccessDeniedException si le type de principal n'est pas supporté")
+        void currentUser_UnsupportedPrincipalType_ThrowsAccessDenied() {
+            Authentication auth = new UsernamePasswordAuthenticationToken(
+                    12345, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(auth);
+            SecurityContextHolder.setContext(context);
+
+            assertThatThrownBy(() -> userService.currentUser())
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessageContaining("Type de principal non supporté");
+        }
+
+        @Test
+        @DisplayName("Doit lever AccessDeniedException si l'utilisateur connecté est introuvable en base")
+        void currentUser_UserNotFoundInDb_ThrowsAccessDenied() {
+            Authentication auth = new UsernamePasswordAuthenticationToken(
+                    "deletedUser", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(auth);
+            SecurityContextHolder.setContext(context);
+
+            when(repository.findByUsername("deletedUser")).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.currentUser())
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessageContaining("Utilisateur introuvable");
         }
 
         @Test

@@ -4,6 +4,7 @@ import net.ent.etnc.models.Building;
 import net.ent.etnc.models.Room;
 import net.ent.etnc.repositories.RoomRepository;
 import net.ent.etnc.services.BuildingService;
+import net.ent.etnc.services.commons.ResourceNotFoundException;
 import net.ent.etnc.services.commons.ServiceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -80,6 +81,18 @@ class RoomServiceImplTest {
         }
 
         @Test
+        @DisplayName("Doit lever ServiceException si le numéro de salle est null")
+        void create_ThrowsException_WhenNumberNull() {
+            sampleRoom.setNumber(null);
+
+            assertThatThrownBy(() -> roomService.create(sampleRoom))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("doit être positif");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @Test
         @DisplayName("Doit lever ServiceException si le numéro de salle est négatif")
         void create_ThrowsException_WhenNumberNegative() {
             sampleRoom.setNumber(-1);
@@ -137,6 +150,30 @@ class RoomServiceImplTest {
 
             assertThatThrownBy(() -> roomService.update(sampleRoom))
                     .isInstanceOf(ServiceException.class);
+        }
+
+        @Test
+        @DisplayName("Doit lever ResourceNotFoundException si la salle n'existe pas en BDD lors de l'update")
+        void update_ThrowsNotFound_WhenNotExisting() {
+            when(repository.existsById(10L)).thenReturn(false);
+
+            assertThatThrownBy(() -> roomService.update(sampleRoom))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests de recherche par numéro et bâtiment")
+    class FindByNumberAndBuildingTests {
+
+        @Test
+        @DisplayName("Doit trouver la salle par numéro et bâtiment")
+        void findByNumberAndBuilding_Success() {
+            when(repository.findByNumberAndBuilding(12, sampleBuilding)).thenReturn(Optional.of(sampleRoom));
+
+            Optional<Room> found = roomService.findByNumberAndBuilding(12, sampleBuilding);
+
+            assertThat(found).isPresent().contains(sampleRoom);
         }
     }
 }

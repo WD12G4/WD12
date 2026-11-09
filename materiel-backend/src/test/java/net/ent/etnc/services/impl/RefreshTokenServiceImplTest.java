@@ -82,6 +82,24 @@ class RefreshTokenServiceImplTest {
     }
 
     @Test
+    @DisplayName("Doit tronquer l'IP et le UserAgent s'ils dépassent la taille maximale")
+    void createToken_TruncatesLongIpAndUserAgent() {
+        when(repository.save(any(RefreshToken.class))).thenAnswer(i -> i.getArgument(0));
+
+        String longIp = "1".repeat(100);
+        String longUa = "U".repeat(600);
+
+        refreshTokenService.createToken(sampleUser, longIp, longUa);
+
+        ArgumentCaptor<RefreshToken> captor = ArgumentCaptor.forClass(RefreshToken.class);
+        verify(repository).save(captor.capture());
+
+        RefreshToken saved = captor.getValue();
+        assertThat(saved.getCreatedByIp()).hasSize(64);
+        assertThat(saved.getCreatedByUserAgent()).hasSize(512);
+    }
+
+    @Test
     @DisplayName("Doit réussir la rotation d'un token valide et révoquer l'ancien")
     void rotate_Success() {
         RefreshToken existingToken = new RefreshToken(
@@ -101,6 +119,16 @@ class RefreshTokenServiceImplTest {
         assertThat(result.newRawToken()).isNotBlank();
         assertThat(existingToken.isRevoked()).isTrue();
         assertThat(existingToken.getReplacedByTokenHash()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Doit lever InvalidRefreshTokenException si le token à faire tourner est null ou blanc")
+    void rotate_NullOrBlank_ThrowsInvalidToken() {
+        assertThatThrownBy(() -> refreshTokenService.rotate(null, "127.0.0.1", "curl"))
+                .isInstanceOf(InvalidRefreshTokenException.class);
+
+        assertThatThrownBy(() -> refreshTokenService.rotate("   ", "127.0.0.1", "curl"))
+                .isInstanceOf(InvalidRefreshTokenException.class);
     }
 
     @Test
@@ -165,5 +193,14 @@ class RefreshTokenServiceImplTest {
 
         assertThat(activeToken.isRevoked()).isTrue();
         assertThat(activeToken.getRevokedAt()).isEqualTo(fixedInstant);
+    }
+
+    @Test
+    @DisplayName("Ne doit rien faire si le token à révoquer est null ou blanc")
+    void revokeToken_NullOrBlank_DoesNothing() {
+        refreshTokenService.revokeToken(null);
+        refreshTokenService.revokeToken("   ");
+
+        verifyNoInteractions(repository);
     }
 }

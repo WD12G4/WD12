@@ -2,6 +2,7 @@ package net.ent.etnc.services.impl;
 
 import net.ent.etnc.models.Building;
 import net.ent.etnc.repositories.BuildingRepository;
+import net.ent.etnc.services.commons.ResourceNotFoundException;
 import net.ent.etnc.services.commons.ServiceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -68,8 +69,20 @@ class BuildingServiceImplTest {
         }
 
         @Test
-        @DisplayName("Doit lever ServiceException si le numéro est null ou négatif")
-        void create_ThrowsException_WhenNumberNegativeOrNull() {
+        @DisplayName("Doit lever ServiceException si le numéro est null")
+        void create_ThrowsException_WhenNumberNull() {
+            sampleBuilding.setNumber(null);
+
+            assertThatThrownBy(() -> buildingService.create(sampleBuilding))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("doit être positif");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @Test
+        @DisplayName("Doit lever ServiceException si le numéro est négatif")
+        void create_ThrowsException_WhenNumberNegative() {
             sampleBuilding.setNumber(-5);
             when(repository.findByNumber(-5)).thenReturn(Optional.empty());
 
@@ -115,6 +128,30 @@ class BuildingServiceImplTest {
 
             assertThatThrownBy(() -> buildingService.update(sampleBuilding))
                     .isInstanceOf(ServiceException.class);
+        }
+
+        @Test
+        @DisplayName("Doit lever ResourceNotFoundException si le bâtiment à mettre à jour n'existe pas")
+        void update_ThrowsNotFound_WhenNotExisting() {
+            when(repository.existsById(1L)).thenReturn(false);
+
+            assertThatThrownBy(() -> buildingService.update(sampleBuilding))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests de recherche par numéro (findByNumber)")
+    class FindByNumberTests {
+
+        @Test
+        @DisplayName("Doit trouver un bâtiment par son numéro")
+        void findByNumber_Success() {
+            when(repository.findByNumber(101)).thenReturn(Optional.of(sampleBuilding));
+
+            Optional<Building> found = buildingService.findByNumber(101);
+
+            assertThat(found).isPresent().contains(sampleBuilding);
         }
     }
 }

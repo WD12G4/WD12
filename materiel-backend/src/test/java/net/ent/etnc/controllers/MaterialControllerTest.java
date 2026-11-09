@@ -236,6 +236,53 @@ class MaterialControllerTest {
     }
 
     @Nested
+    @DisplayName("PATCH /api/v1/materials/{id}/room")
+    class AssignRoomTests {
+
+        @Test
+        @DisplayName("Doit affecter le matériel à une salle et retourner 200 OK")
+        void assignRoom_Success_Returns200Ok() throws Exception {
+            String payload = """
+                    {
+                        "roomId": 5
+                    }
+                    """;
+
+            when(materialService.assignRoom(1L, 5L)).thenReturn(sampleMaterial);
+            when(materialAssembler.toDto(sampleMaterial)).thenReturn(sampleResponse);
+
+            mockMvc.perform(patch("/api/v1/materials/1/room")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(payload))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1));
+
+            verify(materialService).assignRoom(1L, 5L);
+        }
+
+        @Test
+        @DisplayName("Doit désaffecter le matériel de toute salle quand roomId est null")
+        void assignRoom_NullRoomId_Returns200Ok() throws Exception {
+            String payload = """
+                    {
+                        "roomId": null
+                    }
+                    """;
+
+            when(materialService.assignRoom(1L, null)).thenReturn(sampleMaterial);
+            when(materialAssembler.toDto(sampleMaterial)).thenReturn(sampleResponse);
+
+            mockMvc.perform(patch("/api/v1/materials/1/room")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(payload))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1));
+
+            verify(materialService).assignRoom(1L, null);
+        }
+    }
+
+    @Nested
     @DisplayName("DELETE /api/v1/materials/{id}")
     class DeleteTests {
 

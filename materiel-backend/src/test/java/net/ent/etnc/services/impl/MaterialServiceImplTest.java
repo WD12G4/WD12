@@ -79,6 +79,18 @@ class MaterialServiceImplTest {
         }
 
         @Test
+        @DisplayName("Doit échouer si le numéro de série est null")
+        void create_ThrowsException_WhenSerialNumberNull() {
+            sampleMaterial.setSerialNumber(null);
+
+            assertThatThrownBy(() -> materialService.create(sampleMaterial))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("numéro de série doit être renseigné");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @Test
         @DisplayName("Doit échouer si la date de fin de disponibilité est dans le passé pour un matériel non archivé")
         void create_ThrowsException_WhenDateInPastAndNotArchived() {
             sampleMaterial.setEndAvailabilityDate(LocalDate.now().minusDays(1));
@@ -161,6 +173,16 @@ class MaterialServiceImplTest {
 
             assertThat(result.getRoom()).isNull();
             verify(repository).saveAndFlush(sampleMaterial);
+        }
+
+        @Test
+        @DisplayName("Doit échouer si le matériel n'existe pas lors de l'affectation")
+        void assignRoom_ThrowsNotFound_WhenMaterialDoesNotExist() {
+            when(repository.findById(99L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> materialService.assignRoom(99L, 10L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Matériel introuvable");
         }
 
         @Test
@@ -254,6 +276,16 @@ class MaterialServiceImplTest {
 
             assertThatThrownBy(() -> materialService.update(sampleMaterial))
                     .isInstanceOf(ResourceNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("Doit échouer si la validation échoue lors de l'update")
+        void update_ThrowsException_WhenInvalid() {
+            sampleMaterial.setSerialNumber(null);
+
+            assertThatThrownBy(() -> materialService.update(sampleMaterial))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("numéro de série doit être renseigné");
         }
     }
 }

@@ -312,6 +312,24 @@ class ReportControllerTest {
         }
 
         @Test
+        @DisplayName("Doit renvoyer 404 si le signalement à modifier n'existe pas")
+        void update_WhenNotFound_Returns404() throws Exception {
+            String payload = """
+                    {
+                        "description": "Nouvelle description"
+                    }
+                    """;
+
+            when(reportService.findById(999L)).thenReturn(Optional.empty());
+
+            mockMvc.perform(put("/api/v1/reports/999")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(payload))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error").exists());
+        }
+
+        @Test
         @DisplayName("Doit renvoyer 403 Forbidden si l'utilisateur n'est pas le créateur")
         void update_WhenNotCreator_Returns403() throws Exception {
             String payload = """

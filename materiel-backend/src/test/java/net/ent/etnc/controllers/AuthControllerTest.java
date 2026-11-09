@@ -48,6 +48,7 @@ class AuthControllerTest {
 
     private MockMvc mockMvc;
     private AuthController authController;
+    private RefreshTokenProperties refreshTokenProperties;
 
     @Mock
     private AuthenticationManager authenticationManager;
@@ -68,7 +69,7 @@ class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
-        RefreshTokenProperties refreshTokenProperties = new RefreshTokenProperties();
+        refreshTokenProperties = new RefreshTokenProperties();
         refreshTokenProperties.getCookie().setName(COOKIE_NAME);
 
         authController = new AuthController(
@@ -116,6 +117,31 @@ class AuthControllerTest {
                     .andExpect(header().string(HttpHeaders.AUTHORIZATION, "Bearer mocked.jwt.token"))
                     .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString(COOKIE_NAME + "=mocked-refresh-token")))
                     .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("HttpOnly")));
+        }
+
+        @Test
+        @DisplayName("Connexion avec trustForwardedFor activé extrait la première IP de X-Forwarded-For")
+        void login_WithTrustForwardedFor_ExtractsForwardedIp() throws Exception {
+            refreshTokenProperties.getAudit().setTrustForwardedFor(true);
+            String requestJson = """
+                    {
+                        "username": "admin",
+                        "password": "admin123"
+                    }
+                    """;
+            Authentication auth = new UsernamePasswordAuthenticationToken(sampleUser, null);
+
+            when(authenticationManager.authenticate(any())).thenReturn(auth);
+            when(jwtUtils.generateJwtToken(auth)).thenReturn("mocked.jwt.token");
+            when(refreshTokenService.createToken(eq(sampleUser), eq("203.0.113.195"), any())).thenReturn("mocked-refresh-token");
+
+            mockMvc.perform(post("/api/v1/auth/login/")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("X-Forwarded-For", "203.0.113.195, 70.41.3.18")
+                            .content(requestJson))
+                    .andExpect(status().isOk());
+
+            verify(refreshTokenService).createToken(eq(sampleUser), eq("203.0.113.195"), any());
         }
 
         @Test

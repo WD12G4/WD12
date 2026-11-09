@@ -269,6 +269,20 @@ class ReportServiceImplTest {
         }
 
         @Test
+        @DisplayName("Doit renvoyer ResourceNotFoundException si l'ID du signalement est null")
+        void update_ThrowsResourceNotFound_WhenReportIdNull() {
+            Report updateInput = new Report();
+            updateInput.setId(null);
+            updateInput.setDescription("Description");
+
+            assertThatThrownBy(() -> reportService.update(updateInput))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Signalement introuvable");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @Test
         @DisplayName("Doit renvoyer 404 si le signalement à modifier n'existe pas")
         void update_ThrowsResourceNotFound_WhenReportNotFound() {
             when(repository.findById(999L)).thenReturn(Optional.empty());
@@ -363,6 +377,18 @@ class ReportServiceImplTest {
             assertThatThrownBy(() -> reportService.deleteById(100L))
                     .isInstanceOf(AccessDeniedException.class)
                     .hasMessageContaining("Vous n'êtes pas autorisé à supprimer ce signalement");
+
+            verify(repository, never()).deleteById(any());
+        }
+
+        @Test
+        @DisplayName("Doit renvoyer ResourceNotFoundException si le signalement à supprimer n'existe pas")
+        void deleteById_ThrowsResourceNotFound_WhenReportNotFound() {
+            when(repository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> reportService.deleteById(999L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Signalement introuvable avec l'id : 999");
 
             verify(repository, never()).deleteById(any());
         }
