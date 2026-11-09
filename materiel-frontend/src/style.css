@@ -342,23 +342,28 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 .stat:hover::after { transform: scale(1.25); }
 .stat strong { position: relative; z-index: 1; font-size: 2.2rem; font-weight: 750; color: var(--title); letter-spacing: -0.03em; }
 .stat span { position: relative; z-index: 1; color: var(--muted); font-size: 0.85rem; font-weight: 500; }
-.tree details { margin: 0.15rem 0; }
-.tree summary {
-  display: flex; align-items: center; gap: 0.5rem; list-style: none;
-  cursor: pointer; padding: 0.6rem 0.7rem; border-radius: var(--radius-sm); font-weight: 600; color: var(--title);
-  transition: background var(--speed) var(--ease);
+/* Vue d'ensemble des salles : une seule grille, rien à déplier ; une tuile = un clic vers la salle. */
+.overview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 0.9rem; margin-top: 1rem; }
+.overview-tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.45rem;
+  padding: 1rem 1.1rem; color: var(--text);
+  background: var(--surface-soft); border: 1px solid var(--border); border-radius: var(--radius);
+  transition: transform var(--speed) var(--ease), box-shadow var(--speed) var(--ease), border-color var(--speed) var(--ease);
 }
-.tree summary::-webkit-details-marker { display: none; }
-.tree summary::before {
-  content: ''; width: 0.45rem; height: 0.45rem; flex-shrink: 0; margin-right: 0.2rem;
-  border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
-  transform: rotate(-45deg); transition: transform var(--speed) var(--ease);
+.overview-tile:hover {
+  color: var(--text); border-color: var(--accent-soft-hover);
+  transform: translateY(-2px); box-shadow: 0 12px 26px -14px var(--shadow-strong);
 }
-.tree details[open] > summary::before { transform: rotate(45deg); }
-.tree summary:hover { background: var(--surface-hover); }
-.tree .tree-children { margin-left: 1.05rem; padding-left: 0.9rem; border-left: 1px solid var(--border); }
-.tree details[open] > .tree-children { animation: rise 220ms var(--ease); }
-.tree .count { color: var(--muted); font-weight: 400; font-size: 0.88rem; }
+.overview-tile.dashed { border-style: dashed; border-color: var(--border-input); }
+.overview-tile.empty .overview-tile-count { opacity: 0.6; }
+.overview-tile-subtitle { color: var(--muted); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.overview-tile-title { margin-top: -0.3rem; font-weight: 650; font-size: 1.05rem; color: var(--title); }
+.overview-tile-count { color: var(--muted); font-size: 0.85rem; }
+.overview-tile-count strong { font-size: 1.6rem; font-weight: 750; color: var(--title); letter-spacing: -0.02em; margin-right: 0.15rem; }
+.type-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0; padding: 0; list-style: none; }
+.type-chips li { padding: 0.18rem 0.55rem; border-radius: 2rem; background: var(--neutral-soft); color: var(--muted); font-size: 0.74rem; font-weight: 600; }
+.type-chips strong { color: var(--title); margin-left: 0.15rem; }
+.overview-tile .badge { white-space: normal; }
 
 /* ------------------ ANIMATIONS ----------------------------- */
 @keyframes spin { to { transform: rotate(360deg); } }

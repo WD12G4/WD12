@@ -2,15 +2,17 @@
 /**
  * Liste et recherche du matériel : l'écran le plus important pour le client
  * (besoin « scroller, chercher, vérifier », entretien 1, 0:31).
+ * ?emplacement=stock|salle dans l'URL ouvre la liste déjà filtrée (liens du tableau de bord).
  * RG : RG-07, RG-10, RG-16 (création et archivage réservés à l'administrateur)
  */
 import {computed, onMounted, ref} from 'vue';
+import {useRoute} from 'vue-router';
 import type {Material} from '../../../models/material.model.ts';
 import {materialsServices} from '../../../services/materials.services.ts';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {useLocations} from '../../../shared/composables/use-locations.ts';
-import {useMaterialFilters} from '../composables/use-material-filters.ts';
+import {filtersFromQuery, useMaterialFilters} from '../composables/use-material-filters.ts';
 import {useArchiveMaterial} from '../composables/use-archive-material.ts';
 import Card from '../../../shared/components/card.vue';
 import Link from '../../../shared/components/Link.vue';
@@ -24,7 +26,7 @@ const {loading, errorMessage, run} = useAsyncState();
 const {buildings, rooms, loadLocations} = useLocations();
 const {archiveMaterial} = useArchiveMaterial();
 const materials = ref<Material[]>([]);
-const {filters, visibleMaterials} = useMaterialFilters(materials);
+const {filters, visibleMaterials} = useMaterialFilters(materials, filtersFromQuery(useRoute().query));
 
 //------------------ COMPUTED --------------------------------
 /** RG-16 : seul l'administrateur crée et archive. */

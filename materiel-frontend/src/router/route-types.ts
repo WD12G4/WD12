@@ -1,7 +1,9 @@
 /**
  * Types des cibles de navigation, déduits du tableau `routes` de routes.ts.
- * Copié à l'identique du projet du cours (vue1) : une cible invalide (nom inconnu,
+ * Copié du projet du cours (vue1) : une cible invalide (nom inconnu,
  * paramètre manquant) est refusée à la compilation.
+ * Seul ajout : un paramètre d'URL facultatif (query), pour ouvrir une liste déjà filtrée
+ * (ex. { name: 'materials', query: { emplacement: 'stock' } }).
  * Utilisé par : navigation.ts, shared/components/Link.vue
  */
 import type { routes } from './routes.ts';
@@ -31,5 +33,8 @@ type RouteTargetMap = {
         };
 };
 
-/** Cible de navigation : { name } ou { name, params } selon que la route a des paramètres. */
-export type RouteTarget = RouteTargetMap[RouteNames];
+/** Paramètres d'URL facultatifs (?cle=valeur). */
+type WithQuery<Target> = Target & { query?: Record<string, string> };
+
+/** Cible de navigation : { name } ou { name, params } selon que la route a des paramètres, plus une query facultative. */
+export type RouteTarget = WithQuery<RouteTargetMap[RouteNames]>;

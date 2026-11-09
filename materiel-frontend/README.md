@@ -57,7 +57,7 @@ pour respecter la limite de 120 lignes par fichier.
 | 1 | Connexion, menu selon le rôle, session restaurée au rechargement | oui | tous |
 | 2 | Recherche et filtres du matériel, fiche, création, modification, affectation, archivage | oui | tous / ADMIN / MANAGER |
 | 3 | Bâtiments, salles (avec le matériel de la salle), comptes | oui | tous / ADMIN |
-| 4 | Tableau de bord : compteurs, alerte groupée des fins de disponibilité, arbre bâtiment → salle → matériel | oui | tous |
+| 4 | Tableau de bord : compteurs (liens vers la liste déjà filtrée), alerte groupée des fins de disponibilité, toutes les salles en tuiles par bâtiment (un clic ouvre la salle), tuile « En stock » | oui | tous |
 | 5 | Remontées : signalement, liste, document d'état des lieux imprimable, pop-up du gestionnaire | **maquette** | tous / MANAGER |
 | 6 | Supervision : postes d'une salle, processus, arrêt, masterisation | **maquette** | tous / ADMIN |
 

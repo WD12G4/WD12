@@ -5,6 +5,7 @@
  * Besoin : recherche rapide (entretien 1, 0:31). RG : RG-07 (filtre « en stock »), RG-10 (archivés)
  */
 import {computed, ref, type Ref, watch} from 'vue';
+import type {LocationQuery} from 'vue-router';
 import type {
     Material, MaterialFilters, MaterialLocationFilter, MaterialTypeFilter,
 } from '../../../models/material.model.ts';
@@ -18,6 +19,22 @@ const defaultFilters: Readonly<MaterialFilters> = {
     location: 'all',
     showArchived: false,
 };
+
+/** Valeurs acceptées dans l'URL pour ?emplacement= (liens du tableau de bord). */
+const locationFromQuery: Readonly<Record<string, MaterialLocationFilter>> = {
+    stock: 'stock',
+    salle: 'assigned',
+};
+
+/**
+ * Lit les filtres passés dans l'URL, pour arriver sur une liste déjà filtrée.
+ * Seul ?emplacement=stock|salle est reconnu ; toute autre valeur est ignorée.
+ * @param query paramètres d'URL de la route courante
+ */
+export function filtersFromQuery(query: LocationQuery): Partial<MaterialFilters> {
+    const location = locationFromQuery[String(query.emplacement ?? '')];
+    return location ? {location} : {};
+}
 
 //------------------ CRITÈRES --------------------------------
 /** Le texte est cherché dans le numéro de série, le numéro de salle et le numéro de bâtiment. */
@@ -59,11 +76,12 @@ function matchesArchived(material: Material, showArchived: boolean): boolean {
 /**
  * Crée les filtres et la liste filtrée.
  * @param materials liste complète, chargée par la vue
+ * @param initial filtres à appliquer à l'ouverture (ex. lus dans l'URL), en plus des valeurs par défaut
  * @returns filters (lié au composant de filtres) et visibleMaterials (liste filtrée)
  */
-export function useMaterialFilters(materials: Ref<Material[]>) {
+export function useMaterialFilters(materials: Ref<Material[]>, initial: Partial<MaterialFilters> = {}) {
     //------------------ REACTIVE --------------------------------
-    const filters = ref<MaterialFilters>({...defaultFilters});
+    const filters = ref<MaterialFilters>({...defaultFilters, ...initial});
 
     // Changer de bâtiment rend le choix de salle incohérent : on le remet à « toutes ».
     watch(() => filters.value.buildingId, () => {

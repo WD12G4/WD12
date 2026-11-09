@@ -2,7 +2,7 @@
 /**
  * Badges de statut d'un matériel : statut principal, plus « Bientôt expiré » le cas échéant.
  * La couleur est toujours accompagnée d'un texte (accessibilité).
- * Utilisé par : features/materials (liste, fiche), features/home (arbre).
+ * Utilisé par : features/materials (liste, fiche).
  * RG : RG-07, RG-10, RG-24
  */
 import {computed} from 'vue';

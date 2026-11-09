@@ -1,6 +1,6 @@
 /**
  * Chargement des bâtiments et des salles, utilisés par plusieurs écrans
- * (filtres du matériel, affectation, arbre du tableau de bord, remontées).
+ * (filtres du matériel, affectation, vue d'ensemble du tableau de bord, remontées).
  * Chaque appel crée ses propres listes : rien n'est partagé entre les vues.
  * Utilisé par : les vues des features materials, rooms, home et reports.
  */
