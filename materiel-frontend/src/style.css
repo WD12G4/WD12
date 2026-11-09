@@ -443,10 +443,29 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
    « backwards » : l'animation ne garde pas sa transformation, l'inclinaison reste libre ensuite. */
 .stat, .overview-tile { animation: rise-in 520ms var(--ease) backwards; animation-delay: calc(var(--i, 0) * 55ms); }
 
+/* ------------------ TRANSITION PARTAGÉE (router/view-transition.ts) */
+/* La tuile ouverte et la carte de la fiche portent le même nom : le navigateur anime l'une vers
+   l'autre. Les captures ne sont pas étirées (object-fit: none) : la carte grandit, le contenu
+   apparaît en fondu. La tuile concernée ne rejoue pas son animation d'entrée. */
+.overview-tile.vt-target, .room-hero.vt-target { view-transition-name: room-card; animation: none; }
+.overview-tile.vt-target .overview-tile-title, .room-hero.vt-target > h2 { view-transition-name: room-title; }
+::view-transition-group(room-card), ::view-transition-group(room-title) { animation-duration: 420ms; animation-timing-function: var(--ease); }
+::view-transition-old(room-card), ::view-transition-new(room-card) { height: 100%; object-fit: none; object-position: left top; }
+/* Le contenu ne déborde pas du cadre qui grandit : la fiche se dévoile à mesure que la tuile s'agrandit. */
+::view-transition-image-pair(room-card) { overflow: hidden; border-radius: var(--radius-lg); }
+::view-transition-old(room-title), ::view-transition-new(room-title) { height: 100%; object-fit: none; object-position: left center; }
+/* Toute navigation : seul le contenu passe en fondu (léger glissement à l'arrivée), la barre latérale reste fixe. */
+.app-shell .content { view-transition-name: page; }
+::view-transition-old(page) { animation: vt-fade-out 160ms var(--ease) both; }
+::view-transition-new(page) { animation: vt-fade-in 280ms var(--ease) both; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 220ms; }
+
 /* ------------------ ANIMATIONS ----------------------------- */
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes rise { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(14px) scale(0.98); } }
+@keyframes vt-fade-out { to { opacity: 0; } }
+@keyframes vt-fade-in { from { opacity: 0; transform: translateY(8px); } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
 }

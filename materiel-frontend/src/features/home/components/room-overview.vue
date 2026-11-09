@@ -8,6 +8,7 @@
  */
 import {computed} from 'vue';
 import type {MaterialSummary, RoomSummary} from '../composables/use-room-overview.ts';
+import {sharedRoomId} from '../../../router/view-transition.ts';
 import OverviewTile from './overview-tile.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -30,6 +31,11 @@ const isEmpty = computed(() => props.rooms.length === 0);
 function tileStyle(index: number): Record<string, number> {
   return {'--i': index + STATS_COUNT};
 }
+
+/** La tuile de la salle ouverte (ou quittée) porte le nom de la transition partagée. */
+function tileClass(roomId: number): Record<string, boolean> {
+  return {'vt-target': roomId === sharedRoomId.value};
+}
 </script>
 
 <template>
@@ -39,6 +45,7 @@ function tileStyle(index: number): Record<string, number> {
         v-for="(roomSummary, index) in rooms"
         :key="roomSummary.room.id"
         :style="tileStyle(index)"
+        :class="tileClass(roomSummary.room.id)"
         :title="roomSummary.title"
         :subtitle="roomSummary.subtitle"
         :summary="roomSummary"

@@ -3,6 +3,8 @@
  * Coquille de l'application : barre latérale (si connecté), barre du haut sur mobile,
  * message temporaire, page courante avec transition, et alerte des remontées non lues
  * pour le gestionnaire (RG-23). Sans utilisateur connecté, la page est centrée (connexion).
+ * Transition entre les pages : le navigateur s'en charge s'il connaît l'API View Transitions
+ * (router/view-transition.ts) ; sinon, fondu de Vue (<Transition name="page">).
  */
 import {computed, ref, watch} from 'vue';
 import {useRoute} from 'vue-router';
@@ -10,6 +12,7 @@ import {useAuth} from './shared/composables/use-auth.ts';
 import {useFlashMessage} from './shared/composables/use-flash-message.ts';
 import {useNavLinks} from './shared/composables/use-nav-links.ts';
 import {navigateTo} from './router/navigation.ts';
+import {viewTransitionsSupported} from './router/view-transition.ts';
 import AppNav from './shared/components/app-nav.vue';
 import AppTopbar from './shared/components/app-topbar.vue';
 import FlashMessage from './shared/components/flash-message.vue';
@@ -72,9 +75,20 @@ watch(() => route.fullPath, () => {
           @dismiss="dismissReportAlert"
       />
 
-      <!-- Page courante, avec un fondu à chaque changement de route -->
+      <!-- Page courante : animée par le navigateur (View Transitions), sinon par Vue -->
       <router-view v-slot="{ Component, route: current }">
-        <Transition name="page" mode="out-in">
+        <div
+            v-if="viewTransitionsSupported"
+            :key="current.fullPath"
+            class="page"
+        >
+          <component :is="Component" />
+        </div>
+        <Transition
+            v-else
+            name="page"
+            mode="out-in"
+        >
           <div :key="current.fullPath" class="page">
             <component :is="Component" />
           </div>
