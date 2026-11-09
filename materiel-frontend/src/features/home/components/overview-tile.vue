@@ -3,12 +3,14 @@
  * Tuile cliquable de la vue d'ensemble : une salle, ou le stock.
  * Tout est visible sans rien déplier : total, répartition par type, alerte de fin de disponibilité.
  * Composant de présentation : un clic mène à la cible (fiche de la salle, liste filtrée).
+ * La tuile s'incline légèrement vers la souris (use-motion.ts).
  * Utilisé par : room-overview.vue
  * RG : RG-24 (alerte groupée, pas une alerte par matériel)
  */
 import {computed} from 'vue';
 import type {RouteTarget} from '../../../router/route-types.ts';
 import type {MaterialSummary} from '../composables/use-room-overview.ts';
+import {resetTilt, tiltTowardsPointer} from '../../../shared/composables/use-motion.ts';
 import Link from '../../../shared/components/Link.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -32,9 +34,11 @@ const tileClass = computed(() => ({dashed: props.dashed, empty: !props.summary.h
 
 <template>
   <Link
-      class="overview-tile"
+      class="overview-tile tilt"
       :class="tileClass"
       :to="to"
+      @pointermove="tiltTowardsPointer"
+      @pointerleave="resetTilt"
   >
     <span class="overview-tile-subtitle">{{ subtitle }}</span>
     <span class="overview-tile-title">{{ title }}</span>

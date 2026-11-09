@@ -23,7 +23,9 @@ function panelPosition(trigger: HTMLElement): CSSProperties {
     const vertical = openUp
         ? {bottom: `${window.innerHeight - rect.top + GAP_PX}px`}
         : {top: `${rect.bottom + GAP_PX}px`};
-    return {...vertical, left: `${rect.left}px`, width: `${rect.width}px`};
+    // Le panneau grandit depuis le champ : depuis son bord haut, ou bas s'il s'ouvre au-dessus.
+    const transformOrigin = openUp ? 'center bottom' : 'center top';
+    return {...vertical, left: `${rect.left}px`, width: `${rect.width}px`, transformOrigin};
 }
 
 /** Vrai si l'élément cliqué est hors du bouton et hors du panneau. */

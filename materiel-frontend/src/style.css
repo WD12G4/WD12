@@ -289,8 +289,10 @@ input[type='checkbox'] { accent-color: var(--accent); width: 18px; height: 18px;
   padding: 0.6rem 0.75rem 0.3rem; color: var(--muted);
   font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
 }
-.select-pop-enter-active, .select-pop-leave-active { transition: opacity 140ms var(--ease), transform 140ms var(--ease); }
-.select-pop-enter-from, .select-pop-leave-to { opacity: 0; transform: translateY(-4px); }
+/* Le panneau grandit depuis le champ (transform-origin calculé par use-dropdown.ts). */
+.select-pop-enter-active { transition: opacity 180ms var(--ease), transform 220ms var(--ease); }
+.select-pop-leave-active { transition: opacity 120ms var(--ease), transform 120ms var(--ease); }
+.select-pop-enter-from, .select-pop-leave-to { opacity: 0; transform: scale(0.94); }
 
 /* ------------------ BOUTONS -------------------------------- */
 button, .button-link {
@@ -396,21 +398,22 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 .stat:nth-child(2)::after { background: var(--success-soft); }
 .stat:nth-child(3)::after { background: var(--warning-soft); }
 .stat:nth-child(4)::after { background: var(--danger-soft); }
-.stat:hover { transform: translateY(-3px); border-color: var(--accent-soft-hover); box-shadow: 0 14px 30px -14px var(--shadow-strong); }
+.stat:hover { --lift: -3px; border-color: var(--accent-soft-hover); box-shadow: 0 14px 30px -14px var(--shadow-strong); }
 .stat:hover::after { transform: scale(1.25); }
 .stat strong { position: relative; z-index: 1; font-size: 2.2rem; font-weight: 750; color: var(--title); letter-spacing: -0.03em; }
-.stat span { position: relative; z-index: 1; color: var(--muted); font-size: 0.85rem; font-weight: 500; }
+.stat > span { position: relative; z-index: 1; color: var(--muted); font-size: 0.85rem; font-weight: 500; }
 /* Vue d'ensemble des salles : une seule grille, rien à déplier ; une tuile = un clic vers la salle. */
 .overview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 0.9rem; margin-top: 1rem; }
 .overview-tile {
+  position: relative;
   display: flex; flex-direction: column; align-items: flex-start; gap: 0.45rem;
   padding: 1rem 1.1rem; color: var(--text);
   background: var(--surface-soft); border: 1px solid var(--border); border-radius: var(--radius);
   transition: transform var(--speed) var(--ease), box-shadow var(--speed) var(--ease), border-color var(--speed) var(--ease);
 }
 .overview-tile:hover {
-  color: var(--text); border-color: var(--accent-soft-hover);
-  transform: translateY(-2px); box-shadow: 0 12px 26px -14px var(--shadow-strong);
+  --lift: -2px; color: var(--text); border-color: var(--accent-soft-hover);
+  box-shadow: 0 12px 26px -14px var(--shadow-strong);
 }
 .overview-tile.dashed { border-style: dashed; border-color: var(--border-input); }
 .overview-tile.empty .overview-tile-count { opacity: 0.6; }
@@ -423,9 +426,27 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 .type-chips strong { color: var(--title); margin-left: 0.15rem; }
 .overview-tile .badge { white-space: normal; }
 
+/* Profondeur au survol (compteurs et tuiles) : la carte s'incline vers la souris (use-motion.ts
+   écrit --tilt-x et --tilt-y) et un reflet doux suit le pointeur (--glow-x, --glow-y). */
+.tilt {
+  isolation: isolate;
+  transform: perspective(800px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) translateY(var(--lift, 0));
+  transition: transform 260ms var(--ease), box-shadow var(--speed) var(--ease), border-color var(--speed) var(--ease);
+}
+.tilt::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(circle at var(--glow-x, 50%) var(--glow-y, 0%), var(--accent-soft) 0%, transparent 65%);
+  opacity: 0; transition: opacity 260ms var(--ease);
+}
+.tilt:hover::before { opacity: 1; }
+/* Arrivée sur le tableau de bord : les cartes montent en cascade (--i = rang d'apparition).
+   « backwards » : l'animation ne garde pas sa transformation, l'inclinaison reste libre ensuite. */
+.stat, .overview-tile { animation: rise-in 520ms var(--ease) backwards; animation-delay: calc(var(--i, 0) * 55ms); }
+
 /* ------------------ ANIMATIONS ----------------------------- */
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes rise { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(14px) scale(0.98); } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
 }

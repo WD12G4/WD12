@@ -18,17 +18,27 @@ const props = defineProps<{
   stock: MaterialSummary;
 }>();
 
+/** Les tuiles apparaissent en cascade après les 4 compteurs du tableau de bord. */
+const STATS_COUNT = 4;
+
 //------------------ COMPUTED --------------------------------
 /** Vrai si aucune salle n'est enregistrée. */
 const isEmpty = computed(() => props.rooms.length === 0);
+
+//------------------ FUNCTIONS -------------------------------
+/** Rang d'apparition d'une tuile (variable CSS --i, lue par l'animation d'entrée). */
+function tileStyle(index: number): Record<string, number> {
+  return {'--i': index + STATS_COUNT};
+}
 </script>
 
 <template>
   <p v-if="isEmpty" class="empty-state">Aucune salle enregistrée.</p>
   <div class="overview-grid">
     <OverviewTile
-        v-for="roomSummary in rooms"
+        v-for="(roomSummary, index) in rooms"
         :key="roomSummary.room.id"
+        :style="tileStyle(index)"
         :title="roomSummary.title"
         :subtitle="roomSummary.subtitle"
         :summary="roomSummary"
@@ -38,6 +48,7 @@ const isEmpty = computed(() => props.rooms.length === 0);
     <OverviewTile
         title="En stock"
         subtitle="Hors salle"
+        :style="tileStyle(rooms.length)"
         :summary="stock"
         :to="{ name: 'materials', query: { emplacement: 'stock' } }"
         dashed
