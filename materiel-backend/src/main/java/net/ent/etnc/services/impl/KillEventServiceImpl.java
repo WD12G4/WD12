@@ -41,8 +41,10 @@ public class KillEventServiceImpl extends AbstractService<KillEvent, KillEventRe
         log.debug("Demande de création d'un Kill Event : {}", killEvent.getProcessName());
         validateKillEvent(killEvent);
         KillEvent created = super.create(killEvent);
-        log.info("Kill Event créé avec succès [processus={}, UC={}, date/heure={}]",
-                created.getProcessName(), created.getUc(), created.getKillDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        log.info("Kill Event créé avec succès [processus={}, UC={}, date/heure={}, résultat={}]",
+                created.getProcessName(), created.getUc(),
+                created.getKillDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                created.getResult());
         return created;
     }
 
@@ -82,6 +84,10 @@ public class KillEventServiceImpl extends AbstractService<KillEvent, KillEventRe
             log.warn("Validation rejetée : date/heure d'arrêt du processus ({}) postérieure au jour/à l'heure actuelle.",
                     killEvent.getKillDateTime());
             throw new ServiceException("La date/heure d'arrêt d'un processus ne peut pas être après le jour/l'heure actuelle.");
+        }
+        if (killEvent.getResult() == null) {
+            log.warn("Validation rejetée : résultat de l'arrêt non renseigné.");
+            throw new ServiceException("Le résultat de l'arrêt doit être renseigné.");
         }
     }
 

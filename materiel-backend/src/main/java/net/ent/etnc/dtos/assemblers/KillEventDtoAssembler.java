@@ -51,7 +51,7 @@ public class KillEventDtoAssembler implements DtoAssembler<KillEvent, KillEventR
     private void applyFields(final KillEvent killEvent, final KillEventRequest request) {
         killEvent.setProcessName(request.processName());
         killEvent.setKillDateTime(request.killDateTime());
-        killEvent.setResult(request.result());
+        killEvent.setResult(request.result() != null ? request.result() : true);
 
         if (request.ucId() != null) {
             Material material = new Material();

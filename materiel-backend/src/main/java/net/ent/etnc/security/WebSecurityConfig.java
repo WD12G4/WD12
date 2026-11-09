@@ -100,7 +100,7 @@ public class WebSecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/ws/agent", "/ws/agent/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(authJwtFilter, UsernamePasswordAuthenticationFilter.class);

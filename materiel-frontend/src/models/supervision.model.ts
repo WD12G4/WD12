@@ -1,7 +1,5 @@
 /**
- * Modèle de la supervision des postes d'une salle.
- * MAQUETTE : aucune API backend ; la démonstration prévue par le client se fera sur une VM
- * (entretien 2, ~3:06).
+ * Modèle de la supervision des postes de travail et des processus en temps réel.
  * RG : RG-25 (processus lancés), RG-26 (arrêt), RG-28 (masterisation), RG-29 (identification), RG-30
  */
 
@@ -16,35 +14,33 @@ const workstationStatusLabels = {
 //----------------- TYPES --------------------------------
 /**
  * État d'un poste : allumé et joignable, éteint ou injoignable, en cours de masterisation.
- * TODO(question): comment l'agent du poste signale-t-il son état ? À définir avec la démonstration sur VM.
  */
 type WorkstationStatus = keyof typeof workstationStatusLabels;
 
-/** Poste de travail d'une salle. */
+/** Poste de travail supervisé. */
 interface Workstation {
     id: number;
-    roomId: number;
-    /** Ex. « Poste 1 ». */
+    roomId: number | null;
+    /** Nom d'affichage (ex: « bly-manager (000000001415) »). */
     name: string;
-    /**
-     * Libellé du stagiaire installé au poste (rôle « stagiaire » sans connexion, RG-30).
-     * TODO(question): nom saisi, numéro, ou utilisateur de session récupéré ? À proposer au client.
-     */
+    /** Statut ou libellé (ex: « Poste connecté », « Poste éteint / Agent déconnecté »). */
     traineeLabel: string;
-    /**
-     * Adresse MAC, identifiant du poste (RG-29).
-     * TODO(question): MAC ou IP fixe ? Le client indique que les IP des salles sont fixes.
-     */
+    /** Adresse MAC de la machine (ex: « 00:00:00:00:14:15 »). */
     macAddress: string;
     status: WorkstationStatus;
+    /** Vrai si l'agent est actuellement connecté en WebSocket. */
+    online?: boolean;
+    /** Nom d'hôte de la machine (ex: « bly-manager »). */
+    hostname?: string;
 }
 
-/** Processus lancé par l'utilisateur du poste (les processus système ne sont pas listés, RG-25). */
+/** Processus applicatif actif sur un poste supervisé (RG-25). */
 interface ProcessInfo {
     pid: number;
     workstationId: number;
-    /** Nom affiché (ex. « Navigateur web », « Environnement de développement »). */
+    /** Nom du processus (ex: « chrome », « bash », « python ») ou nom affiché. */
     name: string;
+    /** Date/heure de démarrage. */
     startedAt: Date;
 }
 

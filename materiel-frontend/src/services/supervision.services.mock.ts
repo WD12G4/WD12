@@ -20,8 +20,7 @@ const demoApplications = [
 /** Nombre d'applications ouvertes sur chaque poste, selon son numéro. */
 const openCounts = [2, 3, 1, 0, 4, 2, 3, 1];
 
-//------------------ DATAS -----------------------------------
-/** Processus par identifiant de poste, créés au premier affichage de la salle. */
+/** Processus par poste, modifiés en mémoire pendant la session (RG-26, RG-28). */
 const processesByWorkstation = new Map<number, ProcessInfo[]>();
 /** Fin de masterisation par identifiant de poste (horodatage en millisecondes). */
 const reimagingUntil = new Map<number, number>();
@@ -44,12 +43,14 @@ const isOffline = (roomId: number, index: number): boolean => index === 6 + (roo
 function buildWorkstation(roomId: number, index: number): Workstation {
     const id = roomId * 100 + index;
     const reimaging = (reimagingUntil.get(id) ?? 0) > Date.now();
+    const offline = isOffline(roomId, index);
     return {
         id, roomId,
         name: `Poste ${index}`,
         traineeLabel: `Stagiaire ${index}`,
         macAddress: `00:1A:2B:${String(roomId % 100).padStart(2, '0')}:00:${String(index).padStart(2, '0')}`,
-        status: isOffline(roomId, index) ? 'offline' : reimaging ? 'reimaging' : 'online',
+        status: offline ? 'offline' : reimaging ? 'reimaging' : 'online',
+        online: !offline && !reimaging,
     };
 }
 
@@ -111,7 +112,7 @@ export const supervisionServices = {
         await delay();
         const list = processesByWorkstation.get(process.workstationId) ?? [];
         processesByWorkstation.set(process.workstationId, list.filter(item => item.pid !== process.pid));
-        log(workstation.roomId, workstation.name, process.name);
+        log(workstation.roomId ?? 0, workstation.name, process.name);
     },
 
     /** Lance la masterisation d'un poste (RG-28) : ses applications se ferment, il est indisponible un moment. */
@@ -119,6 +120,6 @@ export const supervisionServices = {
         await delay();
         processesByWorkstation.set(workstation.id, []);
         reimagingUntil.set(workstation.id, Date.now() + REIMAGE_DURATION_MS);
-        log(workstation.roomId, workstation.name, null);
+        log(workstation.roomId ?? 0, workstation.name, null);
     },
 };
