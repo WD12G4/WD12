@@ -1,10 +1,11 @@
 package net.ent.etnc.services;
 
 
+import net.ent.etnc.models.RefreshToken;
 import net.ent.etnc.models.User;
 
 /**
- * Business contract for HttpOnly refresh-token lifecycle operations.
+ * Interface de service pour les {@link RefreshToken}.
  */
 public interface RefreshTokenService {
     /**

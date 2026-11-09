@@ -1,0 +1,101 @@
+package net.ent.etnc.services.impl;
+
+import lombok.extern.slf4j.Slf4j;
+import net.ent.etnc.models.KillEvent;
+import net.ent.etnc.models.Material;
+import net.ent.etnc.models.enums.EMaterialType;
+import net.ent.etnc.repositories.KillEventRepository;
+import net.ent.etnc.repositories.MaterialRepository;
+import net.ent.etnc.services.KillEventService;
+import net.ent.etnc.services.commons.AbstractService;
+import net.ent.etnc.services.commons.ResourceNotFoundException;
+import net.ent.etnc.services.commons.ServiceException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+/**
+ * Service des {@link KillEvent}.
+ */
+@Slf4j
+@Service
+public class KillEventServiceImpl extends AbstractService<KillEvent, KillEventRepository> implements KillEventService {
+
+    private final MaterialRepository materialRepository;
+
+    /**
+     * Constructeur du service.
+     */
+    @Autowired
+    public KillEventServiceImpl(final KillEventRepository repository, final MaterialRepository materialRepository) {
+        super(repository);
+        this.materialRepository = materialRepository;
+    }
+
+    @Override
+    @Transactional
+    public KillEvent create(final KillEvent killEvent) {
+        log.debug("Demande de création d'un Kill Event : {}", killEvent.getProcessName());
+        validateKillEvent(killEvent);
+        KillEvent created = super.create(killEvent);
+        log.info("Kill Event créé avec succès [processus={}, UC={}, date/heure={}]",
+                created.getProcessName(), created.getUc(), created.getKillDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        return created;
+    }
+
+    @Override
+    public KillEvent update(final KillEvent killEvent) {
+        throw new UnsupportedOperationException("La mise à jour d'un Kill Event n'est pas autorisée.");
+    }
+
+    @Override
+    @Transactional
+    public void deleteById(final Long id) {
+        throw new UnsupportedOperationException("La suppression d'un Kill Event n'est pas autorisée.");
+    }
+
+    private void validateKillEvent(final KillEvent killEvent) {
+        String processName = killEvent.getProcessName();
+        if (processName == null || processName.isBlank()) {
+            log.warn("Validation rejetée : nom du processus manquant.");
+            throw new ServiceException("Le nom du processus doit être renseigné.");
+        }
+        if (processName.length() > 100) {
+            log.warn("Validation rejetée : nom du processus trop long (longueur={}).", processName.length());
+            throw new ServiceException("Le nom du processus doit être inférieur à 100 caractères.");
+        }
+        if (killEvent.getUc() == null || killEvent.getUc().getId() == null) {
+            log.warn("Validation rejetée : UC non renseignée.");
+            throw new ServiceException("L'UC doit être renseignée.");
+        }
+
+        killEvent.setUc(validateMaterial(killEvent.getUc().getId()));
+
+        if (killEvent.getKillDateTime() == null) {
+            log.warn("Validation rejetée : heure/date non renseignée.");
+            throw new ServiceException("L'heure et la date doivent être renseignées.");
+        }
+        if (killEvent.getKillDateTime().isAfter(LocalDateTime.now())) {
+            log.warn("Validation rejetée : date/heure d'arrêt du processus ({}) postérieure au jour/à l'heure actuelle.",
+                    killEvent.getKillDateTime());
+            throw new ServiceException("La date/heure d'arrêt d'un processus ne peut pas être après le jour/l'heure actuelle.");
+        }
+    }
+
+    private Material validateMaterial(final Long id){
+        Material uc = this.materialRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Validation rejetée : UC manquante dans la base de données (id={}).", id);
+                    return new ResourceNotFoundException("UC non trouvée avec l'id : " + id);
+                });
+
+        if (!EMaterialType.UC.equals(uc.getMaterialType())) {
+            log.warn("Validation rejetée : Le matériel n'est pas une UC.");
+            throw new ServiceException("Le matériel doit être une UC pour avoir un kill event.");
+        }
+        return uc;
+    }
+}

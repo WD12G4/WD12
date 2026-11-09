@@ -7,7 +7,7 @@ import net.ent.etnc.services.commons.Service;
 import java.util.Optional;
 
 /**
- * Business contract for rentable objects.
+ * Interface de service des {@link Room}.
  */
 public interface RoomService extends Service<Room, Long> {
 

@@ -20,7 +20,7 @@ import java.time.LocalDate;
 @Table(name = "materials",
         uniqueConstraints = @UniqueConstraint(name = "uk__material__serial_number",
                 columnNames = "serial_number"))
-@EqualsAndHashCode(callSuper = false, of = "serialNumber", doNotUseGetters = false)
+@EqualsAndHashCode(callSuper = false, of = "serialNumber")
 @ToString(callSuper = true, of = {"serialNumber"})
 public class Material extends AbstractPersistableWithIdSetter<Long> {
 

@@ -6,7 +6,7 @@ import net.ent.etnc.services.commons.Service;
 import java.util.Optional;
 
 /**
- * Business contract for application accounts.
+ * Interface de service des {@link User}.
  */
 public interface UserService extends Service<User, Long> {
     /**

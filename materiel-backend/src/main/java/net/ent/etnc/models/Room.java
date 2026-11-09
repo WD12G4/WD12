@@ -14,7 +14,7 @@ import net.ent.etnc.models.commons.AbstractPersistableWithIdSetter;
 @Table(name = "rooms",
         uniqueConstraints = @UniqueConstraint(name = "uk__room__building__number",
                 columnNames = {"building_id", "number"}))
-@EqualsAndHashCode(callSuper = false, of = {"building", "number"}, doNotUseGetters = false)
+@EqualsAndHashCode(callSuper = false, of = {"building", "number"})
 @ToString(callSuper = true, of = {"number"})
 public class Room extends AbstractPersistableWithIdSetter<Long> {
 

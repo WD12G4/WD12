@@ -6,7 +6,7 @@ import net.ent.etnc.services.commons.Service;
 import java.util.Optional;
 
 /**
- * Business contract for rental lifecycle operations.
+ * Interface de service de {@link Building}.
  */
 public interface BuildingService extends Service<Building, Long> {
 

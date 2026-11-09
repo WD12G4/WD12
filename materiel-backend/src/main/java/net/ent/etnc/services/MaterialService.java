@@ -4,7 +4,7 @@ import net.ent.etnc.models.Material;
 import net.ent.etnc.services.commons.Service;
 
 /**
- * Business contract for rentable objects.
+ * Interface de service des {@link Material}.
  */
 public interface MaterialService extends Service<Material, Long> {
 
