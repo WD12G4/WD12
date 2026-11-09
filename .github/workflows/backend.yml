@@ -38,9 +38,6 @@ jobs:
     runs-on: self-hosted
     if: ${{ !inputs.skip_tests }}
 
-    env:
-      GRADLE_OPTS: "-Dhttp.proxyHost=172.16.0.1 -Dhttp.proxyPort=8080 -Dhttps.proxyHost=172.16.0.1 -Dhttps.proxyPort=8080 -Dhttp.nonProxyHosts=localhost|127.0.0.1|*.internet.comsic|*.etrs.net|*.etrs.terre.defense.gouv.fr|192.168.*|172.16.*|10.10.*|*.pdi|*.etnc.terre.defense.gouv.fr"
-
     services:
       postgres:
         image: postgres:16-alpine
@@ -66,6 +63,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Detect & Configure Proxy
+        run: |
+          if timeout 2 bash -c '</dev/tcp/172.16.0.1/8080' 2>/dev/null; then
+            echo "Proxy 172.16.0.1:8080 détecté -> Activation du proxy"
+            echo "GRADLE_OPTS=-Dhttp.proxyHost=172.16.0.1 -Dhttp.proxyPort=8080 -Dhttps.proxyHost=172.16.0.1 -Dhttps.proxyPort=8080 -Dhttp.nonProxyHosts=localhost|127.0.0.1|*.internet.comsic|*.etrs.net|*.etrs.terre.defense.gouv.fr|192.168.*|172.16.*|10.10.*|*.pdi|*.etnc.terre.defense.gouv.fr" >> "$GITHUB_ENV"
+            echo "HTTP_PROXY=http://172.16.0.1:8080" >> "$GITHUB_ENV"
+            echo "HTTPS_PROXY=http://172.16.0.1:8080" >> "$GITHUB_ENV"
+            echo "NO_PROXY=localhost,127.0.0.1,*.internet.comsic,*.etrs.net,*.etrs.terre.defense.gouv.fr,192.168.*,172.16.*,10.10.*,*.pdi,*.etnc.terre.defense.gouv.fr" >> "$GITHUB_ENV"
+          else
+            echo "Proxy 172.16.0.1:8080 non joignable -> Connexion directe"
+          fi
+
       - name: Set up JDK 21
         uses: actions/setup-java@v6
         with:
@@ -89,10 +98,21 @@ jobs:
         run: ./gradlew test jacocoTestReport --no-daemon
 
       - name: SonarQube Analysis
+        continue-on-error: true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        run: ./gradlew sonar --no-daemon
+        run: |
+          if [ -z "$SONAR_HOST_URL" ]; then
+            echo "SONAR_HOST_URL non défini, étape ignorée."
+            exit 0
+          fi
+          if ! curl -s --connect-timeout 3 -m 5 -I "$SONAR_HOST_URL" > /dev/null 2>&1; then
+            echo "Serveur SonarQube ($SONAR_HOST_URL) non joignable, étape ignorée."
+            exit 0
+          fi
+          echo "Serveur SonarQube joignable, lancement de l'analyse..."
+          ./gradlew sonar --no-daemon
 
   # --------------------------------------------------------------------------
   # 2. CD : Construction et publication de l'image Docker sur GHCR
@@ -129,11 +149,17 @@ jobs:
           echo "Construction de l'image Docker : ${IMAGE_NAME}:${TAG}"
           echo "=========================================================="
 
+          PROXY_BUILD_ARGS=""
+          if timeout 2 bash -c '</dev/tcp/172.16.0.1/8080' 2>/dev/null; then
+            echo "Proxy 172.16.0.1:8080 détecté pour le build Docker"
+            PROXY_BUILD_ARGS="--build-arg HTTP_PROXY=http://172.16.0.1:8080 --build-arg HTTPS_PROXY=http://172.16.0.1:8080 --build-arg NO_PROXY=localhost,127.0.0.1,*.internet.comsic,*.etrs.net,*.etrs.terre.defense.gouv.fr,192.168.*,172.16.*,10.10.*,*.pdi,*.etnc.terre.defense.gouv.fr"
+          else
+            echo "Pas de proxy pour le build Docker (connexion directe)"
+          fi
+
           docker build \
             --network=host \
-            --build-arg HTTP_PROXY="http://172.16.0.1:8080" \
-            --build-arg HTTPS_PROXY="http://172.16.0.1:8080" \
-            --build-arg NO_PROXY="localhost,127.0.0.1,*.internet.comsic,*.etrs.net,*.etrs.terre.defense.gouv.fr,192.168.*,172.16.*,10.10.*,*.pdi,*.etnc.terre.defense.gouv.fr" \
+            ${PROXY_BUILD_ARGS} \
             -t "${IMAGE_NAME}:${TAG}" \
             -t "${IMAGE_NAME}:${BRANCH_TAG}" \
             -t "${IMAGE_NAME}:${SHA_TAG}" \
