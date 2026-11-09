@@ -64,7 +64,8 @@ watch(() => draft.value.roomId, () => {
 </script>
 
 <template>
-  <form class="form-grid" @submit.prevent="submit">
+  <!-- « stepped » : chaque champ est numéroté (01, 02…) par un compteur CSS -->
+  <form class="form-grid stepped" @submit.prevent="submit">
     <div class="field">
       <label for="report-room">Salle</label>
       <RoomSelect

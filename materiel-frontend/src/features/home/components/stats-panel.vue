@@ -17,6 +17,8 @@ import Link from '../../../shared/components/Link.vue';
 const props = defineProps<{
   /** Compteurs à afficher. */
   stats: DashboardStats;
+  /** Horizon des fins de disponibilité, en jours (réglé dans le bandeau sous les compteurs). */
+  horizon: number;
 }>();
 
 //------------------ COMPUTED --------------------------------
@@ -25,7 +27,7 @@ const items = computed<{key: string; value: number; label: string; to: RouteTarg
   {key: 'active', value: props.stats.active, label: 'Matériels suivis', to: {name: 'materials'}},
   {key: 'assigned', value: props.stats.assigned, label: 'Affectés à une salle', to: {name: 'materials', query: {emplacement: 'salle'}}},
   {key: 'stock', value: props.stats.stock, label: 'En stock', to: {name: 'materials', query: {emplacement: 'stock'}}},
-  {key: 'expiring', value: props.stats.expiring, label: 'Bientôt en fin de disponibilité', to: {name: 'materials'}},
+  {key: 'expiring', value: props.stats.expiring, label: `Fin de disponibilité sous ${props.horizon} j`, to: {name: 'materials'}},
 ]);
 </script>
 

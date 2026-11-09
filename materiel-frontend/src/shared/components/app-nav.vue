@@ -11,6 +11,7 @@ import type {RouteNames} from '../../router/route-types.ts';
 import {roleLabels, type User} from '../../models/user.model.ts';
 import type {NavLink} from '../composables/use-nav-links.ts';
 import AppIcon from './app-icon.vue';
+import ThemeSwitch from './theme-switch.vue';
 import Link from './Link.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -71,6 +72,9 @@ function isCurrent(link: NavLink): boolean {
         <span>{{ link.label }}</span>
       </Link>
     </nav>
+
+    <!-- Apparence : thème classique ou essai « tactique » -->
+    <ThemeSwitch />
 
     <!-- Utilisateur connecté -->
     <div class="user-card">

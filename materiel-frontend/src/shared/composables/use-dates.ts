@@ -41,11 +41,12 @@ export function daysUntil(date: Date, today = new Date()): number {
 }
 
 /**
- * Indique si une date arrive à échéance dans les EXPIRY_WARNING_DAYS prochains jours (passée incluse).
+ * Indique si une date arrive à échéance dans les « days » prochains jours (passée incluse).
  * @param date date de fin de disponibilité, ou null
+ * @param days horizon en jours (EXPIRY_WARNING_DAYS par défaut)
  */
-export function isExpiringSoon(date: Date | null): boolean {
-    return date !== null && daysUntil(date) <= EXPIRY_WARNING_DAYS;
+export function isExpiringSoon(date: Date | null, days: number = EXPIRY_WARNING_DAYS): boolean {
+    return date !== null && daysUntil(date) <= days;
 }
 
 /**

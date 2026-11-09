@@ -49,6 +49,11 @@
   --radius: 0.9rem;
   --radius-lg: 1.25rem;
   --sidebar-width: 264px;
+  /* Codes (numéros de série, bâtiments, salles) et petites étiquettes : police monospace du système. */
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, Consolas, monospace;
+  /* Boutons d'action : le thème « tactique » remplace ce dégradé par un aplat vert vif. */
+  --action-bg: linear-gradient(135deg, var(--accent), var(--accent-2));
+  --on-action: var(--on-accent);
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --speed: 180ms;
 
@@ -224,7 +229,7 @@ p { color: var(--muted); line-height: 1.6; }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem; margin-top: 1rem; }
 .form-grid > .full-width { grid-column: 1 / -1; }
 .field { display: flex; flex-direction: column; gap: 0.45rem; min-width: 0; }
-label { font-size: 0.85rem; font-weight: 600; color: var(--title); }
+label, .field-label { font-size: 0.85rem; font-weight: 600; color: var(--title); }
 .checkbox-field { display: flex; flex-direction: row; align-items: center; gap: 0.6rem; cursor: pointer; }
 input:not([type='checkbox']), select, textarea {
   width: 100%; padding: 0.7rem 0.9rem;
@@ -299,13 +304,13 @@ input[type='checkbox'] { accent-color: var(--accent); width: 18px; height: 18px;
 button, .button-link {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
   padding: 0.68rem 1.1rem; border: 1px solid transparent; border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: var(--on-accent); font-weight: 600; font-size: 0.92rem; cursor: pointer;
+  background: var(--action-bg);
+  color: var(--on-action); font-weight: 600; font-size: 0.92rem; cursor: pointer;
   box-shadow: 0 4px 14px -4px var(--accent);
   transition: transform var(--speed) var(--ease), box-shadow var(--speed) var(--ease),
     background var(--speed) var(--ease), filter var(--speed) var(--ease);
 }
-button:hover, .button-link:hover { color: var(--on-accent); filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 8px 20px -6px var(--accent); }
+button:hover, .button-link:hover { color: var(--on-action); filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 8px 20px -6px var(--accent); }
 button:active, .button-link:active { transform: translateY(0) scale(0.98); }
 button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; filter: none; }
 .secondary-button { background: var(--accent-soft); color: var(--accent); box-shadow: none; }
@@ -499,6 +504,105 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
   .form-grid, .stats { grid-template-columns: 1fr; }
   .actions button, .actions .button-link { flex: 1; }
 }
+
+/* ------------------ CODES ET ÉTIQUETTES (monospace) -------- */
+/* Les codes se lisent et se comparent caractère par caractère : numéros de série, en-têtes, étiquettes. */
+.code { font-family: var(--font-mono); font-size: 0.92em; letter-spacing: -0.01em; }
+.eyebrow { display: block; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.overview-tile-subtitle, .data-table th, dt, .select-group { font-family: var(--font-mono); }
+
+/* ------------------ BOUTONS SEGMENTÉS (segmented-control.vue) */
+.segmented {
+  display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.25rem; min-height: 2.85rem; padding: 0.25rem;
+  border: 1px solid var(--border-input); border-radius: var(--radius-sm); background: var(--surface-input);
+}
+.segmented button {
+  flex: 1 1 auto; padding: 0.4rem 0.7rem; border-radius: calc(var(--radius-sm) - 0.2rem);
+  background: transparent; color: var(--muted); font-weight: 600; font-size: 0.85rem; white-space: nowrap;
+  box-shadow: none; transform: none; filter: none;
+}
+.segmented button:hover { background: var(--surface-hover); color: var(--title); box-shadow: none; transform: none; filter: none; }
+.segmented button:active { transform: none; }
+.segmented button[aria-checked='true'] { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent-soft-hover); }
+@container (min-width: 720px) { .filters .wide { grid-column: span 2; } }
+.theme-switch { display: flex; flex-direction: column; gap: 0.4rem; padding: 0 0.25rem; }
+.theme-switch .segmented { min-height: 0; }
+.theme-switch .segmented button { padding: 0.35rem 0.5rem; font-size: 0.8rem; }
+
+/* ------------------ HORIZON DES FINS DE DISPONIBILITÉ (expiry-indicator.vue) */
+.expiry-panel {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; margin-bottom: 1.5rem; padding: 0.85rem 1.1rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.expiry-panel.alert { background: var(--danger-soft); border-color: var(--danger-border); }
+.expiry-label { color: var(--muted); font-weight: 600; font-size: 0.88rem; }
+.expiry-panel .segmented { min-height: 0; background: var(--surface); }
+.expiry-panel .segmented button { padding: 0.3rem 0.65rem; }
+.expiry-count { margin: 0; color: var(--text); font-weight: 500; }
+.expiry-panel.alert .expiry-count { color: var(--danger); }
+.expiry-count strong { font-size: 1.35rem; font-weight: 750; margin-right: 0.2rem; }
+
+/* ------------------ APERÇU LATÉRAL (material-preview.vue) -- */
+.drawer {
+  position: fixed; inset: 0 0 0 auto; z-index: 50; width: min(420px, 100vw); overflow-y: auto;
+  display: flex; flex-direction: column; gap: 1.25rem; padding: 1.5rem;
+  background: var(--surface); border-left: 1px solid var(--border); box-shadow: -24px 0 48px -24px var(--shadow-strong);
+}
+.drawer-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.drawer-header h2 { margin: 0.2rem 0 0; word-break: break-all; }
+.drawer .detail-grid { grid-template-columns: 1fr 1fr; }
+.drawer-backdrop { position: fixed; inset: 0; z-index: 45; background: var(--backdrop); }
+.drawer-enter-active, .drawer-leave-active { transition: transform 280ms var(--ease); }
+.drawer-enter-from, .drawer-leave-to { transform: translateX(100%); }
+.data-table tbody tr.previewed { background: var(--accent-soft); }
+/* Sur grand écran, la liste reste cliquable à côté de l'aperçu : pas de voile. */
+@media (min-width: 901px) { .drawer-backdrop { display: none; } }
+
+/* ------------------ CHAMPS NUMÉROTÉS (formulaires « stepped ») */
+.form-grid.stepped { counter-reset: step; }
+.form-grid.stepped > .field > :is(label, .field-label):first-child::before {
+  counter-increment: step; content: counter(step, decimal-leading-zero);
+  margin-right: 0.5rem; padding: 0.1rem 0.35rem; border-radius: 0.3rem;
+  font-family: var(--font-mono); font-size: 0.7rem; color: var(--accent); background: var(--accent-soft);
+}
+
+/* ------------------ THÈME « TACTIQUE » (essai, use-theme.ts) */
+/* Un seul accent vif, réservé aux actions ; coins coupés ; boutons et étiquettes en monospace. */
+:root[data-theme='tactique'] {
+  --accent: #3d6b00; --accent-2: #3d6b00; --accent-hover: #2f5300;
+  --accent-soft: #eaf5d3; --accent-soft-hover: #d8eeac; --focus: #7cc400;
+  --background: #f3f4ef; --background-glow: #e6f1cc; --title: #0d1408;
+  --muted: #5d6656; --surface-soft: #f7f8f3; --surface-hover: #eff2e6;
+  --border: #e2e5da; --border-input: #d3d8c8; --neutral-soft: #eceee6;
+  --action-bg: #abff02; --on-action: #0d1408;
+  --cut: 12px;
+  --select-chevron-active: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%233d6b00' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme='tactique'] {
+    --accent: #abff02; --accent-2: #abff02; --accent-hover: #c6ff52;
+    --accent-soft: #1c2809; --accent-soft-hover: #2a3b0e; --focus: #c6ff52;
+    --background: #090b07; --background-glow: #16210a; --title: #f2f6ea;
+    --surface: #10140c; --surface-soft: #141a10; --surface-input: #0c0f09; --surface-hover: #1b2215;
+    --border: #232c1b; --border-input: #2e3a24;
+    --muted: #9aa38c; --neutral-soft: #1a2016; --text: #dde3d2;
+    --select-chevron-active: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23abff02' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+  }
+}
+:root[data-theme='tactique'] :is(.card, .stat, .overview-tile, .expiry-panel, .drawer) {
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+}
+:root[data-theme='tactique'] .stat::after { display: none; }
+:root[data-theme='tactique'] :is(button, .button-link):not(.select-trigger, .icon-button, .segmented button) {
+  border-radius: 3px; font-family: var(--font-mono); font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.08em;
+}
+:root[data-theme='tactique'] :is(label, .field-label, .expiry-label) {
+  font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted);
+}
+:root[data-theme='tactique'] .badge { border-radius: 3px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; }
+:root[data-theme='tactique'] :is(.brand-logo, .avatar) { border-radius: 4px; background: var(--action-bg); color: var(--on-action); }
+:root[data-theme='tactique'] :is(.segmented, .select-trigger, input:not([type='checkbox']), textarea, .detail-grid > div, .type-chips li, .select-panel, .flash) { border-radius: 3px; }
 
 /* ------------------ ACCESSIBILITÉ -------------------------- */
 /* Texte lu par les lecteurs d'écran mais invisible à l'écran (en-tête de colonne « Actions »). */

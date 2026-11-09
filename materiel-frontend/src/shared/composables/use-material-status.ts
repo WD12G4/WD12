@@ -29,10 +29,12 @@ export function materialStatus(material: Material): MaterialStatus {
 
 /**
  * Vrai si le matériel, non archivé, arrive bientôt en fin de disponibilité (RG-24).
+ * Attention : ne pas passer cette fonction telle quelle à filter(), qui donnerait l'index comme « days ».
  * @param material matériel à évaluer
+ * @param days horizon en jours (30 par défaut)
  */
-export function isMaterialExpiring(material: Material): boolean {
-    return !material.archived && isExpiringSoon(material.endAvailabilityDate);
+export function isMaterialExpiring(material: Material, days?: number): boolean {
+    return !material.archived && isExpiringSoon(material.endAvailabilityDate, days);
 }
 
 export type {MaterialStatus};

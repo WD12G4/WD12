@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
  * Champs de recherche et de filtre de la liste des matériels (texte, type, archivés).
+ * Le type se choisit en un clic, avec des boutons segmentés (libellés courts).
  * Les filtres d'emplacement sont dans material-location-filters.vue.
  * L'objet de filtres est lié en v-model (comme todo-filters.vue du cours).
  * Utilisé par : features/materials/views/material-view.vue
@@ -8,10 +9,10 @@
 import type {Building} from '../../../models/building.model.ts';
 import type {Room} from '../../../models/room.model.ts';
 import {
-  type MaterialFilters, type MaterialTypeFilter, materialTypeLabels, materialTypes,
+  type MaterialFilters, type MaterialTypeFilter, materialTypes, materialTypeShortLabels,
 } from '../../../models/material.model.ts';
 import type {SelectOption} from '../../../shared/composables/use-listbox.ts';
-import AppSelect from '../../../shared/components/app-select.vue';
+import SegmentedControl from '../../../shared/components/segmented-control.vue';
 import MaterialLocationFilters from './material-location-filters.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -26,10 +27,10 @@ defineProps<{
 const filters = defineModel<MaterialFilters>('filters', {required: true});
 
 //------------------ DATAS -----------------------------------
-/** « Tous les types », puis chaque type par son libellé. */
+/** « Tous », puis chaque type par son libellé court. */
 const typeOptions: SelectOption<MaterialTypeFilter>[] = [
-  {value: 'all', label: 'Tous les types'},
-  ...materialTypes.map(type => ({value: type, label: materialTypeLabels[type]})),
+  {value: 'all', label: 'Tous'},
+  ...materialTypes.map(type => ({value: type, label: materialTypeShortLabels[type]})),
 ];
 </script>
 
@@ -44,12 +45,12 @@ const typeOptions: SelectOption<MaterialTypeFilter>[] = [
           placeholder="Numéro de série, salle ou bâtiment…"
       >
     </div>
-    <div class="field">
-      <label for="material-type-filter">Type</label>
-      <AppSelect
-          id="material-type-filter"
+    <div class="field wide">
+      <span id="material-type-label" class="field-label">Type</span>
+      <SegmentedControl
           v-model="filters.type"
           :options="typeOptions"
+          labelledby="material-type-label"
       />
     </div>
     <MaterialLocationFilters

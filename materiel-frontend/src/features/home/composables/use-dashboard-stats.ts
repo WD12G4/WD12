@@ -20,15 +20,16 @@ interface DashboardStats {
 /**
  * Calcule les compteurs à partir de la liste complète du matériel.
  * @param materials matériel chargé par la vue
+ * @param horizon nombre de jours pour « bientôt en fin de disponibilité » (choisi sur le tableau de bord)
  */
-export function useDashboardStats(materials: Ref<Material[]>) {
+export function useDashboardStats(materials: Ref<Material[]>, horizon: Readonly<Ref<number>>) {
     const stats = computed<DashboardStats>(() => {
         const statuses = materials.value.map(materialStatus);
         return {
             active: statuses.filter(status => status !== 'archived').length,
             assigned: statuses.filter(status => status === 'assigned').length,
             stock: statuses.filter(status => status === 'stock').length,
-            expiring: materials.value.filter(isMaterialExpiring).length,
+            expiring: materials.value.filter(material => isMaterialExpiring(material, horizon.value)).length,
         };
     });
     return {stats};
