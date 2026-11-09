@@ -28,7 +28,8 @@ async function checkAccess(to: RouteLocationNormalized): Promise<true | RouteLoc
         return isAuthenticated.value ? {name: 'home'} : true;
     }
     if (!isAuthenticated.value) {
-        return {name: 'login'};
+        // La page demandée est gardée : après la connexion, on y revient (navigation.ts, navigateAfterLogin).
+        return to.fullPath === '/' ? {name: 'login'} : {name: 'login', query: {redirect: to.fullPath}};
     }
     if (!to.meta.roles.some(hasRole)) {
         show("Vous n'avez pas accès à cette page.", 'error');
@@ -47,6 +48,6 @@ export function installGuards(router: Router): void {
 
     onSessionExpired(() => {
         show('Votre session a expiré. Reconnectez-vous.', 'error');
-        void router.push({name: 'login'});
+        void router.push({name: 'login', query: {redirect: router.currentRoute.value.fullPath}});
     });
 }

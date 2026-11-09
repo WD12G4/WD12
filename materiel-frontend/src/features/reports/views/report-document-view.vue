@@ -12,7 +12,7 @@ import {reportsServices} from '../../../services/reports.services.mock.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import Card from '../../../shared/components/card.vue';
 import DemoBanner from '../../../shared/components/demo-banner.vue';
-import Link from '../../../shared/components/Link.vue';
+import BackLink from '../../../shared/components/back-link.vue';
 import LoadState from '../../../shared/components/load-state.vue';
 import ReportDocument from '../components/report-document.vue';
 
@@ -48,7 +48,7 @@ onMounted(load);
 </script>
 
 <template>
-  <Link class="back-link no-print" :to="{ name: 'reports' }">← Retour aux remontées</Link>
+  <BackLink class="no-print" :fallback="{ name: 'reports' }" />
   <Card v-if="isNotFound" title="Remontée introuvable">
     <template #body>
       <p>Cette remontée n'existe pas (les données de démonstration sont effacées au rechargement).</p>

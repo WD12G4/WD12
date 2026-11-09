@@ -6,6 +6,8 @@
  * Utilisé par : App.vue
  */
 import {computed} from 'vue';
+import {useRoute} from 'vue-router';
+import type {RouteNames} from '../../router/route-types.ts';
 import {roleLabels, type User} from '../../models/user.model.ts';
 import type {NavLink} from '../composables/use-nav-links.ts';
 import AppIcon from './app-icon.vue';
@@ -28,12 +30,21 @@ const emit = defineEmits<{
   close: [];
 }>();
 
+//------------------ DATAS -----------------------------------
+const route = useRoute();
+
 //------------------ COMPUTED --------------------------------
 /** Rôle affiché par son libellé, jamais par son code. */
 const roleLabel = computed(() => roleLabels[props.user.role]);
 
 /** Initiale affichée dans la pastille de l'utilisateur. */
 const initial = computed(() => props.user.username.charAt(0).toUpperCase());
+
+//------------------ FUNCTIONS -------------------------------
+/** Vrai si la page courante appartient à la rubrique du lien (ex. fiche d'une salle → « Salles »). */
+function isCurrent(link: NavLink): boolean {
+  return link.section.includes(route.name as RouteNames);
+}
 </script>
 
 <template>
@@ -54,6 +65,7 @@ const initial = computed(() => props.user.username.charAt(0).toUpperCase());
           v-for="link in links"
           :key="link.to.name"
           :to="link.to"
+          :class="{ current: isCurrent(link) }"
       >
         <AppIcon :name="link.icon" />
         <span>{{ link.label }}</span>

@@ -6,7 +6,7 @@
 import {onMounted} from 'vue';
 import type {MaterialInput} from '../../../models/material.model.ts';
 import {materialsServices} from '../../../services/materials.services.ts';
-import {navigateTo} from '../../../router/navigation.ts';
+import {replaceWith, returnTo} from '../../../router/navigation.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {useFlashMessage} from '../../../shared/composables/use-flash-message.ts';
 import {useLocations} from '../../../shared/composables/use-locations.ts';
@@ -31,13 +31,14 @@ async function create(input: MaterialInput): Promise<void> {
   await runSave(async () => {
     const created = await materialsServices.create(input);
     show(`Le matériel ${created.serialNumber} a été créé.`, 'success');
-    await navigateTo({name: 'material-detail', params: {id: created.id}});
+    // Le formulaire est remplacé par la fiche : « Retour » ramène à la liste, pas au formulaire vide.
+    await replaceWith({name: 'material-detail', params: {id: created.id}});
   });
 }
 
 /** Abandonne la saisie et revient à la liste. */
 async function cancel(): Promise<void> {
-  await navigateTo({name: 'materials'});
+  await returnTo({name: 'materials'});
 }
 
 //------------------ LIFECYCLE -------------------------------

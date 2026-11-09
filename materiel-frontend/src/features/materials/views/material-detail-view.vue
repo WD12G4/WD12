@@ -11,7 +11,7 @@ import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {useLocations} from '../../../shared/composables/use-locations.ts';
 import {useArchiveMaterial} from '../composables/use-archive-material.ts';
 import Card from '../../../shared/components/card.vue';
-import Link from '../../../shared/components/Link.vue';
+import BackLink from '../../../shared/components/back-link.vue';
 import LoadState from '../../../shared/components/load-state.vue';
 import MaterialDetails from '../components/material-details.vue';
 import MaterialActions from '../components/material-actions.vue';
@@ -73,7 +73,8 @@ watch(() => props.id, load);
 </script>
 
 <template>
-  <Link class="back-link" :to="{ name: 'materials' }">← Retour au matériel</Link>
+  <!-- Retour à la page d'où l'on vient (liste du matériel, fiche d'une salle…), sinon au matériel -->
+  <BackLink :fallback="{ name: 'materials' }" />
 
   <!-- 404 : carte « introuvable » -->
   <Card v-if="isNotFound" title="Matériel introuvable">

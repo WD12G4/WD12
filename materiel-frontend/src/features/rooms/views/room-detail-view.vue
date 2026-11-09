@@ -12,7 +12,7 @@ import {roomLabel} from '../../../shared/composables/use-room-label.ts';
 import {useRoomMaterials} from '../composables/use-room-materials.ts';
 import {sharedRoomId} from '../../../router/view-transition.ts';
 import Card from '../../../shared/components/card.vue';
-import Link from '../../../shared/components/Link.vue';
+import BackLink from '../../../shared/components/back-link.vue';
 import LoadState from '../../../shared/components/load-state.vue';
 import MaterialList from '../../materials/components/material-list.vue';
 
@@ -50,7 +50,8 @@ watch(() => props.id, load);
 </script>
 
 <template>
-  <Link class="back-link" :to="{ name: 'rooms' }">← Retour aux salles</Link>
+  <!-- Retour à la page d'où l'on vient (tableau de bord ou liste des salles), sinon aux salles -->
+  <BackLink :fallback="{ name: 'rooms' }" />
 
   <Card v-if="isNotFound" title="Salle introuvable">
     <template #body>

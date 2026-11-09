@@ -9,7 +9,7 @@ import type {Material} from '../../../models/material.model.ts';
 import type {ReportInput} from '../../../models/report.model.ts';
 import {materialsServices} from '../../../services/materials.services.ts';
 import {reportsServices} from '../../../services/reports.services.mock.ts';
-import {navigateTo} from '../../../router/navigation.ts';
+import {replaceWith} from '../../../router/navigation.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {useFlashMessage} from '../../../shared/composables/use-flash-message.ts';
 import {useLocations} from '../../../shared/composables/use-locations.ts';
@@ -39,7 +39,7 @@ async function send(input: ReportInput): Promise<void> {
   await runSend(async () => {
     await reportsServices.create(input);
     show('Votre remontée a été transmise au gestionnaire.', 'success');
-    await navigateTo({name: 'home'});
+    await replaceWith({name: 'home'});
   });
 }
 

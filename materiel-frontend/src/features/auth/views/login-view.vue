@@ -6,7 +6,7 @@
 import {useAuth} from '../../../shared/composables/use-auth.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {ApiError} from '../../../services/api-error.ts';
-import {navigateTo} from '../../../router/navigation.ts';
+import {navigateAfterLogin} from '../../../router/navigation.ts';
 import Card from '../../../shared/components/card.vue';
 import LoginForm from '../components/login-form.vue';
 
@@ -30,7 +30,7 @@ async function signIn(username: string, password: string): Promise<void> {
     }
   });
   if (succeeded) {
-    await navigateTo({name: 'home'});
+    await navigateAfterLogin();
   }
 }
 </script>

@@ -5,7 +5,7 @@
 import {computed, onMounted, ref} from 'vue';
 import type {Material, MaterialInput} from '../../../models/material.model.ts';
 import {materialsServices} from '../../../services/materials.services.ts';
-import {navigateTo} from '../../../router/navigation.ts';
+import {returnTo} from '../../../router/navigation.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {useFlashMessage} from '../../../shared/composables/use-flash-message.ts';
 import {useLocations} from '../../../shared/composables/use-locations.ts';
@@ -44,13 +44,14 @@ async function save(input: MaterialInput): Promise<void> {
   await runSave(async () => {
     await materialsServices.update(materialId.value, input);
     show('Les modifications ont été enregistrées.', 'success');
-    await navigateTo({name: 'material-detail', params: {id: materialId.value}});
+    // Retour à la fiche dans l'historique : son lien « Retour » mène encore à la page d'avant.
+    await returnTo({name: 'material-detail', params: {id: materialId.value}});
   });
 }
 
 /** Abandonne la saisie et revient à la fiche. */
 async function cancel(): Promise<void> {
-  await navigateTo({name: 'material-detail', params: {id: materialId.value}});
+  await returnTo({name: 'material-detail', params: {id: materialId.value}});
 }
 
 //------------------ LIFECYCLE -------------------------------
