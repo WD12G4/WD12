@@ -236,21 +236,8 @@ input:not([type='checkbox']):focus, select:focus, textarea:focus {
   outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft-hover);
 }
 input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.8; }
-/* Champs d'une ligne : même hauteur partout. Safari ignore le padding d'un <select> natif. */
+/* Champs d'une ligne : même hauteur partout. */
 input:not([type='checkbox']), select { min-height: 2.85rem; line-height: 1.25; }
-/* Listes déroulantes : la flèche native (◇ sous Safari) est remplacée par un chevron fin,
-   aux couleurs du thème clair ou sombre, qui passe à la couleur d'accent au survol. */
-select {
-  appearance: none; -webkit-appearance: none;
-  padding-right: 2rem; cursor: pointer;
-  background-image: var(--select-chevron);
-  background-position: right 0.6rem center;
-  background-size: 1rem 1rem;
-  background-repeat: no-repeat;
-}
-select:hover, select:focus { background-image: var(--select-chevron-active); }
-select:disabled { cursor: not-allowed; opacity: 0.6; }
-select option { background: var(--surface); color: var(--text); }
 /* Champs numériques : sans les petites flèches du navigateur, qui changent la hauteur du champ. */
 input[type='number'] { appearance: textfield; -moz-appearance: textfield; }
 input[type='number']::-webkit-inner-spin-button,
@@ -259,6 +246,51 @@ input[type='date']::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 textarea { resize: vertical; min-height: 90px; }
 input[type='checkbox'] { accent-color: var(--accent); width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; }
 .field-hint { font-size: 0.8rem; color: var(--muted); font-weight: 400; }
+
+/* ------------------ LISTES DÉROULANTES (app-select.vue) ---- */
+/* Bouton : même apparence qu'un champ (et non celle des boutons d'action), chevron du thème. */
+.select-trigger {
+  width: 100%; min-width: 0; min-height: 2.85rem; justify-content: flex-start;
+  padding: 0.7rem 2rem 0.7rem 0.9rem; line-height: 1.25;
+  border: 1px solid var(--border-input); border-radius: var(--radius-sm);
+  background: var(--surface-input) var(--select-chevron) no-repeat right 0.6rem center / 1rem 1rem;
+  color: var(--text); font-weight: 400; font-size: 1rem; text-align: left;
+  box-shadow: none; transform: none; filter: none;
+}
+.select-trigger:hover { color: var(--text); border-color: var(--focus); background-image: var(--select-chevron-active); box-shadow: none; transform: none; filter: none; }
+.select-trigger:active { transform: none; }
+.select-trigger:focus-visible, .select-trigger.open {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft-hover);
+  background-image: var(--select-chevron-active);
+}
+.select-trigger:disabled { opacity: 0.6; cursor: not-allowed; border-color: var(--border-input); background-image: var(--select-chevron); }
+.select-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.select-trigger.placeholder .select-value { color: var(--muted); }
+/* Panneau : rendu dans <body>, positionné par use-dropdown.ts. */
+.select-panel {
+  position: fixed; z-index: 60; max-height: 18rem; overflow-y: auto;
+  margin: 0; padding: 0.35rem; list-style: none;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 2px 6px var(--shadow), 0 18px 40px -16px var(--shadow-strong);
+}
+.select-option {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  padding: 0.55rem 0.75rem; border-radius: var(--radius-sm);
+  color: var(--text); cursor: pointer; user-select: none;
+}
+.select-option.active { background: var(--surface-hover); }
+.select-option.selected { color: var(--accent); font-weight: 650; }
+.select-option.selected::after {
+  content: ''; width: 0.4rem; height: 0.75rem; margin-right: 0.2rem; flex-shrink: 0;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translateY(-2px);
+}
+.select-option[aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
+.select-group {
+  padding: 0.6rem 0.75rem 0.3rem; color: var(--muted);
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+}
+.select-pop-enter-active, .select-pop-leave-active { transition: opacity 140ms var(--ease), transform 140ms var(--ease); }
+.select-pop-enter-from, .select-pop-leave-to { opacity: 0; transform: translateY(-4px); }
 
 /* ------------------ BOUTONS -------------------------------- */
 button, .button-link {

@@ -8,6 +8,8 @@
 import {computed, ref, watch} from 'vue';
 import type {Building} from '../../../models/building.model.ts';
 import {type Room, type RoomInput, roomNumberRange} from '../../../models/room.model.ts';
+import type {SelectOption} from '../../../shared/composables/use-listbox.ts';
+import AppSelect from '../../../shared/components/app-select.vue';
 import FormError from '../../../shared/components/form-error.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -33,6 +35,9 @@ const emit = defineEmits<{
 const draft = ref<RoomInput>({buildingId: null, number: null});
 
 //------------------ COMPUTED --------------------------------
+const buildingOptions = computed<SelectOption<number | null>[]>(() =>
+  props.buildings.map(building => ({value: building.id, label: `Bâtiment ${building.number}`})));
+
 /** RG-13 : un bâtiment choisi et un numéro entier entre 0 et 999. */
 const isValid = computed(() => {
   const value = draft.value.number;
@@ -64,20 +69,12 @@ watch(() => props.initial, room => {
   <form class="form-grid" @submit.prevent="submit">
     <div class="field">
       <label for="room-building">Bâtiment</label>
-      <select
+      <AppSelect
           id="room-building"
           v-model="draft.buildingId"
-          required
-      >
-        <option :value="null" disabled>Choisir un bâtiment</option>
-        <option
-            v-for="building in buildings"
-            :key="building.id"
-            :value="building.id"
-        >
-          Bâtiment {{ building.number }}
-        </option>
-      </select>
+          :options="buildingOptions"
+          placeholder="Choisir un bâtiment"
+      />
     </div>
     <div class="field">
       <label for="room-number">Numéro de la salle</label>

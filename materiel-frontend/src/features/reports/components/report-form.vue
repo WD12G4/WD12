@@ -9,8 +9,10 @@ import {computed, ref, watch} from 'vue';
 import type {Material} from '../../../models/material.model.ts';
 import type {Room} from '../../../models/room.model.ts';
 import {
-  problemTypeLabels, problemTypes, reportDescriptionMaxLength, type ReportInput,
+  type ProblemType, problemTypeLabels, problemTypes, reportDescriptionMaxLength, type ReportInput,
 } from '../../../models/report.model.ts';
+import type {SelectOption} from '../../../shared/composables/use-listbox.ts';
+import AppSelect from '../../../shared/components/app-select.vue';
 import FormError from '../../../shared/components/form-error.vue';
 import RoomSelect from '../../../shared/components/room-select.vue';
 import ReportMaterialSelect from './report-material-select.vue';
@@ -39,6 +41,8 @@ const draft = ref<ReportInput>({
   problemType: 'OUT_OF_ORDER',
   description: '',
 });
+/** RG-21 : types de problème proposés (liste à valider avec le client). */
+const problemTypeOptions: SelectOption<ProblemType>[] = problemTypes.map(type => ({value: type, label: problemTypeLabels[type]}));
 
 //------------------ COMPUTED --------------------------------
 const isValid = computed(() => draft.value.roomId !== null);
@@ -81,15 +85,11 @@ watch(() => draft.value.roomId, () => {
     </div>
     <div class="field">
       <label for="report-type">Type de problème</label>
-      <select id="report-type" v-model="draft.problemType">
-        <option
-            v-for="type in problemTypes"
-            :key="type"
-            :value="type"
-        >
-          {{ problemTypeLabels[type] }}
-        </option>
-      </select>
+      <AppSelect
+          id="report-type"
+          v-model="draft.problemType"
+          :options="problemTypeOptions"
+      />
     </div>
     <div class="field full-width">
       <label for="report-description">Description <span class="field-hint">(facultative)</span></label>

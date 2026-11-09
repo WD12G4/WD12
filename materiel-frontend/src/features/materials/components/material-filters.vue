@@ -7,7 +7,11 @@
  */
 import type {Building} from '../../../models/building.model.ts';
 import type {Room} from '../../../models/room.model.ts';
-import {type MaterialFilters, materialTypeLabels, materialTypes} from '../../../models/material.model.ts';
+import {
+  type MaterialFilters, type MaterialTypeFilter, materialTypeLabels, materialTypes,
+} from '../../../models/material.model.ts';
+import type {SelectOption} from '../../../shared/composables/use-listbox.ts';
+import AppSelect from '../../../shared/components/app-select.vue';
 import MaterialLocationFilters from './material-location-filters.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -21,6 +25,12 @@ defineProps<{
 /** Critères de recherche, modifiés directement par les champs. */
 const filters = defineModel<MaterialFilters>('filters', {required: true});
 
+//------------------ DATAS -----------------------------------
+/** « Tous les types », puis chaque type par son libellé. */
+const typeOptions: SelectOption<MaterialTypeFilter>[] = [
+  {value: 'all', label: 'Tous les types'},
+  ...materialTypes.map(type => ({value: type, label: materialTypeLabels[type]})),
+];
 </script>
 
 <template>
@@ -36,16 +46,11 @@ const filters = defineModel<MaterialFilters>('filters', {required: true});
     </div>
     <div class="field">
       <label for="material-type-filter">Type</label>
-      <select id="material-type-filter" v-model="filters.type">
-        <option value="all">Tous les types</option>
-        <option
-            v-for="type in materialTypes"
-            :key="type"
-            :value="type"
-        >
-          {{ materialTypeLabels[type] }}
-        </option>
-      </select>
+      <AppSelect
+          id="material-type-filter"
+          v-model="filters.type"
+          :options="typeOptions"
+      />
     </div>
     <MaterialLocationFilters
         v-model:filters="filters"

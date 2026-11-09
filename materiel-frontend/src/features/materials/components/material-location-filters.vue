@@ -7,8 +7,10 @@
  */
 import {computed} from 'vue';
 import type {Building} from '../../../models/building.model.ts';
-import type {MaterialFilters} from '../../../models/material.model.ts';
+import type {MaterialFilters, MaterialLocationFilter} from '../../../models/material.model.ts';
 import type {Room} from '../../../models/room.model.ts';
+import type {SelectOption} from '../../../shared/composables/use-listbox.ts';
+import AppSelect from '../../../shared/components/app-select.vue';
 
 //------------------ PROPS / EMITS ---------------------------
 const props = defineProps<{
@@ -21,47 +23,54 @@ const props = defineProps<{
 /** Critères de recherche, partagés avec material-filters.vue. */
 const filters = defineModel<MaterialFilters>('filters', {required: true});
 
+//------------------ DATAS -----------------------------------
+/** RG-07 : affecté = dans une salle, en stock = sans salle. */
+const locationOptions: SelectOption<MaterialLocationFilter>[] = [
+  {value: 'all', label: 'Partout'},
+  {value: 'assigned', label: 'Affecté à une salle'},
+  {value: 'stock', label: 'En stock'},
+];
+
 //------------------ COMPUTED --------------------------------
-/** Salles du bâtiment sélectionné, ou toutes si aucun bâtiment n'est choisi. */
-const roomOptions = computed(() => {
+const buildingOptions = computed<SelectOption<number | 'all'>[]>(() => [
+  {value: 'all', label: 'Tous les bâtiments'},
+  ...props.buildings.map(building => ({value: building.id, label: `Bâtiment ${building.number}`})),
+]);
+
+/** Salles du bâtiment sélectionné, ou toutes (groupées par bâtiment) si aucun bâtiment n'est choisi. */
+const roomOptions = computed<SelectOption<number | 'all'>[]>(() => {
   const buildingId = filters.value.buildingId;
-  return buildingId === 'all' ? props.rooms : props.rooms.filter(room => room.building.id === buildingId);
+  const rooms = buildingId === 'all' ? props.rooms : props.rooms.filter(room => room.building.id === buildingId);
+  return [
+    {value: 'all', label: 'Toutes les salles'},
+    ...rooms.map(room => ({value: room.id, label: `Salle ${room.number}`, group: `Bâtiment ${room.building.number}`})),
+  ];
 });
 </script>
 
 <template>
   <div class="field">
     <label for="material-building-filter">Bâtiment</label>
-    <select id="material-building-filter" v-model="filters.buildingId">
-      <option value="all">Tous les bâtiments</option>
-      <option
-          v-for="building in buildings"
-          :key="building.id"
-          :value="building.id"
-      >
-        Bâtiment {{ building.number }}
-      </option>
-    </select>
+    <AppSelect
+        id="material-building-filter"
+        v-model="filters.buildingId"
+        :options="buildingOptions"
+    />
   </div>
   <div class="field">
     <label for="material-room-filter">Salle</label>
-    <select id="material-room-filter" v-model="filters.roomId">
-      <option value="all">Toutes les salles</option>
-      <option
-          v-for="room in roomOptions"
-          :key="room.id"
-          :value="room.id"
-      >
-        Salle {{ room.number }} (bât. {{ room.building.number }})
-      </option>
-    </select>
+    <AppSelect
+        id="material-room-filter"
+        v-model="filters.roomId"
+        :options="roomOptions"
+    />
   </div>
   <div class="field">
     <label for="material-location-filter">Emplacement</label>
-    <select id="material-location-filter" v-model="filters.location">
-      <option value="all">Partout</option>
-      <option value="assigned">Affecté à une salle</option>
-      <option value="stock">En stock</option>
-    </select>
+    <AppSelect
+        id="material-location-filter"
+        v-model="filters.location"
+        :options="locationOptions"
+    />
   </div>
 </template>

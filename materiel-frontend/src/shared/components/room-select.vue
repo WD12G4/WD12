@@ -1,15 +1,17 @@
 <script setup lang="ts">
 /**
- * Liste déroulante de salles, regroupées par bâtiment.
+ * Liste déroulante de salles, regroupées par bâtiment (intitulés de groupe dans la liste).
  * La valeur liée (v-model) est l'identifiant de la salle, ou null pour l'option vide.
  * Utilisé par : formulaire et affectation du matériel, formulaire de remontée.
  */
 import {computed} from 'vue';
 import type {Room} from '../../models/room.model.ts';
+import type {SelectOption} from '../composables/use-listbox.ts';
+import AppSelect from './app-select.vue';
 
 //------------------ PROPS / EMITS ---------------------------
 const props = defineProps<{
-  /** id de la balise <select>, relié au <label for> du parent. */
+  /** id de la liste, relié au <label for> du parent. */
   id: string;
   /** Salles proposées. */
   rooms: Room[];
@@ -23,37 +25,20 @@ const props = defineProps<{
 const roomId = defineModel<number | null>({required: true});
 
 //------------------ COMPUTED --------------------------------
-/** Salles regroupées par numéro de bâtiment, pour des <optgroup> triés. */
-const groups = computed(() => {
-  const byBuilding = new Map<number, Room[]>();
-  for (const room of props.rooms) {
-    const list = byBuilding.get(room.building.number) ?? [];
-    list.push(room);
-    byBuilding.set(room.building.number, list);
-  }
-  return [...byBuilding.entries()].sort(([a], [b]) => a - b);
-});
+/** Option vide, puis les salles triées par bâtiment et par numéro, groupées par bâtiment. */
+const options = computed<SelectOption<number | null>[]>(() => [
+  {value: null, label: props.emptyLabel},
+  ...[...props.rooms]
+      .sort((a, b) => a.building.number - b.building.number || a.number - b.number)
+      .map(room => ({value: room.id, label: `Salle ${room.number}`, group: `Bâtiment ${room.building.number}`})),
+]);
 </script>
 
 <template>
-  <select
+  <AppSelect
       :id="id"
       v-model="roomId"
+      :options="options"
       :disabled="disabled"
-  >
-    <option :value="null">{{ emptyLabel }}</option>
-    <optgroup
-        v-for="[buildingNumber, buildingRooms] in groups"
-        :key="buildingNumber"
-        :label="`Bâtiment ${buildingNumber}`"
-    >
-      <option
-          v-for="room in buildingRooms"
-          :key="room.id"
-          :value="room.id"
-      >
-        Salle {{ room.number }}
-      </option>
-    </optgroup>
-  </select>
+  />
 </template>
