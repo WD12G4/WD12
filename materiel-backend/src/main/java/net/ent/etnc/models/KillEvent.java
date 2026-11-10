@@ -51,6 +51,10 @@ public class KillEvent extends AbstractPersistableWithIdSetter<Long> {
     @Column(name = "result", nullable = false)
     private Boolean result = true;
 
+    public Boolean isResult() {
+        return result;
+    }
+
     @Override
     public String toString() {
         return "KillEvent{" +

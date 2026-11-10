@@ -1,7 +1,7 @@
 /**
- * Apparence des applications dans la supervision : icône et couleur façon icônes iOS, selon le nom.
- * Une application inconnue est affichée par son initiale, sur fond gris.
- * TODO(question): les vrais noms viendront de l'agent du poste (ex. « chrome.exe ») : table à adapter.
+ * Apparence des applications dans la supervision : icône et couleur façon icônes iOS, d'après le
+ * nom du processus remonté par l'agent (« chrome.exe », « code »…). Une application inconnue est
+ * affichée par son initiale, sur fond gris.
  * Utilisé par : app-glyph.vue
  */
 import type {IconName} from '../../../shared/components/app-icon.vue';
@@ -17,23 +17,25 @@ interface AppStyle {
     letter: string;
 }
 
-/** Applications connues. « Masterisation » sert au journal (poste réinstallé, RG-28). */
-const knownApps: Record<string, { icon: IconName; tone: AppTone }> = {
-    'Navigateur web': {icon: 'globe', tone: 'blue'},
-    'Environnement de développement': {icon: 'code', tone: 'indigo'},
-    'Terminal': {icon: 'terminal', tone: 'graphite'},
-    'Traitement de texte': {icon: 'document', tone: 'sky'},
-    'Tableur': {icon: 'table', tone: 'teal'},
-    'Masterisation': {icon: 'refresh', tone: 'neutral'},
-};
+/** Familles d'applications reconnues, par nom de processus (sans « .exe », en minuscules). */
+const families: { icon: IconName; tone: AppTone; names: string[] }[] = [
+    {icon: 'globe', tone: 'blue', names: ['chrome', 'chromium', 'firefox', 'msedge', 'brave', 'opera', 'safari']},
+    {icon: 'code', tone: 'indigo', names: ['code', 'idea64', 'idea', 'pycharm64', 'pycharm', 'eclipse', 'devenv', 'rider64', 'studio64', 'netbeans64']},
+    {icon: 'terminal', tone: 'graphite', names: ['cmd', 'powershell', 'pwsh', 'windowsterminal', 'bash', 'zsh', 'sh', 'gnome-terminal-server', 'konsole', 'xterm']},
+    {icon: 'document', tone: 'sky', names: ['winword', 'soffice', 'soffice.bin', 'notepad', 'notepad++', 'gedit', 'acrord32']},
+    {icon: 'table', tone: 'teal', names: ['excel']},
+    // Journal : poste réinstallé (RG-28)
+    {icon: 'refresh', tone: 'neutral', names: ['masterisation']},
+];
 
 /**
- * Icône et couleur d'une application, d'après son nom.
- * @param name nom affiché de l'application
+ * Icône et couleur d'une application, d'après le nom de son processus.
+ * @param name nom du processus (ou « Masterisation » pour le journal)
  */
 export function appStyle(name: string): AppStyle {
-    const known = knownApps[name];
-    return {icon: known?.icon ?? null, tone: known?.tone ?? 'neutral', letter: name.charAt(0).toUpperCase()};
+    const key = name.trim().toLowerCase().replace(/\.exe$/, '');
+    const family = families.find(candidate => candidate.names.includes(key));
+    return {icon: family?.icon ?? null, tone: family?.tone ?? 'neutral', letter: name.trim().charAt(0).toUpperCase()};
 }
 
 export type {AppStyle};

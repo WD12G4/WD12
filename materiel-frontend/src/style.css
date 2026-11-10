@@ -481,6 +481,7 @@ button.delete-button:hover { color: var(--danger); background: var(--danger-bord
 .detail-grid > div { padding: 1rem 1.15rem; border-radius: var(--radius); }
 dt { color: var(--muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.45rem; }
 dd { margin: 0; font-weight: 650; color: var(--title); }
+.detail-grid > .full-width { grid-column: 1 / -1; }
 
 /* Carte trop étroite pour le tableau : chaque ligne devient un bloc empilé. */
 @container (max-width: 720px) {
@@ -727,7 +728,7 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 .station-tile.selected { border-color: var(--accent); box-shadow: var(--glass-shine), 0 0 0 3px var(--accent-soft-hover); }
 .station-tile.offline { opacity: 0.62; }
 .station-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-.station-name { margin: 0; font-size: 1rem; }
+.station-name { margin: 0; font-size: 1rem; min-width: 0; overflow-wrap: anywhere; }
 /* Le nom du poste est le bouton d'ouverture du détail ; sa zone cliquable couvre toute la tuile. */
 .station-open {
   padding: 0; border: none; border-radius: 0; background: none; box-shadow: none;
@@ -742,11 +743,6 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 .station-status::before { content: ''; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px var(--success-soft); }
 .station-tile.offline .station-status::before { background: var(--muted); box-shadow: none; }
 .station-tile.reimaging .station-status::before { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); animation: pulse 1.2s ease-in-out infinite; }
-.station-trainee { display: flex; align-items: center; gap: 0.5rem; margin: 0; color: var(--text); font-size: 0.88rem; font-weight: 500; }
-.trainee-avatar {
-  display: grid; place-items: center; flex-shrink: 0; width: 1.75rem; height: 1.75rem; border-radius: 50%;
-  background: var(--avatar-bg); color: var(--on-avatar); font-size: 0.64rem; font-weight: 700;
-}
 .station-count { margin: auto 0 0; color: var(--muted); font-size: 0.8rem; line-height: 1.3; }
 
 /* Applications ouvertes, façon Dock : un clic sur une icône ferme l'application (« × » au survol). */
@@ -757,6 +753,11 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
   box-shadow: var(--app-shine), 0 2px 6px var(--shadow-strong);
 }
 .app-glyph .icon { width: 1.3rem; height: 1.3rem; }
+/* « +N » : applications qui ne tiennent pas dans la tuile (détail dans le panneau). */
+.app-more {
+  display: inline-grid; place-items: center; min-width: 2.5rem; height: 2.5rem; padding: 0 0.5rem; border-radius: 0.72rem;
+  background: var(--track); color: var(--muted); font-size: 0.82rem; font-weight: 700;
+}
 .app-glyph.tone-blue { background: var(--app-blue); }
 .app-glyph.tone-indigo { background: var(--app-indigo); }
 .app-glyph.tone-graphite { background: var(--app-graphite); }

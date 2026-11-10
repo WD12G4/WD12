@@ -187,6 +187,19 @@ class KillEventServiceImplTest {
 
             verify(repository, never()).saveAndFlush(any());
         }
+
+        @Test
+        @DisplayName("Doit échouer si le résultat de l'arrêt est null")
+        void create_ThrowsException_WhenResultNull() {
+            when(materialRepository.findById(1L)).thenReturn(Optional.of(sampleUc));
+            sampleKillEvent.setResult(null);
+
+            assertThatThrownBy(() -> killEventService.create(sampleKillEvent))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("résultat de l'arrêt doit être renseigné");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
     }
 
     @Nested

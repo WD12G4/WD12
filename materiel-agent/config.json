@@ -1,0 +1,5 @@
+{
+  "server_url": "ws://172.16.131.130:8080/ws/agent",
+  "serial_number": "000000001415",
+  "reconnect_delay_sec": 5
+}

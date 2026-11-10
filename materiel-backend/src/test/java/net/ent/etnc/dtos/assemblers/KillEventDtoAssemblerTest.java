@@ -117,6 +117,7 @@ class KillEventDtoAssemblerTest {
             assertThat(entity).isNotNull();
             assertThat(entity.getProcessName()).isEqualTo("malicious.exe");
             assertThat(entity.getKillDateTime()).isEqualTo(LocalDateTime.of(2026, 1, 15, 10, 30));
+            assertThat(entity.getResult()).isTrue();
             assertThat(entity.getUc()).isNotNull();
             assertThat(entity.getUc().getId()).isEqualTo(1L);
             assertThat(entity.getResult()).isTrue();

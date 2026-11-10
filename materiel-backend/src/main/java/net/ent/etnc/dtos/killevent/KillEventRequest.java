@@ -22,6 +22,14 @@ public record KillEventRequest(
         @PastOrPresent(message = "La date/heure d'arrêt d'un processus ne peut pas être après le jour/l'heure actuelle.")
         LocalDateTime killDateTime,
 
-        boolean result
+        Boolean result
 ) {
+    public KillEventRequest(String processName, Long ucId, LocalDateTime killDateTime) {
+        this(processName, ucId, killDateTime, true);
+    }
+
+    @Override
+    public Boolean result() {
+        return result != null ? result : true;
+    }
 }

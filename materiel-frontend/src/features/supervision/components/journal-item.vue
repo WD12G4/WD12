@@ -18,9 +18,17 @@ const props = defineProps<{
 //------------------ COMPUTED --------------------------------
 /** Application arrêtée, ou « Masterisation » (icône dédiée dans use-app-style.ts). */
 const title = computed(() => props.event.processName ?? 'Masterisation');
-const detail = computed(() => `${props.event.kind === 'kill' ? 'Application arrêtée' : 'Lancée'} sur ${props.event.workstationName}`);
+/** Action et poste : « Application arrêtée sur … », « Arrêt refusé sur … », « Lancée sur … ». */
+const detail = computed(() => `${actionLabel(props.event)} sur ${props.event.workstationName}`);
 const time = computed(() => formatTime(props.event.at));
 const isoTime = computed(() => props.event.at.toISOString());
+
+//------------------ FUNCTIONS -------------------------------
+/** Nature de l'action : arrêt réussi ou refusé par l'agent, ou masterisation lancée. */
+function actionLabel(event: SupervisionEvent): string {
+  if (event.kind === 'reimage') return 'Lancée';
+  return event.succeeded ? 'Application arrêtée' : 'Arrêt refusé';
+}
 </script>
 
 <template>
@@ -29,5 +37,6 @@ const isoTime = computed(() => props.event.at.toISOString());
     <strong>{{ title }}</strong>
     <span class="muted">{{ detail }}</span>
   </span>
+  <span v-if="!event.succeeded" class="badge expiring">Échec</span>
   <time class="journal-time" :datetime="isoTime">{{ time }}</time>
 </template>

@@ -23,3 +23,7 @@ out/
 # System
 .DS_Store
 Thumbs.db
+
+# Go binaries
+agent-supervision
+agent-supervision.exe

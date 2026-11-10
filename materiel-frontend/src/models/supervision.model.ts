@@ -1,8 +1,6 @@
 /**
- * Modèle de la supervision des postes d'une salle.
- * Un poste est une UC de la salle (matériel réel). Ses applications ouvertes, son état et la
- * masterisation restent simulés en attendant l'agent de supervision (branche feature/supervision-agent) ;
- * les arrêts d'applications sont enregistrés par le backend (KillEvent).
+ * Modèle de la supervision des postes d'une salle (API /api/v1/supervision et agent de supervision).
+ * Un poste est une UC de la salle ; il est en ligne quand son agent est connecté au backend.
  * RG : RG-25 (processus lancés), RG-26 (arrêt), RG-28 (masterisation), RG-29 (identification), RG-30
  */
 
@@ -15,37 +13,31 @@ const workstationStatusLabels = {
 } as const;
 
 //----------------- TYPES --------------------------------
-/**
- * État d'un poste : allumé et joignable, éteint ou injoignable, en cours de masterisation.
- * TODO(question): comment l'agent du poste signale-t-il son état ? À définir avec la démonstration sur VM.
- */
+/** État d'un poste : agent connecté, agent déconnecté (poste éteint), masterisation en cours (simulée). */
 type WorkstationStatus = keyof typeof workstationStatusLabels;
 
-/** Poste de travail d'une salle. */
+/**
+ * Poste de travail d'une salle.
+ * TODO(question): l'agent n'identifie pas le stagiaire installé au poste (RG-30). À proposer au client.
+ */
 interface Workstation {
-    /** Identifiant de l'UC (matériel), comme dans KillEvent et l'agent de supervision. */
+    /** Identifiant de l'UC (matériel), comme dans KillEvent. */
     id: number;
-    roomId: number;
-    /** Numéro de série de l'UC (ex. « UC-DELL-001 »). */
+    roomId: number | null;
+    /** Nom donné par le backend : « nom d'hôte (n° de série) », ou « Poste N (n° de série) » sans agent. */
     name: string;
-    /**
-     * Libellé du stagiaire installé au poste (rôle « stagiaire » sans connexion, RG-30).
-     * TODO(question): nom saisi, numéro, ou utilisateur de session récupéré ? À proposer au client.
-     */
-    traineeLabel: string;
-    /**
-     * Adresse MAC, identifiant du poste (RG-29).
-     * TODO(question): MAC ou IP fixe ? Le client indique que les IP des salles sont fixes.
-     */
-    macAddress: string;
+    /** Nom d'hôte remonté par l'agent, ou null s'il n'est pas connecté. */
+    hostname: string | null;
+    /** Adresse MAC remontée par l'agent (RG-29), ou null si elle est inconnue. */
+    macAddress: string | null;
     status: WorkstationStatus;
 }
 
-/** Processus lancé par l'utilisateur du poste (les processus système ne sont pas listés, RG-25). */
+/** Processus lancé par l'utilisateur du poste ; l'agent écarte les processus système (RG-25). */
 interface ProcessInfo {
     pid: number;
     workstationId: number;
-    /** Nom affiché (ex. « Navigateur web », « Environnement de développement »). */
+    /** Nom du processus remonté par l'agent (ex. « chrome.exe », « code »). */
     name: string;
     startedAt: Date;
 }
@@ -59,8 +51,10 @@ interface SupervisionEvent {
     workstationName: string;
     /** Application arrêtée (RG-26), ou poste masterisé (RG-28). */
     kind: 'kill' | 'reimage';
-    /** Nom de l'application arrêtée ; null pour une masterisation. */
+    /** Nom de l'application visée ; null pour une masterisation. */
     processName: string | null;
+    /** Faux si l'agent n'a pas pu arrêter l'application (processus protégé, déjà fermé…). */
+    succeeded: boolean;
     at: Date;
 }
 

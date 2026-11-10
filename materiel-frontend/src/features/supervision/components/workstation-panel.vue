@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Détail d'un poste dans le panneau latéral : stagiaire, état, adresse MAC, applications ouvertes
+ * Détail d'un poste dans le panneau latéral : état, nom d'hôte, adresse MAC, applications ouvertes
  * (depuis quand, bouton Arrêter) et, pour l'administrateur, la masterisation, à part en bas.
  * Composant de présentation : émet des événements.
  * Utilisé par : supervision-view.vue
@@ -9,7 +9,7 @@
 import {computed} from 'vue';
 import type {ProcessInfo} from '../../../models/supervision.model.ts';
 import type {WorkstationView} from '../composables/use-supervision.ts';
-import {statusLabel, traineeInitials} from '../composables/use-station-labels.ts';
+import {openAppsLabel, statusLabel} from '../composables/use-station-labels.ts';
 import SidePanel from '../../../shared/components/side-panel.vue';
 import ProcessList from './process-list.vue';
 
@@ -32,10 +32,11 @@ const emit = defineEmits<{
 //------------------ COMPUTED --------------------------------
 const panelKey = computed(() => props.view?.workstation.id ?? null);
 const title = computed(() => props.view?.workstation.name ?? '');
-const initials = computed(() => traineeInitials(props.view?.workstation.traineeLabel ?? ''));
+const hostname = computed(() => props.view?.workstation.hostname ?? 'Inconnu (agent non connecté)');
+const macAddress = computed(() => props.view?.workstation.macAddress ?? '—');
 const status = computed(() => (props.view ? statusLabel(props.view.workstation) : ''));
 const isOnline = computed(() => props.view?.workstation.status === 'online');
-const emptyLabel = computed(() => (isOnline.value ? 'Aucune application ouverte.' : `Poste indisponible (${status.value.toLowerCase()}).`));
+const emptyLabel = computed(() => (props.view ? `${openAppsLabel(props.view.workstation, 0)}.` : ''));
 /** Poste à masteriser (administrateur seulement), ou null pour masquer le bouton. */
 const reimageTarget = computed(() => (props.canReimage ? props.view : null));
 /** Pas de masterisation sur un poste éteint ou déjà en cours de masterisation. */
@@ -50,13 +51,10 @@ const reimageDisabled = computed(() => props.busy || !isOnline.value);
       @close="emit('close')"
   >
     <template v-if="view">
-      <p class="station-trainee">
-        <span class="trainee-avatar" aria-hidden="true">{{ initials }}</span>
-        {{ view.workstation.traineeLabel }}
-      </p>
       <dl class="detail-grid">
         <div><dt>État</dt><dd>{{ status }}</dd></div>
-        <div><dt>Adresse MAC</dt><dd class="code">{{ view.workstation.macAddress }}</dd></div>
+        <div><dt>Adresse MAC</dt><dd class="code">{{ macAddress }}</dd></div>
+        <div class="full-width"><dt>Nom d'hôte</dt><dd class="code">{{ hostname }}</dd></div>
       </dl>
       <section class="panel-section">
         <h3 class="eyebrow">Applications ouvertes</h3>

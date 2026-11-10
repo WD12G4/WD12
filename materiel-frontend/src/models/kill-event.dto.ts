@@ -15,17 +15,8 @@ export interface KillEventDto {
     /** UC sur laquelle l'application a été arrêtée, avec sa salle. */
     uc: MaterialDto;
     killDateTime: string;
-    /** Vrai si l'arrêt a réussi. */
-    result: boolean;
-}
-
-/** Corps attendu par POST /api/v1/killevents. */
-export interface KillEventRequestDto {
-    processName: string;
-    ucId: number;
-    /** Date-heure de l'arrêt, ni future ni absente (le backend le vérifie). */
-    killDateTime: string;
-    result: boolean;
+    /** Vrai si l'arrêt a réussi ; null pour un arrêt enregistré avant ce champ (réussi). */
+    result: boolean | null;
 }
 
 /**
@@ -39,6 +30,7 @@ export function killEventFromDto(dto: KillEventDto): SupervisionEvent {
         workstationName: dto.uc.serialNumber,
         kind: 'kill',
         processName: dto.processName,
+        succeeded: dto.result ?? true,
         at: parseApiDateTime(dto.killDateTime),
     };
 }
