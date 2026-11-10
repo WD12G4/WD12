@@ -1,10 +1,10 @@
 /**
- * Nombre de remontées non lues, chargé à la connexion d'un gestionnaire (RG-23 : pop-up à la connexion,
- * pas de mail). Le formateur n'est pas concerné : il ne consulte pas les remontées.
+ * Nombre de remontées à traiter (non traitées), chargé à la connexion d'un gestionnaire (RG-23 : pop-up
+ * à la connexion, pas de mail). Le formateur n'est pas concerné : il ne consulte pas les remontées.
  * Utilisé par : App.vue
  */
 import {computed, ref, watch} from 'vue';
-import {reportsServices} from '../../../services/reports.services.mock.ts';
+import {reportsServices} from '../../../services/reports.services.ts';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
 
 /**
@@ -13,7 +13,7 @@ import {useAuth} from '../../../shared/composables/use-auth.ts';
  * @param isManager vrai si l'utilisateur connecté est gestionnaire ou administrateur
  */
 async function fetchUnreadCount(isManager: boolean): Promise<number> {
-    return isManager ? reportsServices.countUnread().catch(() => 0) : 0;
+    return isManager ? reportsServices.countUnhandled().catch(() => 0) : 0;
 }
 
 /**

@@ -9,6 +9,7 @@
 import {computed} from 'vue';
 import {problemTypeLabels, type Report} from '../../../models/report.model.ts';
 import {formatDateTime} from '../../../shared/composables/use-dates.ts';
+import {locationLabel} from '../../../shared/composables/use-room-label.ts';
 
 //------------------ PROPS / EMITS ---------------------------
 const props = defineProps<{
@@ -18,8 +19,10 @@ const props = defineProps<{
 
 //------------------ COMPUTED --------------------------------
 const createdAt = computed(() => formatDateTime(props.report.createdAt));
-const material = computed(() => props.report.materialSerialNumber ?? 'Aucun matériel précis');
+const location = computed(() => locationLabel(props.report.material.room));
+const problem = computed(() => (props.report.problemType ? problemTypeLabels[props.report.problemType] : 'Non précisé'));
 const description = computed(() => props.report.description || 'Aucune description.');
+const status = computed(() => (props.report.handledAt ? `Traitée le ${formatDateTime(props.report.handledAt)}` : 'À traiter'));
 </script>
 
 <template>
@@ -36,15 +39,19 @@ const description = computed(() => props.report.description || 'Aucune descripti
       </div>
       <div>
         <dt>Salle</dt>
-        <dd>{{ report.roomLabel }}</dd>
+        <dd>{{ location }}</dd>
       </div>
       <div>
         <dt>Matériel</dt>
-        <dd>{{ material }}</dd>
+        <dd class="code">{{ report.material.serialNumber }}</dd>
       </div>
       <div>
         <dt>Problème</dt>
-        <dd>{{ problemTypeLabels[report.problemType] }}</dd>
+        <dd>{{ problem }}</dd>
+      </div>
+      <div>
+        <dt>Suivi</dt>
+        <dd>{{ status }}</dd>
       </div>
     </dl>
     <h3>Description</h3>

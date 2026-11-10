@@ -1,12 +1,14 @@
 /**
- * Données de la supervision d'une salle : postes, applications ouvertes (regroupées par poste) et
- * journal des actions. Après une masterisation, les postes sont rechargés quand elle doit être finie.
+ * Données de la supervision d'une salle : postes (UC réelles), applications ouvertes (simulées,
+ * regroupées par poste) et journal : arrêts enregistrés par le backend (KillEvent) et masterisations
+ * simulées. Après une masterisation, les postes sont rechargés quand elle doit être finie.
  * Utilisé par : supervision-view.vue
  * RG : RG-25, RG-26, RG-28 ; journal demandé en entretien 4
  */
 import {computed, onScopeDispose, ref, type Ref} from 'vue';
 import type {ProcessInfo, SupervisionEvent, Workstation} from '../../../models/supervision.model.ts';
 import {REIMAGE_DURATION_MS, supervisionServices} from '../../../services/supervision.services.mock.ts';
+import {killEventsServices} from '../../../services/kill-events.services.ts';
 
 /** Poste avec ses applications ouvertes, prêt à afficher. */
 interface WorkstationView {
@@ -26,13 +28,17 @@ interface SupervisionState {
 }
 
 //------------------ FUNCTIONS -------------------------------
+/** Journal d'une salle : arrêts (backend) et masterisations (simulées), du plus récent au plus ancien. */
+async function loadJournal(roomId: number | null): Promise<SupervisionEvent[]> {
+    if (roomId === null) return [];
+    const kills = await killEventsServices.findByRoom(roomId);
+    return [...kills, ...supervisionServices.findReimageEvents(roomId)].sort((a, b) => b.at.getTime() - a.at.getTime());
+}
+
 /** Recharge ce qui change après une action : applications ouvertes et journal. */
 async function reloadActivity(state: SupervisionState): Promise<void> {
     const ids = state.workstations.value.map(workstation => workstation.id);
-    const [processes, events] = await Promise.all([
-        supervisionServices.findProcesses(ids),
-        state.roomId === null ? Promise.resolve([]) : supervisionServices.findEvents(state.roomId),
-    ]);
+    const [processes, events] = await Promise.all([supervisionServices.findProcesses(ids), loadJournal(state.roomId)]);
     state.processes.value = processes;
     state.events.value = events;
 }
@@ -52,14 +58,19 @@ function toViews(state: SupervisionState): WorkstationView[] {
     }));
 }
 
-/** Arrête des applications (une seule, ou la même sur plusieurs postes), puis recharge (RG-26). */
+/**
+ * Arrête des applications (une seule, ou la même sur plusieurs postes), enregistre chaque arrêt
+ * (KillEvent), puis recharge (RG-26). Le journal est rechargé même si un enregistrement échoue.
+ */
 async function killAll(state: SupervisionState, processes: ProcessInfo[]): Promise<void> {
-    const workstations = new Map(state.workstations.value.map(workstation => [workstation.id, workstation]));
-    await Promise.all(processes.map(process => {
-        const workstation = workstations.get(process.workstationId);
-        return workstation ? supervisionServices.killProcess(process, workstation) : Promise.resolve();
-    }));
-    await reloadActivity(state);
+    try {
+        await Promise.all(processes.map(async process => {
+            await supervisionServices.killProcess(process);
+            await killEventsServices.create(process.name, process.workstationId);
+        }));
+    } finally {
+        await reloadActivity(state);
+    }
 }
 
 /**

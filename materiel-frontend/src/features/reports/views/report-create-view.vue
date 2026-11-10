@@ -1,20 +1,18 @@
 <script setup lang="ts">
 /**
- * Signalement d'un problème sur un matériel ou une salle, accessible à tous les rôles.
- * MAQUETTE : la remontée est enregistrée par un service simulé (pas d'API backend).
+ * Signalement d'un problème sur un matériel, accessible à tous les rôles.
  * RG : RG-21 (contenu), RG-22 (document créé à la remontée), RG-23 (le gestionnaire est notifié)
  */
 import {onMounted, ref} from 'vue';
 import type {Material} from '../../../models/material.model.ts';
 import type {ReportInput} from '../../../models/report.model.ts';
 import {materialsServices} from '../../../services/materials.services.ts';
-import {reportsServices} from '../../../services/reports.services.mock.ts';
+import {reportsServices} from '../../../services/reports.services.ts';
 import {replaceWith} from '../../../router/navigation.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {useFlashMessage} from '../../../shared/composables/use-flash-message.ts';
 import {useLocations} from '../../../shared/composables/use-locations.ts';
 import Card from '../../../shared/components/card.vue';
-import DemoBanner from '../../../shared/components/demo-banner.vue';
 import LoadState from '../../../shared/components/load-state.vue';
 import ReportForm from '../components/report-form.vue';
 
@@ -50,7 +48,6 @@ onMounted(load);
 <template>
   <Card title="Signaler un problème">
     <template #header>
-      <DemoBanner />
       <p>Choisissez la salle, le matériel concerné et le type de problème.</p>
     </template>
     <template #body>

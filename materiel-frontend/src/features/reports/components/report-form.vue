@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Formulaire de remontée : salle, matériel et type de problème en listes déroulantes,
- * description courte facultative (RG-21 : « pas besoin d'un gros formulaire »).
+ * description courte facultative (RG-21 : « pas besoin d'un gros formulaire »). Le matériel est
+ * obligatoire (le backend rattache chaque remontée à un matériel) ; la salle sert à le trouver.
  * Composant de présentation : il émet la saisie, la vue appelle le service.
  * Utilisé par : report-create-view.vue
  */
@@ -45,12 +46,12 @@ const draft = ref<ReportInput>({
 const problemTypeOptions: SelectOption<ProblemType>[] = problemTypes.map(type => ({value: type, label: problemTypeLabels[type]}));
 
 //------------------ COMPUTED --------------------------------
-const isValid = computed(() => draft.value.roomId !== null);
+const isValid = computed(() => draft.value.materialId !== null);
 /** Le bouton d'envoi est actif si la saisie est valide et qu'aucun envoi n'est en cours. */
 const canSubmit = computed(() => isValid.value && !props.submitting);
 
 //------------------ FUNCTIONS -------------------------------
-/** Émet la saisie si une salle est choisie (seul champ obligatoire). */
+/** Émet la saisie si un matériel est choisi (seul champ obligatoire). */
 function submit(): void {
   if (!isValid.value) return;
   emit('submit', {...draft.value});

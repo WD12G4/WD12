@@ -19,7 +19,7 @@ const props = defineProps<{
   roomId: number | null;
 }>();
 
-/** Identifiant du matériel choisi, ou null si le problème concerne la salle en général. */
+/** Identifiant du matériel choisi, ou null tant qu'aucun n'est choisi. */
 const materialId = defineModel<number | null>({required: true});
 
 //------------------ COMPUTED --------------------------------
@@ -27,11 +27,12 @@ const materialId = defineModel<number | null>({required: true});
 const noRoom = computed(() => props.roomId === null);
 const roomMaterials = computed(() => props.materials.filter(material => material.room?.id === props.roomId));
 
-/** Option « aucun matériel précis », puis le matériel de la salle. */
-const options = computed<SelectOption<number | null>[]>(() => [
-  {value: null, label: 'Aucun matériel précis'},
-  ...roomMaterials.value.map(material => ({value: material.id, label: optionLabel(material)})),
-]);
+/** Le matériel de la salle (le backend rattache chaque remontée à un matériel). */
+const options = computed<SelectOption<number | null>[]>(() => roomMaterials.value.map(material => ({
+  value: material.id, label: optionLabel(material),
+})));
+/** Texte affiché tant qu'aucun matériel n'est choisi. */
+const placeholder = computed(() => (noRoom.value ? 'Choisissez d\'abord une salle' : 'Choisir le matériel'));
 
 //------------------ FUNCTIONS -------------------------------
 /** Libellé d'une option : « Écran – SN-0042 ». */
@@ -45,6 +46,7 @@ function optionLabel(material: Material): string {
       :id="id"
       v-model="materialId"
       :options="options"
+      :placeholder="placeholder"
       :disabled="noRoom"
   />
 </template>

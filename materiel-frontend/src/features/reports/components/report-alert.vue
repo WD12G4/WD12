@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Pop-up affichée à la connexion du gestionnaire quand des remontées ne sont pas lues (RG-23).
+ * Pop-up affichée à la connexion du gestionnaire quand des remontées sont à traiter (RG-23).
  * Composant de présentation : le compteur est calculé par use-unread-reports.ts.
  * Utilisé par : App.vue
  */
@@ -8,7 +8,7 @@ import Link from '../../../shared/components/Link.vue';
 
 //------------------ PROPS / EMITS ---------------------------
 defineProps<{
-  /** Nombre de remontées non lues. */
+  /** Nombre de remontées à traiter. */
   count: number;
 }>();
 
@@ -59,8 +59,9 @@ const emit = defineEmits<{
   z-index: 10;
 }
 
+/* Largeur explicite : les cartes ont container-type (style.css), sans largeur elles se réduiraient à rien. */
 .dialog {
-  max-width: 460px;
+  width: min(460px, 100%);
   padding: 1.5rem;
   border-radius: 1.25rem;
 }

@@ -1,23 +1,26 @@
-// MAQUETTE : aucun endpoint backend. À remplacer par supervision.services.ts quand l'API existera.
+// MAQUETTE PARTIELLE : à remplacer par supervision.services.ts quand l'agent de supervision sera fusionné
+// (branche feature/supervision-agent : /api/v1/supervision).
 /**
- * Service simulé de la supervision : postes d'une salle, applications lancées, arrêt, masterisation
- * et journal des actions. Tout est généré en mémoire, de façon identique à chaque ouverture d'une salle.
+ * Supervision des postes : les postes sont les vraies UC de la salle (API /materials) ; leurs
+ * applications ouvertes, leur état et la masterisation sont simulés en mémoire. Les arrêts sont
+ * enregistrés pour de vrai par kill-events.services.ts ; les masterisations, simulées, gardent un
+ * journal local (perdu au rechargement de la page).
  * Utilisé par : features/supervision
- * RG : RG-25, RG-26, RG-28 ; journal demandé en entretien 4 (entité KillEvent côté backend, sans route)
+ * RG : RG-25, RG-28
  */
+import type {Material} from '../models/material.model.ts';
 import type {ProcessInfo, SupervisionEvent, Workstation} from '../models/supervision.model.ts';
+import {materialsServices} from './materials.services.ts';
 
-/** Latence simulée, pour que les états de chargement soient visibles. */
+/** Latence simulée des parties simulées, pour que les états de chargement soient visibles. */
 const MOCK_LATENCY_MS = 300;
-/** Nombre de postes générés par salle. */
-const WORKSTATIONS_PER_ROOM = 8;
 /** Durée simulée d'une masterisation. */
 export const REIMAGE_DURATION_MS = 8000;
 /** Applications simulées ; la dernière n'a pas d'icône dédiée (affichée par son initiale). */
 const demoApplications = [
     'Navigateur web', 'Environnement de développement', 'Terminal', 'Traitement de texte', 'Tableur', 'Lecteur vidéo',
 ];
-/** Nombre d'applications ouvertes sur chaque poste, selon son numéro. */
+/** Nombre d'applications ouvertes sur chaque poste, selon son rang dans la salle. */
 const openCounts = [2, 3, 1, 0, 4, 2, 3, 1];
 
 //------------------ DATAS -----------------------------------
@@ -25,10 +28,9 @@ const openCounts = [2, 3, 1, 0, 4, 2, 3, 1];
 const processesByWorkstation = new Map<number, ProcessInfo[]>();
 /** Fin de masterisation par identifiant de poste (horodatage en millisecondes). */
 const reimagingUntil = new Map<number, number>();
-/** Journal de toutes les salles, le plus récent en premier. */
-const events: SupervisionEvent[] = [];
-const seededRooms = new Set<number>();
-let nextEventId = 1;
+/** Masterisations simulées, la plus récente en premier. */
+const reimageEvents: SupervisionEvent[] = [];
+let nextReimageId = 1;
 
 //------------------ FUNCTIONS -------------------------------
 /** Attend la latence simulée. */
@@ -36,89 +38,65 @@ function delay(): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, MOCK_LATENCY_MS));
 }
 
-const minutesAgo = (minutes: number): Date => new Date(Date.now() - minutes * 60_000);
-/** Un poste par salle est éteint (le 6, le 7 ou le 8 selon la salle). */
-const isOffline = (roomId: number, index: number): boolean => index === 6 + (roomId % 3);
-
-/** Crée un poste de démonstration, avec son état du moment. */
-function buildWorkstation(roomId: number, index: number): Workstation {
-    const id = roomId * 100 + index;
-    const reimaging = (reimagingUntil.get(id) ?? 0) > Date.now();
+/** Poste correspondant à une UC ; le stagiaire et l'adresse MAC sont simulés. */
+function toWorkstation(uc: Material, roomId: number, index: number): Workstation {
+    const reimaging = (reimagingUntil.get(uc.id) ?? 0) > Date.now();
     return {
-        id, roomId,
-        name: `Poste ${index}`,
+        id: uc.id, roomId,
+        name: uc.serialNumber,
         traineeLabel: `Stagiaire ${index}`,
-        macAddress: `00:1A:2B:${String(roomId % 100).padStart(2, '0')}:00:${String(index).padStart(2, '0')}`,
-        status: isOffline(roomId, index) ? 'offline' : reimaging ? 'reimaging' : 'online',
+        macAddress: `00:1A:2B:${String(roomId % 100).padStart(2, '0')}:00:${String(uc.id % 100).padStart(2, '0')}`,
+        status: reimaging ? 'reimaging' : 'online',
     };
 }
 
-/** Crée les applications ouvertes d'un poste (aucune s'il est éteint). */
+/** Crée les applications ouvertes simulées d'un poste. */
 function buildProcesses(workstation: Workstation, index: number): ProcessInfo[] {
-    if (workstation.status === 'offline') return [];
     return Array.from({length: openCounts[(index - 1) % openCounts.length] ?? 0}, (_, offset) => ({
         pid: workstation.id * 10 + offset,
         workstationId: workstation.id,
         name: demoApplications[(index + offset) % demoApplications.length] ?? 'Application',
-        startedAt: minutesAgo(offset * 17 + index * 3 + 4),
+        startedAt: new Date(Date.now() - (offset * 17 + index * 3 + 4) * 60_000),
     }));
-}
-
-/** Ajoute un événement au journal. */
-function log(roomId: number, workstationName: string, processName: string | null, at = new Date()): void {
-    events.unshift({id: nextEventId++, roomId, workstationName, kind: processName ? 'kill' : 'reimage', processName, at});
-}
-
-/** Quelques événements passés, la première fois qu'une salle est ouverte. */
-function seedJournal(roomId: number): void {
-    if (seededRooms.has(roomId)) return;
-    seededRooms.add(roomId);
-    log(roomId, 'Poste 5', null, minutesAgo(26 * 60));
-    log(roomId, 'Poste 2', 'Lecteur vidéo', minutesAgo(125));
-    log(roomId, 'Poste 7', 'Navigateur web', minutesAgo(48));
-    events.sort((a, b) => b.at.getTime() - a.at.getTime());
 }
 
 export const supervisionServices = {
 
-    /** Postes d'une salle, avec leur état ; crée leurs applications au premier affichage. */
+    /** Postes d'une salle : ses UC non archivées (réelles), avec leurs applications simulées. */
     findWorkstations: async (roomId: number): Promise<Workstation[]> => {
-        await delay();
-        seedJournal(roomId);
-        return Array.from({length: WORKSTATIONS_PER_ROOM}, (_, i) => {
-            const workstation = buildWorkstation(roomId, i + 1);
-            if (!processesByWorkstation.has(workstation.id)) {
-                processesByWorkstation.set(workstation.id, buildProcesses(workstation, i + 1));
-            }
+        const materials = await materialsServices.findAll();
+        const ucs = materials.filter(material => material.materialType === 'UC' && !material.archived && material.room?.id === roomId);
+        return ucs.map((uc, i) => {
+            const workstation = toWorkstation(uc, roomId, i + 1);
+            if (!processesByWorkstation.has(uc.id)) processesByWorkstation.set(uc.id, buildProcesses(workstation, i + 1));
             return workstation;
         });
     },
 
-    /** Applications lancées sur les postes donnés (RG-25). */
+    /** Applications lancées sur les postes donnés (simulées, RG-25). */
     findProcesses: async (workstationIds: number[]): Promise<ProcessInfo[]> => {
         await delay();
         return workstationIds.flatMap(id => processesByWorkstation.get(id) ?? []).map(process => ({...process}));
     },
 
-    /** Journal d'une salle, le plus récent en premier. */
-    findEvents: async (roomId: number): Promise<SupervisionEvent[]> => {
-        await delay();
-        return events.filter(event => event.roomId === roomId).map(event => ({...event}));
-    },
-
-    /** Arrête une application (RG-26) et l'inscrit au journal. */
-    killProcess: async (process: ProcessInfo, workstation: Workstation): Promise<void> => {
+    /** Ferme une application sur le poste (simulé ; l'arrêt est enregistré par kill-events.services.ts). */
+    killProcess: async (process: ProcessInfo): Promise<void> => {
         await delay();
         const list = processesByWorkstation.get(process.workstationId) ?? [];
         processesByWorkstation.set(process.workstationId, list.filter(item => item.pid !== process.pid));
-        log(workstation.roomId, workstation.name, process.name);
     },
 
-    /** Lance la masterisation d'un poste (RG-28) : ses applications se ferment, il est indisponible un moment. */
+    /** Masterisations simulées d'une salle, la plus récente en premier. */
+    findReimageEvents: (roomId: number): SupervisionEvent[] => reimageEvents.filter(event => event.roomId === roomId),
+
+    /** Lance la masterisation simulée d'un poste (RG-28) : ses applications se ferment un moment. */
     reimage: async (workstation: Workstation): Promise<void> => {
         await delay();
         processesByWorkstation.set(workstation.id, []);
         reimagingUntil.set(workstation.id, Date.now() + REIMAGE_DURATION_MS);
-        log(workstation.roomId, workstation.name, null);
+        reimageEvents.unshift({
+            id: `reimage-${nextReimageId++}`, roomId: workstation.roomId, workstationName: workstation.name,
+            kind: 'reimage', processName: null, at: new Date(),
+        });
     },
 };

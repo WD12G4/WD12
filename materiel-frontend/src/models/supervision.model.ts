@@ -1,7 +1,8 @@
 /**
  * Modèle de la supervision des postes d'une salle.
- * MAQUETTE : aucune API backend ; la démonstration prévue par le client se fera sur une VM
- * (entretien 2, ~3:06).
+ * Un poste est une UC de la salle (matériel réel). Ses applications ouvertes, son état et la
+ * masterisation restent simulés en attendant l'agent de supervision (branche feature/supervision-agent) ;
+ * les arrêts d'applications sont enregistrés par le backend (KillEvent).
  * RG : RG-25 (processus lancés), RG-26 (arrêt), RG-28 (masterisation), RG-29 (identification), RG-30
  */
 
@@ -22,9 +23,10 @@ type WorkstationStatus = keyof typeof workstationStatusLabels;
 
 /** Poste de travail d'une salle. */
 interface Workstation {
+    /** Identifiant de l'UC (matériel), comme dans KillEvent et l'agent de supervision. */
     id: number;
     roomId: number;
-    /** Ex. « Poste 1 ». */
+    /** Numéro de série de l'UC (ex. « UC-DELL-001 »). */
     name: string;
     /**
      * Libellé du stagiaire installé au poste (rôle « stagiaire » sans connexion, RG-30).
@@ -50,8 +52,10 @@ interface ProcessInfo {
 
 /** Événement du journal de supervision : quel poste, quoi, à quelle heure (entretien 4, 6:30). */
 interface SupervisionEvent {
-    id: number;
-    roomId: number;
+    /** Clé unique (« kill-12 » pour un KillEvent, « reimage-3 » pour une masterisation simulée). */
+    id: string;
+    /** Salle de l'UC, ou null si elle est en stock. */
+    roomId: number | null;
     workstationName: string;
     /** Application arrêtée (RG-26), ou poste masterisé (RG-28). */
     kind: 'kill' | 'reimage';

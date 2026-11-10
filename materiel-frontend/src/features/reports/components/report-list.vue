@@ -14,8 +14,8 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  /** Une remontée est marquée comme lue. */
-  markAsRead: [report: Report];
+  /** Une remontée est marquée comme traitée, ou rouverte. */
+  toggleHandled: [report: Report];
 }>();
 </script>
 
@@ -28,13 +28,14 @@ const emit = defineEmits<{
         <th scope="col">Salle</th>
         <th scope="col">Matériel</th>
         <th scope="col">Problème</th>
+        <th scope="col">Signalé par</th>
         <th scope="col">État</th>
         <th scope="col"><span class="visually-hidden">Actions</span></th>
       </tr>
     </thead>
     <tbody>
       <tr v-for="report in reports" :key="report.id">
-        <ReportItem :report="report" @mark-as-read="emit('markAsRead', $event)" />
+        <ReportItem :report="report" @toggle-handled="emit('toggleHandled', $event)" />
       </tr>
     </tbody>
   </table>

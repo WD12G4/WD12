@@ -3,7 +3,7 @@
  * Supervision d'une salle : les postes en tuiles (état, stagiaire, applications ouvertes), une
  * application fermée en un clic, le détail d'un poste dans le panneau latéral, un résumé de la salle
  * et le journal des actions. L'administrateur peut aussi masteriser un poste.
- * MAQUETTE : données d'un service simulé (pas d'API backend).
+ * Postes réels (UC) et arrêts enregistrés (KillEvent) ; applications, état et masterisation simulés.
  * RG : RG-25, RG-26, RG-28 ; journal (entretien 4). RG-27 (liste noire) : bonus, pas encore d'écran.
  */
 import {computed, onMounted, ref, watch} from 'vue';
@@ -77,7 +77,7 @@ watch(selectedRoomId, roomId => {
 <template>
   <Card class="supervision-card" title="Supervision des postes">
     <template #header>
-      <DemoBanner />
+      <DemoBanner>Postes et journal réels ; applications ouvertes simulées en attendant l'agent de supervision.</DemoBanner>
       <p>Survolez une application pour la fermer d'un clic ; cliquez sur un poste pour voir son détail.</p>
     </template>
     <template #body>
