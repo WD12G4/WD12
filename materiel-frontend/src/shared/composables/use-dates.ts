@@ -1,7 +1,7 @@
 /**
  * Fonctions pures sur les dates : formatage français et calcul d'échéance.
  * Inspiré de use-due-date.ts du projet du cours.
- * Utilisé par : features/materials, features/home, features/reports.
+ * Utilisé par : features/materials, features/home, features/reports, features/supervision.
  * RG : RG-24 (alerte d'expiration groupée), RG-05 (date de fin non passée)
  */
 
@@ -65,4 +65,37 @@ export function toIsoDate(date: Date): string {
  */
 export function todayIsoDate(): string {
     return toIsoDate(new Date());
+}
+
+/**
+ * Heure seule (ex. 10:12), pour le journal de supervision.
+ * @param date date à formater
+ */
+export function formatTime(date: Date): string {
+    return date.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
+}
+
+/**
+ * Temps écoulé depuis une date, en clair (ex. « depuis 20 min », « depuis 1 h 05 »).
+ * @param date début (lancement d'une application)
+ * @param now instant de référence (paramètre pour pouvoir tester)
+ */
+export function formatElapsed(date: Date, now = new Date()): string {
+    const minutes = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 60_000));
+    if (minutes < 1) return 'à l’instant';
+    if (minutes < 60) return `depuis ${minutes} min`;
+    const rest = minutes % 60;
+    return `depuis ${Math.floor(minutes / 60)} h${rest > 0 ? ` ${String(rest).padStart(2, '0')}` : ''}`;
+}
+
+/**
+ * Libellé d'un jour : « Aujourd'hui », « Hier », sinon la date (ex. « lundi 9 novembre »).
+ * @param date jour à décrire
+ * @param today date du jour (paramètre pour pouvoir tester)
+ */
+export function dayLabel(date: Date, today = new Date()): string {
+    const days = daysUntil(date, today);
+    if (days === 0) return 'Aujourd’hui';
+    if (days === -1) return 'Hier';
+    return date.toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'});
 }

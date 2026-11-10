@@ -19,7 +19,7 @@ interface NavLink {
     minRole: Role;
     /** Pages de la rubrique : le lien reste surligné sur ses fiches et formulaires. */
     section: readonly RouteNames[];
-    /** Lien d'action : bouton mis en avant à droite de la barre du haut (thème « Verre »). */
+    /** Lien d'action : bouton mis en avant à droite de la barre du haut. */
     primary?: boolean;
 }
 

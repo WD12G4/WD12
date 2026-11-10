@@ -2,7 +2,7 @@
 /**
  * Icône vectorielle au trait, dessinée en SVG (aucune librairie d'icônes).
  * Décorative : masquée aux lecteurs d'écran, le texte ou l'aria-label du parent porte le sens.
- * Utilisé par : app-nav.vue, app-topbar.vue, use-nav-links.ts (type IconName)
+ * Utilisé par : app-nav.vue, app-topbar.vue, use-nav-links.ts (type IconName), features/supervision
  */
 
 //----------------- VALEURS ------------------------------
@@ -18,6 +18,13 @@ const iconPaths = {
   users: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8',
   logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
   menu: 'M4 6h16M4 12h16M4 18h16',
+  // Applications (supervision) et masterisation
+  globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18',
+  code: 'M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16',
+  terminal: 'M4 5h16v14H4zM8 10l3 2-3 2M13 15h3',
+  document: 'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6',
+  table: 'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14',
+  refresh: 'M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7',
 } as const;
 
 //----------------- TYPES --------------------------------

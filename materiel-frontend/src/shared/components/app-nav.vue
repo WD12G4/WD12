@@ -1,10 +1,9 @@
 <script setup lang="ts">
 /**
  * Menu principal : marque, liens autorisés, utilisateur connecté et déconnexion.
- * Même contenu dans les deux thèmes, la mise en page vient de style.css :
- * - « classique » : barre latérale ; sur mobile, tiroir ouvert par le bouton menu de app-topbar.vue ;
- * - « verre » : barre flottante en haut sur grand écran (pastille glissante sous la rubrique courante,
- *   « Signaler un problème » en bouton d'action à droite) ; tiroir en verre sur mobile.
+ * Grand écran : barre flottante en haut, pastille glissante sous la rubrique courante et
+ * « Signaler un problème » en bouton d'action à droite. Mobile : tiroir en verre ouvert par le bouton
+ * menu de app-topbar.vue. La mise en page vient de style.css (MENU PRINCIPAL).
  * Composant de présentation : les liens arrivent déjà filtrés selon le rôle (use-nav-links.ts).
  * Utilisé par : App.vue
  */
@@ -59,9 +58,9 @@ function linkClass(link: NavLink): Record<string, boolean> {
 </script>
 
 <template>
-  <aside
-      id="app-sidebar"
-      class="sidebar"
+  <div
+      id="main-menu"
+      class="main-menu"
       :class="{ open }"
   >
     <!-- Marque -->
@@ -105,13 +104,13 @@ function linkClass(link: NavLink): Record<string, boolean> {
         <AppIcon name="logout" />
       </button>
     </div>
-  </aside>
+  </div>
 
   <!-- Fond cliquable derrière le tiroir (mobile) -->
   <Transition name="fade">
     <div
         v-if="open"
-        class="sidebar-backdrop"
+        class="main-menu-backdrop"
         @click="emit('close')"
     />
   </Transition>

@@ -8,7 +8,7 @@ import AppIcon from './app-icon.vue';
 
 //------------------ PROPS / EMITS ---------------------------
 defineProps<{
-  /** Vrai si le menu latéral est ouvert. */
+  /** Vrai si le tiroir du menu est ouvert. */
   menuOpen: boolean;
 }>();
 
@@ -24,7 +24,7 @@ const emit = defineEmits<{
         type="button"
         class="icon-button"
         aria-label="Menu principal"
-        aria-controls="app-sidebar"
+        aria-controls="main-menu"
         :aria-expanded="menuOpen"
         @click="emit('toggle')"
     >

@@ -2,11 +2,12 @@
 /**
  * Liste déroulante de salles, regroupées par bâtiment (intitulés de groupe dans la liste).
  * La valeur liée (v-model) est l'identifiant de la salle, ou null pour l'option vide.
- * Utilisé par : formulaire et affectation du matériel, formulaire de remontée.
+ * Utilisé par : formulaire et affectation du matériel, formulaire de remontée, supervision (plus de 6 salles).
  */
 import {computed} from 'vue';
 import type {Room} from '../../models/room.model.ts';
 import type {SelectOption} from '../composables/use-listbox.ts';
+import {byBuildingThenNumber} from '../composables/use-room-label.ts';
 import AppSelect from './app-select.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -29,7 +30,7 @@ const roomId = defineModel<number | null>({required: true});
 const options = computed<SelectOption<number | null>[]>(() => [
   {value: null, label: props.emptyLabel},
   ...[...props.rooms]
-      .sort((a, b) => a.building.number - b.building.number || a.number - b.number)
+      .sort(byBuildingThenNumber)
       .map(room => ({value: room.id, label: `Salle ${room.number}`, group: `Bâtiment ${room.building.number}`})),
 ]);
 </script>
