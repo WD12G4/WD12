@@ -52,6 +52,7 @@ class KillEventServiceImplTest {
         sampleKillEvent.setProcessName("notepad.exe");
         sampleKillEvent.setUc(sampleUc);
         sampleKillEvent.setKillDateTime(LocalDateTime.now().minusMinutes(5));
+        sampleKillEvent.setResult(true);
     }
 
     @Nested
@@ -69,6 +70,7 @@ class KillEventServiceImplTest {
             assertThat(created).isNotNull();
             assertThat(created.getProcessName()).isEqualTo("notepad.exe");
             assertThat(created.getUc()).isEqualTo(sampleUc);
+            assertThat(created.getResult()).isTrue();
             verify(repository).saveAndFlush(sampleKillEvent);
         }
 

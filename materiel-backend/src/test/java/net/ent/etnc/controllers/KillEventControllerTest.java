@@ -73,13 +73,14 @@ class KillEventControllerTest {
         sampleEntity.setProcessName("malicious.exe");
         sampleEntity.setUc(sampleUc);
         sampleEntity.setKillDateTime(LocalDateTime.of(2026, 1, 15, 10, 30));
+        sampleEntity.setResult(true);
 
         MaterialResponse ucResponse = new MaterialResponse(
                 1L, 0L, "UC-12345", EMaterialType.UC, LocalDate.now().plusYears(1), null, false
         );
 
         sampleResponse = new KillEventResponse(
-                10L, 0L, "malicious.exe", ucResponse, LocalDateTime.of(2026, 1, 15, 10, 30)
+                10L, 0L, "malicious.exe", ucResponse, LocalDateTime.of(2026, 1, 15, 10, 30), true
         );
     }
 
@@ -100,7 +101,8 @@ class KillEventControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.content[0].id").value(10))
                     .andExpect(jsonPath("$.content[0].processName").value("malicious.exe"))
-                    .andExpect(jsonPath("$.content[0].uc.serialNumber").value("UC-12345"));
+                    .andExpect(jsonPath("$.content[0].uc.serialNumber").value("UC-12345"))
+                    .andExpect(jsonPath("$.content[0].result").value(true));
         }
     }
 
@@ -118,7 +120,8 @@ class KillEventControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(10))
                     .andExpect(jsonPath("$.processName").value("malicious.exe"))
-                    .andExpect(jsonPath("$.uc.serialNumber").value("UC-12345"));
+                    .andExpect(jsonPath("$.uc.serialNumber").value("UC-12345"))
+                    .andExpect(jsonPath("$.result").value(true));
         }
 
         @Test
@@ -143,7 +146,8 @@ class KillEventControllerTest {
                     {
                         "processName": "malicious.exe",
                         "ucId": 1,
-                        "killDateTime": "2026-01-15T10:30:00"
+                        "killDateTime": "2026-01-15T10:30:00",
+                        "result": true
                     }
                     """;
 
@@ -156,7 +160,8 @@ class KillEventControllerTest {
                             .content(payload))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.id").value(10))
-                    .andExpect(jsonPath("$.processName").value("malicious.exe"));
+                    .andExpect(jsonPath("$.processName").value("malicious.exe"))
+                    .andExpect(jsonPath("$.result").value(true));
         }
 
         @Test
@@ -166,7 +171,8 @@ class KillEventControllerTest {
                     {
                         "processName": "",
                         "ucId": 1,
-                        "killDateTime": "2026-01-15T10:30:00"
+                        "killDateTime": "2026-01-15T10:30:00",
+                        "result": true
                     }
                     """;
 
@@ -184,7 +190,8 @@ class KillEventControllerTest {
                     {
                         "processName": "malicious.exe",
                         "ucId": null,
-                        "killDateTime": "2026-01-15T10:30:00"
+                        "killDateTime": "2026-01-15T10:30:00",
+                        "result": true
                     }
                     """;
 
@@ -202,7 +209,8 @@ class KillEventControllerTest {
                     {
                         "processName": "malicious.exe",
                         "ucId": 1,
-                        "killDateTime": "2099-12-31T23:59:59"
+                        "killDateTime": "2099-12-31T23:59:59",
+                        "result": true
                     }
                     """;
 
@@ -220,7 +228,8 @@ class KillEventControllerTest {
                     {
                         "processName": "malicious.exe",
                         "ucId": 999,
-                        "killDateTime": "2026-01-15T10:30:00"
+                        "killDateTime": "2026-01-15T10:30:00",
+                        "result": true
                     }
                     """;
 
@@ -242,7 +251,8 @@ class KillEventControllerTest {
                     {
                         "processName": "malicious.exe",
                         "ucId": 1,
-                        "killDateTime": "2026-01-15T10:30:00"
+                        "killDateTime": "2026-01-15T10:30:00",
+                        "result": true
                     }
                     """;
 

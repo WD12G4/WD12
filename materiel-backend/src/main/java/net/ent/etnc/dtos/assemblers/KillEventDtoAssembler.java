@@ -31,7 +31,8 @@ public class KillEventDtoAssembler implements DtoAssembler<KillEvent, KillEventR
                 entity.getVersion(),
                 entity.getProcessName(),
                 materialResponse,
-                entity.getKillDateTime());
+                entity.getKillDateTime(),
+                entity.getResult());
     }
 
     @Override
@@ -50,6 +51,7 @@ public class KillEventDtoAssembler implements DtoAssembler<KillEvent, KillEventR
     private void applyFields(final KillEvent killEvent, final KillEventRequest request) {
         killEvent.setProcessName(request.processName());
         killEvent.setKillDateTime(request.killDateTime());
+        killEvent.setResult(request.result());
 
         if (request.ucId() != null) {
             Material material = new Material();

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 /**
  * Coquille de l'application : barre latérale (si connecté), barre du haut sur mobile,
  * message temporaire, page courante avec transition, et alerte des remontées non lues
@@ -38,6 +38,7 @@ async function signOut(): Promise<void> {
   menuOpen.value = false;
   await logout();
   clearFlash();
+  
   await navigateTo({name: 'login'});
 }
 
@@ -59,10 +60,10 @@ watch(() => route.fullPath, () => {
     <template v-if="currentUser">
       <AppNav
           :links="visibleLinks"
-          :user="currentUser"
           :open="menuOpen"
-          @logout="signOut"
+          :user="currentUser"
           @close="menuOpen = false"
+          @logout="signOut"
       />
       <AppTopbar :menu-open="menuOpen" @toggle="toggleMenu" />
     </template>
@@ -86,8 +87,8 @@ watch(() => route.fullPath, () => {
         </div>
         <Transition
             v-else
-            name="page"
             mode="out-in"
+            name="page"
         >
           <div :key="current.fullPath" class="page">
             <component :is="Component" />

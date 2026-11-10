@@ -20,6 +20,8 @@ public record KillEventRequest(
 
         @NotNull(message = "L'heure et la date doivent être renseignées")
         @PastOrPresent(message = "La date/heure d'arrêt d'un processus ne peut pas être après le jour/l'heure actuelle.")
-        LocalDateTime killDateTime
+        LocalDateTime killDateTime,
+
+        boolean result
 ) {
 }

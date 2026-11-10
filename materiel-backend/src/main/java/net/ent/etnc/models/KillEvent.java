@@ -45,12 +45,19 @@ public class KillEvent extends AbstractPersistableWithIdSetter<Long> {
     @Column(name = "kill_date_time", nullable = false)
     private LocalDateTime killDateTime;
 
+    @Getter
+    @Setter
+    @NotNull(message = "Le résultat doit être renseigné")
+    @Column(name = "result", nullable = false)
+    private Boolean result = true;
+
     @Override
     public String toString() {
         return "KillEvent{" +
                 "processName='" + processName + '\'' +
                 ", uc_SN=" + (uc != null ? uc.getSerialNumber() : "NONE") +
                 ", killDateTime=" + (killDateTime != null ? killDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : "NONE") +
+                ", result=" + result +
                 '}';
     }
 }

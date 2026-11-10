@@ -49,6 +49,7 @@ class KillEventDtoAssemblerTest {
         sampleEntity.setProcessName("malicious.exe");
         sampleEntity.setUc(sampleUc);
         sampleEntity.setKillDateTime(LocalDateTime.of(2026, 1, 15, 10, 30));
+        sampleEntity.setResult(true);
 
         sampleMaterialResponse = new MaterialResponse(
                 1L, 0L, "UC-001", EMaterialType.UC, LocalDate.now().plusYears(1), null, false
@@ -78,6 +79,7 @@ class KillEventDtoAssemblerTest {
             assertThat(response.processName()).isEqualTo("malicious.exe");
             assertThat(response.uc()).isEqualTo(sampleMaterialResponse);
             assertThat(response.killDateTime()).isEqualTo(LocalDateTime.of(2026, 1, 15, 10, 30));
+            assertThat(response.result()).isTrue();
         }
 
         @Test
@@ -89,6 +91,7 @@ class KillEventDtoAssemblerTest {
 
             assertThat(response).isNotNull();
             assertThat(response.uc()).isNull();
+            assertThat(response.result()).isTrue();
         }
     }
 
@@ -106,7 +109,7 @@ class KillEventDtoAssemblerTest {
         @DisplayName("Doit convertir correctement la requête en entité")
         void toEntity_Success() {
             KillEventRequest request = new KillEventRequest(
-                    "malicious.exe", 1L, LocalDateTime.of(2026, 1, 15, 10, 30)
+                    "malicious.exe", 1L, LocalDateTime.of(2026, 1, 15, 10, 30), true
             );
 
             KillEvent entity = killEventDtoAssembler.toEntity(request);
@@ -116,19 +119,21 @@ class KillEventDtoAssemblerTest {
             assertThat(entity.getKillDateTime()).isEqualTo(LocalDateTime.of(2026, 1, 15, 10, 30));
             assertThat(entity.getUc()).isNotNull();
             assertThat(entity.getUc().getId()).isEqualTo(1L);
+            assertThat(entity.getResult()).isTrue();
         }
 
         @Test
         @DisplayName("Doit gérer une requête sans ucId")
         void toEntity_WhenUcIdIsNull_UcIsNull() {
             KillEventRequest request = new KillEventRequest(
-                    "malicious.exe", null, LocalDateTime.of(2026, 1, 15, 10, 30)
+                    "malicious.exe", null, LocalDateTime.of(2026, 1, 15, 10, 30), false
             );
 
             KillEvent entity = killEventDtoAssembler.toEntity(request);
 
             assertThat(entity).isNotNull();
             assertThat(entity.getUc()).isNull();
+            assertThat(entity.getResult()).isFalse();
         }
     }
 
@@ -140,7 +145,7 @@ class KillEventDtoAssemblerTest {
         @DisplayName("Doit lever UnsupportedOperationException")
         void updateEntity_ThrowsUnsupportedOperationException() {
             KillEventRequest request = new KillEventRequest(
-                    "malicious.exe", 1L, LocalDateTime.of(2026, 1, 15, 10, 30)
+                    "malicious.exe", 1L, LocalDateTime.of(2026, 1, 15, 10, 30), true
             );
 
             assertThatThrownBy(() -> killEventDtoAssembler.updateEntity(sampleEntity, request))
