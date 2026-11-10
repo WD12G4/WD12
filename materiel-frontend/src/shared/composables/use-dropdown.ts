@@ -11,6 +11,10 @@ import {type CSSProperties, onBeforeUnmount, ref, type Ref} from 'vue';
 const GAP_PX = 6;
 /** Hauteur maximale du panneau (18rem dans style.css), pour choisir entre dessous et dessus. */
 const PANEL_MAX_HEIGHT_PX = 288;
+/** Largeur minimale du panneau, pour un bouton étroit (ex. pastille de l'utilisateur). */
+const PANEL_MIN_WIDTH_PX = 200;
+/** Marge gardée avec le bord droit de la fenêtre. */
+const EDGE_PX = 8;
 
 /**
  * Calcule la position fixe du panneau d'après celle du bouton.
@@ -25,7 +29,10 @@ function panelPosition(trigger: HTMLElement): CSSProperties {
         : {top: `${rect.bottom + GAP_PX}px`};
     // Le panneau grandit depuis le champ : depuis son bord haut, ou bas s'il s'ouvre au-dessus.
     const transformOrigin = openUp ? 'center bottom' : 'center top';
-    return {...vertical, left: `${rect.left}px`, width: `${rect.width}px`, transformOrigin};
+    // Au moins aussi large que le bouton, sans sortir de la fenêtre à droite.
+    const width = Math.max(rect.width, PANEL_MIN_WIDTH_PX);
+    const left = Math.max(EDGE_PX, Math.min(rect.left, window.innerWidth - width - EDGE_PX));
+    return {...vertical, left: `${left}px`, width: `${width}px`, transformOrigin};
 }
 
 /** Vrai si l'élément cliqué est hors du bouton et hors du panneau. */

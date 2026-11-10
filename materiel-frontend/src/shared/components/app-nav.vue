@@ -7,17 +7,18 @@
  * Composant de présentation : les liens arrivent déjà filtrés selon le rôle (use-nav-links.ts).
  * Utilisé par : App.vue
  */
-import {computed, useTemplateRef} from 'vue';
+import {useTemplateRef} from 'vue';
 import {useRoute} from 'vue-router';
 import type {RouteNames} from '../../router/route-types.ts';
-import {roleLabels, type User} from '../../models/user.model.ts';
+import type {User} from '../../models/user.model.ts';
 import type {NavLink} from '../composables/use-nav-links.ts';
 import {useNavIndicator} from '../composables/use-nav-indicator.ts';
 import AppIcon from './app-icon.vue';
 import Link from './Link.vue';
+import UserCard from './user-card.vue';
 
 //------------------ PROPS / EMITS ---------------------------
-const props = defineProps<{
+defineProps<{
   /** Liens à afficher. */
   links: readonly NavLink[];
   /** Utilisateur connecté. */
@@ -37,13 +38,6 @@ const emit = defineEmits<{
 const route = useRoute();
 const nav = useTemplateRef<HTMLElement>('nav');
 useNavIndicator(nav);
-
-//------------------ COMPUTED --------------------------------
-/** Rôle affiché par son libellé, jamais par son code. */
-const roleLabel = computed(() => roleLabels[props.user.role]);
-
-/** Initiale affichée dans la pastille de l'utilisateur. */
-const initial = computed(() => props.user.username.charAt(0).toUpperCase());
 
 //------------------ FUNCTIONS -------------------------------
 /** Vrai si la page courante appartient à la rubrique du lien (ex. fiche d'une salle → « Salles »). */
@@ -87,23 +81,8 @@ function linkClass(link: NavLink): Record<string, boolean> {
       </Link>
     </nav>
 
-    <!-- Utilisateur connecté -->
-    <div class="user-card">
-      <span class="avatar" aria-hidden="true">{{ initial }}</span>
-      <div class="user-meta">
-        <strong>{{ user.username }}</strong>
-        <span>{{ roleLabel }}</span>
-      </div>
-      <button
-          type="button"
-          class="icon-button"
-          aria-label="Se déconnecter"
-          title="Se déconnecter"
-          @click="emit('logout')"
-      >
-        <AppIcon name="logout" />
-      </button>
-    </div>
+    <!-- Utilisateur connecté (et, en mode développement, changement de compte) -->
+    <UserCard :user="user" @logout="emit('logout')" />
   </div>
 
   <!-- Fond cliquable derrière le tiroir (mobile) -->

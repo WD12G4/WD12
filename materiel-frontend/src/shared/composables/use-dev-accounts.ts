@@ -1,0 +1,59 @@
+/**
+ * OUTIL DE TEST (mode développement uniquement) : comptes de démonstration de la base locale
+ * (docker/initdb/02-data.sql) et changement de compte sans se déconnecter ni se reconnecter.
+ * Jamais dans la version de production : seul dev-user-switch.vue l'importe, et ce composant n'est
+ * chargé que si import.meta.env.DEV (user-card.vue) ; le build le retire entièrement.
+ * Utilisé par : dev-user-switch.vue
+ */
+import {roleLabels, type Role} from '../../models/user.model.ts';
+import {router} from '../../router/index.ts';
+import type {SelectOption} from './use-listbox.ts';
+import {useAuth} from './use-auth.ts';
+import {useFlashMessage} from './use-flash-message.ts';
+
+/** Compte de démonstration (mots de passe de la base locale uniquement). */
+interface DemoAccount {
+    username: string;
+    password: string;
+    role: Role;
+}
+
+//------------------ DATAS -----------------------------------
+const demoAccounts: readonly DemoAccount[] = [
+    {username: 'admin', password: 'admin123', role: 'ADMIN'},
+    {username: 'manager', password: 'manager123', role: 'MANAGER'},
+    {username: 'user', password: 'user123', role: 'USER'},
+];
+
+/** Options de la liste : un compte par rôle, désigné par son rôle (c'est lui qu'on veut tester). */
+export const demoAccountOptions: SelectOption<string>[] = demoAccounts.map(account => ({
+    value: account.username,
+    label: roleLabels[account.role],
+    group: 'Tester en tant que',
+}));
+
+const {login, hasRole} = useAuth();
+const {show} = useFlashMessage();
+
+//------------------ FUNCTIONS -------------------------------
+/**
+ * Se connecte avec un autre compte de démonstration. La session en cours n'est remplacée qu'en cas
+ * de succès. Si la page affichée est interdite au nouveau rôle, retour au tableau de bord.
+ * @param username identifiant du compte de démonstration
+ * @returns vrai si le changement a réussi
+ */
+export async function switchAccount(username: string): Promise<boolean> {
+    const account = demoAccounts.find(candidate => candidate.username === username);
+    if (!account) return false;
+    try {
+        await login(account.username, account.password);
+    } catch {
+        show(`Connexion impossible avec le compte de démonstration « ${username} ».`, 'error');
+        return false;
+    }
+    const allowed = router.currentRoute.value.meta.roles.some(hasRole);
+    if (!allowed) await router.replace({name: 'home'});
+    const role = roleLabels[account.role];
+    show(allowed ? `Vous testez en tant que ${role} (« ${username} »).` : `Vous testez en tant que ${role} : page non autorisée, retour au tableau de bord.`);
+    return true;
+}
