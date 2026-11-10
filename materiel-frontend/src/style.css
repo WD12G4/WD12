@@ -51,7 +51,7 @@
   --sidebar-width: 264px;
   /* Codes (numéros de série, bâtiments, salles) et petites étiquettes : police monospace du système. */
   --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, Consolas, monospace;
-  /* Boutons d'action : le thème « tactique » remplace ce dégradé par un aplat vert vif. */
+  /* Boutons d'action : le thème « verre » remplace ce dégradé par un aplat bleu. */
   --action-bg: linear-gradient(135deg, var(--accent), var(--accent-2));
   --on-action: var(--on-accent);
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -187,6 +187,8 @@ p { color: var(--muted); line-height: 1.6; }
 .user-meta span { color: var(--muted); font-size: 0.78rem; }
 .sidebar-backdrop { display: none; }
 .topbar { display: none; }
+/* Pastille glissante de la barre du haut (thème « verre », use-nav-indicator.ts) : masquée ailleurs. */
+.nav-pill { display: none; }
 .back-link { display: inline-flex; align-items: center; gap: 0.3rem; margin-bottom: 1.25rem; font-weight: 600; font-size: 0.9rem; }
 
 /* ------------------ CARTES ET MESSAGES --------------------- */
@@ -462,6 +464,15 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 ::view-transition-old(room-title), ::view-transition-new(room-title) { height: 100%; object-fit: none; object-position: left center; }
 /* Toute navigation : seul le contenu passe en fondu (léger glissement à l'arrivée), la barre latérale reste fixe. */
 .app-shell .content { view-transition-name: page; }
+/* Éléments fixes, capturés à part pour rester au-dessus du contenu pendant la transition. */
+.sidebar { view-transition-name: app-nav; }
+.topbar { view-transition-name: app-topbar; }
+.theme-switch { view-transition-name: theme-switch; }
+.drawer { view-transition-name: material-drawer; }
+/* Leur contenu ne change presque pas : on montre directement le nouvel état, sans fondu enchaîné
+   (sinon la pastille de l'ancienne rubrique apparaîtrait en fantôme pendant qu'elle glisse). */
+::view-transition-old(app-nav), ::view-transition-old(app-topbar), ::view-transition-old(theme-switch) { display: none; }
+::view-transition-new(app-nav), ::view-transition-new(app-topbar), ::view-transition-new(theme-switch) { animation: none; }
 ::view-transition-old(page) { animation: vt-fade-out 160ms var(--ease) both; }
 ::view-transition-new(page) { animation: vt-fade-in 280ms var(--ease) both; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 220ms; }
@@ -525,9 +536,24 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 .segmented button:active { transform: none; }
 .segmented button[aria-checked='true'] { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent-soft-hover); }
 @container (min-width: 720px) { .filters .wide { grid-column: span 2; } }
-.theme-switch { display: flex; flex-direction: column; gap: 0.4rem; padding: 0 0.25rem; }
-.theme-switch .segmented { min-height: 0; }
-.theme-switch .segmented button { padding: 0.35rem 0.5rem; font-size: 0.8rem; }
+
+/* ------------------ CHOIX DE L'APPARENCE (theme-switch.vue) */
+/* Pastille flottante en bas à droite, sur toutes les pages : outil de comparaison de la branche d'essai. */
+.theme-switch {
+  position: fixed; right: 1rem; bottom: 1rem; z-index: 40;
+  display: flex; align-items: center; gap: 0.6rem; padding: 0.3rem 0.3rem 0.3rem 0.9rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+  box-shadow: 0 12px 30px -12px var(--shadow-strong);
+}
+.theme-switch .segmented { min-height: 0; padding: 0.2rem; border-radius: 999px; flex-wrap: nowrap; }
+.theme-switch .segmented button { padding: 0.3rem 0.8rem; border-radius: 999px; font-size: 0.8rem; }
+.theme-switch { transition: opacity var(--speed) var(--ease), visibility var(--speed) var(--ease); }
+/* Masquée quand un panneau occupe le bas de l'écran (aperçu latéral, menu mobile). */
+body:has(.drawer, .sidebar.open) .theme-switch { opacity: 0; visibility: hidden; }
+@media (max-width: 600px) {
+  .theme-switch { right: 0.75rem; bottom: 0.75rem; padding-left: 0.3rem; }
+  .theme-switch .field-label { display: none; }
+}
 
 /* ------------------ HORIZON DES FINS DE DISPONIBILITÉ (expiry-indicator.vue) */
 .expiry-panel {
@@ -566,43 +592,216 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
   font-family: var(--font-mono); font-size: 0.7rem; color: var(--accent); background: var(--accent-soft);
 }
 
-/* ------------------ THÈME « TACTIQUE » (essai, use-theme.ts) */
-/* Un seul accent vif, réservé aux actions ; coins coupés ; boutons et étiquettes en monospace. */
-:root[data-theme='tactique'] {
-  --accent: #3d6b00; --accent-2: #3d6b00; --accent-hover: #2f5300;
-  --accent-soft: #eaf5d3; --accent-soft-hover: #d8eeac; --focus: #7cc400;
-  --background: #f3f4ef; --background-glow: #e6f1cc; --title: #0d1408;
-  --muted: #5d6656; --surface-soft: #f7f8f3; --surface-hover: #eff2e6;
-  --border: #e2e5da; --border-input: #d3d8c8; --neutral-soft: #eceee6;
-  --action-bg: #abff02; --on-action: #0d1408;
-  --cut: 12px;
-  --select-chevron-active: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%233d6b00' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+/* ------------------ THÈME « VERRE » (essai, use-theme.ts) -- */
+/* Esprit Apple « Liquid Glass » : fond clair aux reflets colorés, barre de menu flottante en haut
+   (grand écran), surfaces en verre dépoli (flou + liseré clair + reflet en haut), boutons en pilule,
+   un seul accent bleu. Les autres couleurs restent celles des statuts. */
+:root[data-theme='verre'] {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable', 'Segoe UI', Inter, system-ui, sans-serif;
+  --text: #1d1d1f; --title: #1d1d1f; --muted: #6e6e73;
+  --background: #f5f5f7;
+  --surface: #ffffff; --surface-soft: #ffffff8c; --surface-input: #ffffffb3; --surface-hover: #0000000a;
+  --border: #00000012; --border-input: #0000001a;
+  --accent: #0071e3; --accent-2: #0071e3; --accent-hover: #0077ed;
+  --accent-soft: #0071e314; --accent-soft-hover: #0071e329; --on-accent: #ffffff; --focus: #0071e3;
+  --shadow: #1d1d1f0a; --shadow-strong: #1d1d1f26;
+  --success: #1d7a36; --success-soft: #34c7591f;
+  --warning: #a34d00; --warning-soft: #ff95001f;
+  --danger: #c4001a; --danger-soft: #ff3b301a; --danger-border: #ff3b3040;
+  --neutral-soft: #7676801f;
+  --backdrop: #1d1d1f33;
+  --action-bg: var(--accent); --on-action: #ffffff;
+  --radius-sm: 0.75rem; --radius: 1.1rem; --radius-lg: 1.6rem;
+  /* Verre : fond translucide, plus opaque pour les panneaux à lire (aperçu, listes déroulantes). */
+  --glass: #ffffff94;
+  --glass-strong: #ffffffd1;
+  --glass-rim: #ffffffcc;
+  --glass-blur: blur(26px) saturate(180%);
+  --glass-shine: inset 0 1px 0 #ffffff, inset 0 0 0 1px #ffffff66;
+  --glass-shadow: 0 1px 2px #1d1d1f0a, 0 14px 40px -18px #1d1d1f40;
+  --glass-specular: #ffffffd9;
+  /* Pastille choisie (boutons segmentés, rubrique courante) et piste des boutons segmentés. */
+  --thumb: #ffffff; --thumb-shadow: 0 3px 8px #0000001f, 0 1px 2px #0000000f;
+  --track: #7676801f;
+  --brand-bg: #1d1d1f; --on-brand: #ffffff;
+  --avatar-bg: linear-gradient(180deg, #b6b6bc, #8e8e93);
+  /* Reflets colorés du fond, visibles à travers le verre. */
+  --blob-1: #cfe1ff; --blob-2: #ecdcff; --blob-3: #d3f1ff; --blob-4: #ffe5d8;
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%236e6e73' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+  --select-chevron-active: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230071e3' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
 }
 @media (prefers-color-scheme: dark) {
-  :root[data-theme='tactique'] {
-    --accent: #abff02; --accent-2: #abff02; --accent-hover: #c6ff52;
-    --accent-soft: #1c2809; --accent-soft-hover: #2a3b0e; --focus: #c6ff52;
-    --background: #090b07; --background-glow: #16210a; --title: #f2f6ea;
-    --surface: #10140c; --surface-soft: #141a10; --surface-input: #0c0f09; --surface-hover: #1b2215;
-    --border: #232c1b; --border-input: #2e3a24;
-    --muted: #9aa38c; --neutral-soft: #1a2016; --text: #dde3d2;
-    --select-chevron-active: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23abff02' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+  :root[data-theme='verre'] {
+    --text: #f5f5f7; --title: #f5f5f7; --muted: #a1a1a6;
+    --background: #0b0b0f;
+    --surface: #1c1c1e; --surface-soft: #ffffff0d; --surface-input: #ffffff12; --surface-hover: #ffffff14;
+    --border: #ffffff1a; --border-input: #ffffff24;
+    --accent: #0a84ff; --accent-2: #0a84ff; --accent-hover: #409cff;
+    --accent-soft: #0a84ff26; --accent-soft-hover: #0a84ff40; --focus: #409cff;
+    --shadow: #00000040; --shadow-strong: #00000080;
+    --success: #30d158; --success-soft: #30d15826;
+    --warning: #ff9f0a; --warning-soft: #ff9f0a26;
+    --danger: #ff6961; --danger-soft: #ff453a26; --danger-border: #ff453a4d;
+    --neutral-soft: #7676803d;
+    --backdrop: #00000080;
+    --glass: #26262b8c; --glass-strong: #26262be0; --glass-rim: #ffffff21;
+    --glass-shine: inset 0 1px 0 #ffffff2e, inset 0 0 0 1px #ffffff0f;
+    --glass-shadow: 0 1px 2px #00000040, 0 16px 48px -16px #000000b3;
+    --glass-specular: #ffffff1f;
+    --thumb: #5a5a60; --thumb-shadow: 0 3px 8px #0000004d, 0 1px 2px #00000033;
+    --track: #7676803d;
+    --brand-bg: #f5f5f7; --on-brand: #1d1d1f;
+    --avatar-bg: linear-gradient(180deg, #8e8e93, #5a5a60);
+    --blob-1: #11305c; --blob-2: #2c1650; --blob-3: #0b3a48; --blob-4: #3b2016;
+    --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23a1a1a6' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+    --select-chevron-active: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230a84ff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
   }
 }
-:root[data-theme='tactique'] :is(.card, .stat, .overview-tile, .expiry-panel, .drawer) {
-  border-radius: 0;
-  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+
+/* Fond : reflets colorés très doux, fixes pendant le défilement. */
+:root[data-theme='verre'] body {
+  background:
+    radial-gradient(44rem 32rem at 4% -6%, var(--blob-1), transparent 65%),
+    radial-gradient(40rem 30rem at 96% 4%, var(--blob-2), transparent 65%),
+    radial-gradient(48rem 34rem at 82% 106%, var(--blob-3), transparent 65%),
+    radial-gradient(36rem 26rem at -6% 100%, var(--blob-4), transparent 65%),
+    var(--background);
+  background-attachment: fixed;
 }
-:root[data-theme='tactique'] .stat::after { display: none; }
-:root[data-theme='tactique'] :is(button, .button-link):not(.select-trigger, .icon-button, .segmented button) {
-  border-radius: 3px; font-family: var(--font-mono); font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.08em;
+
+/* Surfaces en verre : flou de ce qui passe derrière, liseré clair, reflet en haut. */
+:root[data-theme='verre'] :is(.sidebar, .topbar, .card, .stat, .expiry-panel, .theme-switch, .drawer, .select-panel) {
+  background: var(--glass); border: 1px solid var(--glass-rim);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shine), var(--glass-shadow);
 }
-:root[data-theme='tactique'] :is(label, .field-label, .expiry-label) {
-  font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted);
+:root[data-theme='verre'] :is(.drawer, .select-panel) { background: var(--glass-strong); }
+:root[data-theme='verre'] .expiry-panel.alert { background: var(--danger-soft); border-color: var(--danger-border); }
+/* Éléments posés sur une carte : verre plus léger, sans flou (déjà flouté par la carte). */
+:root[data-theme='verre'] :is(.overview-tile, .filters, .detail-grid > div, .plain-list > li) {
+  background: var(--surface-soft); border-color: var(--glass-rim); box-shadow: var(--glass-shine);
 }
-:root[data-theme='tactique'] .badge { border-radius: 3px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; }
-:root[data-theme='tactique'] :is(.brand-logo, .avatar) { border-radius: 4px; background: var(--action-bg); color: var(--on-action); }
-:root[data-theme='tactique'] :is(.segmented, .select-trigger, input:not([type='checkbox']), textarea, .detail-grid > div, .type-chips li, .select-panel, .flash) { border-radius: 3px; }
+:root[data-theme='verre'] .overview-tile.dashed { border-color: var(--border-input); }
+:root[data-theme='verre'] :is(.overview-tile, .plain-list > li):hover {
+  border-color: var(--glass-rim); box-shadow: var(--glass-shine), 0 16px 32px -18px var(--shadow-strong);
+}
+:root[data-theme='verre'] .stat:hover { border-color: var(--glass-rim); box-shadow: var(--glass-shine), 0 18px 40px -18px var(--shadow-strong); }
+/* Reflet qui suit la souris (use-motion.ts) : lumière blanche, comme sur du verre. */
+:root[data-theme='verre'] .tilt::before {
+  background: radial-gradient(circle at var(--glow-x, 50%) var(--glow-y, 0%), var(--glass-specular) 0%, transparent 60%);
+}
+:root[data-theme='verre'] .stat::after { width: 7rem; height: 7rem; right: -2rem; top: -2rem; filter: blur(18px); }
+
+/* Typographie : police du système, étiquettes sans monospace (seuls les codes la gardent). */
+:root[data-theme='verre'] :is(.overview-tile-subtitle, .data-table th, dt, .select-group, .eyebrow) {
+  font-family: inherit; letter-spacing: 0.03em;
+}
+:root[data-theme='verre'] .data-table th { background: transparent; }
+:root[data-theme='verre'] :is(.brand-logo, .avatar) { border-radius: 50%; box-shadow: none; }
+:root[data-theme='verre'] .brand-logo { background: var(--brand-bg); color: var(--on-brand); }
+:root[data-theme='verre'] .avatar { background: var(--avatar-bg); color: #ffffff; }
+
+/* Boutons en pilule, aplat bleu ; les secondaires sont teintés. */
+:root[data-theme='verre'] :is(button, .button-link):not(.select-trigger, .icon-button, .segmented button) { border-radius: 999px; }
+:root[data-theme='verre'] :is(button, .button-link):not(.select-trigger, .icon-button, .segmented button, .secondary-button, .delete-button) {
+  box-shadow: 0 1px 2px var(--shadow), 0 8px 18px -10px var(--accent);
+}
+:root[data-theme='verre'] .icon-button { border-radius: 50%; }
+
+/* Boutons segmentés à la iOS : piste grise, pastille blanche qui porte le choix. */
+:root[data-theme='verre'] .segmented { gap: 0.15rem; padding: 0.2rem; border: none; border-radius: 0.8rem; background: var(--track); }
+:root[data-theme='verre'] .segmented button { border-radius: 0.62rem; color: var(--title); font-weight: 500; }
+:root[data-theme='verre'] .segmented button:hover { background: var(--surface-hover); color: var(--title); }
+:root[data-theme='verre'] .segmented button[aria-checked='true'] { background: var(--thumb); color: var(--title); font-weight: 600; box-shadow: var(--thumb-shadow); }
+:root[data-theme='verre'] .theme-switch .segmented, :root[data-theme='verre'] .theme-switch .segmented button { border-radius: 999px; }
+
+/* Champs numérotés : pastille ronde bleue. */
+:root[data-theme='verre'] .form-grid.stepped > .field > :is(label, .field-label):first-child::before {
+  content: counter(step); display: inline-grid; place-items: center; width: 1.3rem; height: 1.3rem; padding: 0;
+  border-radius: 50%; font-family: inherit; font-size: 0.72rem; font-weight: 700; color: var(--on-accent); background: var(--accent);
+}
+
+/* Barre de menu flottante en haut (grand écran) : marque, liens, bouton d'action, utilisateur. */
+@media (min-width: 901px) {
+  :root[data-theme='verre'] .app-shell { padding-left: 0; }
+  :root[data-theme='verre'] .app-shell .content { padding-top: 7rem; }
+  :root[data-theme='verre'] .sidebar {
+    inset: 1rem 0 auto; margin-inline: auto; width: min(1280px, calc(100% - 2rem));
+    flex-direction: row; align-items: center; gap: 0.75rem; padding: 0.4rem 0.45rem 0.4rem 0.5rem; border-radius: 999px;
+  }
+  :root[data-theme='verre'] .brand { flex-shrink: 0; gap: 0.6rem; padding: 0; }
+  :root[data-theme='verre'] .brand-logo { width: 2.5rem; height: 2.5rem; }
+  :root[data-theme='verre'] .nav { position: relative; flex-direction: row; align-items: stretch; gap: 0.1rem; overflow: visible; }
+  :root[data-theme='verre'] .nav a {
+    gap: 0.4rem; padding: 0.55rem 0.8rem; border-radius: 999px;
+    color: var(--text); font-weight: 500; font-size: 0.88rem; white-space: nowrap;
+  }
+  :root[data-theme='verre'] .nav a:not(.primary) .icon { display: none; }
+  :root[data-theme='verre'] .nav a:hover { background: var(--surface-hover); color: var(--title); }
+  :root[data-theme='verre'] .nav a.current { background: transparent; color: var(--title); font-weight: 600; }
+  :root[data-theme='verre'] .nav a.current::before { display: none; }
+  /* Pastille de la rubrique courante : glisse d'un lien à l'autre, avec un léger rebond. */
+  :root[data-theme='verre'] .nav-pill {
+    display: block; position: absolute; top: 0; bottom: 0; left: 0;
+    width: var(--pill-w, 0); translate: var(--pill-x, 0) 0; opacity: 0;
+    border-radius: 999px; background: var(--thumb); box-shadow: var(--thumb-shadow);
+  }
+  :root[data-theme='verre'] .nav.has-pill .nav-pill {
+    opacity: 1;
+    transition: translate 520ms cubic-bezier(0.34, 1.3, 0.64, 1), width 520ms cubic-bezier(0.34, 1.3, 0.64, 1), opacity 200ms var(--ease);
+  }
+  /* « Signaler un problème » : bouton d'action à droite des liens. */
+  :root[data-theme='verre'] .nav a.primary {
+    order: 1; margin-left: auto; padding-inline: 0.95rem;
+    background: var(--action-bg); color: var(--on-action); font-weight: 600;
+    box-shadow: 0 1px 2px var(--shadow), 0 8px 18px -10px var(--accent);
+  }
+  :root[data-theme='verre'] .nav a.primary:hover { color: var(--on-action); filter: brightness(1.08); }
+  :root[data-theme='verre'] .nav a.primary.current { box-shadow: 0 0 0 3px var(--accent-soft-hover); }
+  :root[data-theme='verre'] .nav a.primary .icon { width: 1.05rem; height: 1.05rem; }
+  :root[data-theme='verre'] .user-card { flex-shrink: 0; gap: 0.55rem; padding: 0 0 0 0.25rem; border: none; background: none; }
+  :root[data-theme='verre'] .avatar { width: 2.5rem; height: 2.5rem; }
+  :root[data-theme='verre'] .user-meta { flex: none; }
+  /* Aperçu latéral : panneau flottant sous la barre. */
+  :root[data-theme='verre'] .drawer { inset: 5.75rem 1rem 1rem auto; border-radius: var(--radius-lg); }
+  :root[data-theme='verre'] :is(.drawer-enter-from, .drawer-leave-to) { transform: translateX(calc(100% + 1.5rem)); }
+}
+/* Écrans moyens : on retire d'abord le rôle et le nom de l'utilisateur, puis le nom de l'application. */
+@media (min-width: 901px) and (max-width: 1399px) { :root[data-theme='verre'] .user-meta { display: none; } }
+@media (min-width: 901px) and (max-width: 1199px) { :root[data-theme='verre'] .brand-name { display: none; } }
+/* Tablette en paysage : « Signaler un problème » ne garde que son icône (libellé lu par les lecteurs d'écran). */
+@media (min-width: 901px) and (max-width: 1099px) {
+  :root[data-theme='verre'] .nav a { padding-inline: 0.65rem; }
+  :root[data-theme='verre'] .nav a.primary { padding-inline: 0.6rem; }
+  :root[data-theme='verre'] .nav a.primary span {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+}
+
+/* Mobile : barre du haut en pilule flottante, menu en tiroir de verre. */
+@media (max-width: 900px) {
+  /* Marge du haut en padding (une marge de la barre « traverserait » la page et laisserait une bande unie). */
+  :root[data-theme='verre'] .app-shell { padding-top: 0.75rem; }
+  :root[data-theme='verre'] .topbar { top: 0.75rem; margin: 0 0.75rem; padding: 0.4rem 1rem 0.4rem 0.4rem; border-radius: 999px; }
+  :root[data-theme='verre'] .sidebar {
+    inset: 0.75rem auto 0.75rem 0.75rem; width: min(300px, calc(100vw - 1.5rem));
+    border-radius: 1.75rem; transform: translateX(calc(-100% - 1rem));
+  }
+  :root[data-theme='verre'] .sidebar.open { transform: none; }
+  :root[data-theme='verre'] .nav a.current { background: var(--thumb); color: var(--title); box-shadow: var(--thumb-shadow); }
+  :root[data-theme='verre'] .nav a.current::before { display: none; }
+  :root[data-theme='verre'] .user-card { background: var(--surface-soft); border-color: var(--glass-rim); }
+  :root[data-theme='verre'] .drawer { inset: 0.75rem; width: auto; border-radius: 1.75rem; }
+  :root[data-theme='verre'] :is(.drawer-enter-from, .drawer-leave-to) { transform: translateY(calc(100% + 1.5rem)); }
+}
+
+/* Pendant une transition de page, les éléments en verre sont capturés en image, sans leur flou :
+   on le leur rend sur la capture (sinon le contenu se lirait à travers pendant un instant). */
+:root[data-theme='verre']::view-transition-group(app-nav),
+:root[data-theme='verre']::view-transition-group(app-topbar),
+:root[data-theme='verre']::view-transition-group(theme-switch) {
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border-radius: 999px;
+}
 
 /* ------------------ ACCESSIBILITÉ -------------------------- */
 /* Texte lu par les lecteurs d'écran mais invisible à l'écran (en-tête de colonne « Actions »). */

@@ -1,17 +1,20 @@
 <script setup lang="ts">
 /**
- * Barre latérale : marque, liens autorisés, utilisateur connecté et déconnexion.
- * Sur mobile, elle devient un tiroir ouvert par le bouton menu de app-topbar.vue.
+ * Menu principal : marque, liens autorisés, utilisateur connecté et déconnexion.
+ * Même contenu dans les deux thèmes, la mise en page vient de style.css :
+ * - « classique » : barre latérale ; sur mobile, tiroir ouvert par le bouton menu de app-topbar.vue ;
+ * - « verre » : barre flottante en haut sur grand écran (pastille glissante sous la rubrique courante,
+ *   « Signaler un problème » en bouton d'action à droite) ; tiroir en verre sur mobile.
  * Composant de présentation : les liens arrivent déjà filtrés selon le rôle (use-nav-links.ts).
  * Utilisé par : App.vue
  */
-import {computed} from 'vue';
+import {computed, useTemplateRef} from 'vue';
 import {useRoute} from 'vue-router';
 import type {RouteNames} from '../../router/route-types.ts';
 import {roleLabels, type User} from '../../models/user.model.ts';
 import type {NavLink} from '../composables/use-nav-links.ts';
+import {useNavIndicator} from '../composables/use-nav-indicator.ts';
 import AppIcon from './app-icon.vue';
-import ThemeSwitch from './theme-switch.vue';
 import Link from './Link.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -33,6 +36,8 @@ const emit = defineEmits<{
 
 //------------------ DATAS -----------------------------------
 const route = useRoute();
+const nav = useTemplateRef<HTMLElement>('nav');
+useNavIndicator(nav);
 
 //------------------ COMPUTED --------------------------------
 /** Rôle affiché par son libellé, jamais par son code. */
@@ -45,6 +50,11 @@ const initial = computed(() => props.user.username.charAt(0).toUpperCase());
 /** Vrai si la page courante appartient à la rubrique du lien (ex. fiche d'une salle → « Salles »). */
 function isCurrent(link: NavLink): boolean {
   return link.section.includes(route.name as RouteNames);
+}
+
+/** Classes d'un lien : rubrique courante, lien d'action (bouton mis en avant dans la barre du haut). */
+function linkClass(link: NavLink): Record<string, boolean> {
+  return {current: isCurrent(link), primary: link.primary === true};
 }
 </script>
 
@@ -60,21 +70,23 @@ function isCurrent(link: NavLink): boolean {
       <span class="brand-name">Gestion du parc</span>
     </div>
 
-    <!-- Liens -->
-    <nav class="nav" aria-label="Menu principal">
+    <!-- Liens (la pastille ne sert que dans la barre du haut) -->
+    <nav
+        ref="nav"
+        class="nav"
+        aria-label="Menu principal"
+    >
+      <span class="nav-pill" aria-hidden="true" />
       <Link
           v-for="link in links"
           :key="link.to.name"
           :to="link.to"
-          :class="{ current: isCurrent(link) }"
+          :class="linkClass(link)"
       >
         <AppIcon :name="link.icon" />
         <span>{{ link.label }}</span>
       </Link>
     </nav>
-
-    <!-- Apparence : thème classique ou essai « tactique » -->
-    <ThemeSwitch />
 
     <!-- Utilisateur connecté -->
     <div class="user-card">

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * Coquille de l'application : barre latérale (si connecté), barre du haut sur mobile,
- * message temporaire, page courante avec transition, et alerte des remontées non lues
- * pour le gestionnaire (RG-23). Sans utilisateur connecté, la page est centrée (connexion).
+ * Coquille de l'application : menu (si connecté ; barre latérale ou barre du haut selon le thème),
+ * barre du haut sur mobile, message temporaire, page courante avec transition, alerte des remontées
+ * non lues pour le gestionnaire (RG-23) et choix de l'apparence (essai). Sans utilisateur connecté,
+ * la page est centrée (connexion).
  * Transition entre les pages : le navigateur s'en charge s'il connaît l'API View Transitions
  * (router/view-transition.ts) ; sinon, fondu de Vue (<Transition name="page">).
  */
@@ -16,6 +17,7 @@ import {viewTransitionsSupported} from './router/view-transition.ts';
 import AppNav from './shared/components/app-nav.vue';
 import AppTopbar from './shared/components/app-topbar.vue';
 import FlashMessage from './shared/components/flash-message.vue';
+import ThemeSwitch from './shared/components/theme-switch.vue';
 import ReportAlert from './features/reports/components/report-alert.vue';
 import {useUnreadReports} from './features/reports/composables/use-unread-reports.ts';
 
@@ -95,5 +97,8 @@ watch(() => route.fullPath, () => {
         </Transition>
       </router-view>
     </main>
+
+    <!-- Apparence : thème classique ou essai « Verre » -->
+    <ThemeSwitch />
   </div>
 </template>
