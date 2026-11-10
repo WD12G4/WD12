@@ -74,7 +74,8 @@ func IsSystemOrProtected(p *process.Process) bool {
 	if runtime.GOOS != "windows" {
 		uids, err := p.Uids()
 		if err == nil && len(uids) > 0 {
-			if uids[0] < 1000 {
+			// Premier UID utilisateur : 1000 sous Linux, 501 sous macOS (voir platform.go)
+			if uids[0] < int32(minUserUID()) {
 				return true
 			}
 		}
@@ -114,7 +115,7 @@ func GetUserProcesses() []ProcessInfo {
 
 	result := make([]ProcessInfo, 0, len(procs))
 	for _, p := range procs {
-		if IsSystemOrProtected(p) {
+		if IsSystemOrProtected(p) || isHiddenOnThisOS(p) {
 			continue
 		}
 
@@ -122,6 +123,7 @@ func GetUserProcesses() []ProcessInfo {
 		if err != nil || name == "" {
 			continue
 		}
+		name = displayName(p, name)
 
 		createTime, err := p.CreateTime()
 		if err != nil {
@@ -165,6 +167,7 @@ func KillUserProcess(pid int32) KillResult {
 	}
 
 	name, _ := p.Name()
+	name = displayName(p, name)
 
 	// Sécurité absolue : refus catégorique d'arrêter un processus système ou protégé
 	if IsSystemOrProtected(p) {

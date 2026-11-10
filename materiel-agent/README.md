@@ -268,3 +268,13 @@ L'agent n'affiche et ne permet de tuer **aucun processus critique** :
    * Processus essentiels : `systemd`, `init`, `sshd`, `dbus-daemon`, `NetworkManager`, `Xorg`, `wayland`, `gnome-shell`, etc.
 
 Toute commande de fermeture reçue du serveur est **re-validée côté agent** avant toute tentative de terminaison. Si le processus est protégé, l'agent renvoie un `KILL_RESULT` avec `success: false`, ce qui permet au backend d'enregistrer le `KillEvent` à l'état échoué.
+
+---
+
+## Particularités macOS (tests sur Mac)
+
+* Les comptes utilisateurs macOS commencent à l'UID **501** (1000 sous Linux) : l'agent applique le bon seuil selon le système (`platform.go`).
+* Un compte Mac fait tourner des centaines de processus de fond (Dock, services, aides des navigateurs). Sous macOS, l'agent ne remonte donc que les **applications visibles** : exécutable principal d'une application `.app`, hors `/System/Library` et hors processus « Helper ». Elles sont nommées d'après l'application (« Visual Studio Code » plutôt qu'« Electron »).
+* L'adresse MAC retenue est celle d'une vraie carte réseau : les interfaces virtuelles (VPN, Docker, OrbStack, AirDrop…) et les adresses factices (`02:00:00:00:00:00`) sont écartées quand c'est possible.
+
+Test de la règle des applications macOS : `go test ./...`

@@ -75,18 +75,43 @@ func LoadConfig() (*Config, error) {
 	return cfg, nil
 }
 
-// GetMacAddress récupère l'adresse MAC de la première interface active non-loopback.
+// GetMacAddress récupère l'adresse MAC de la première carte réseau active (hors boucle locale), en
+// préférant une vraie carte à une interface virtuelle ou à une adresse factice.
 func GetMacAddress() string {
 	interfaces, err := net.Interfaces()
 	if err != nil {
 		return "00:00:00:00:00:00"
 	}
+	fallback := ""
 	for _, iface := range interfaces {
-		if iface.Flags&net.FlagUp != 0 && !strings.Contains(iface.Flags.String(), "loopback") {
-			if len(iface.HardwareAddr) > 0 {
-				return iface.HardwareAddr.String()
-			}
+		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 || len(iface.HardwareAddr) == 0 {
+			continue
 		}
+		if fallback == "" {
+			fallback = iface.HardwareAddr.String()
+		}
+		// On préfère une vraie carte réseau : ni interface virtuelle (VPN, Docker, OrbStack, AirDrop…),
+		// ni adresse « administrée localement » (bit 0x02 du premier octet, ex. 02:00:00:00:00:00).
+		if isVirtualInterface(iface.Name) || iface.HardwareAddr[0]&0x02 != 0 {
+			continue
+		}
+		return iface.HardwareAddr.String()
+	}
+	if fallback != "" {
+		return fallback
 	}
 	return "00:00:00:00:00:00"
+}
+
+// isVirtualInterface reconnaît les interfaces réseau virtuelles courantes (macOS, Linux, Docker).
+func isVirtualInterface(name string) bool {
+	prefixes := []string{"utun", "awdl", "llw", "bridge", "anpi", "ap", "gif", "stf", "vmnet", "vboxnet",
+		"docker", "br-", "veth", "virbr", "tun", "tap", "zt", "tailscale"}
+	lower := strings.ToLower(name)
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(lower, prefix) {
+			return true
+		}
+	}
+	return false
 }
