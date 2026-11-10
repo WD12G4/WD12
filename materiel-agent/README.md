@@ -269,6 +269,10 @@ L'agent n'affiche et ne permet de tuer **aucun processus critique** :
 
 Toute commande de fermeture reçue du serveur est **re-validée côté agent** avant toute tentative de terminaison. Si le processus est protégé, l'agent renvoie un `KILL_RESULT` avec `success: false`, ce qui permet au backend d'enregistrer le `KillEvent` à l'état échoué.
 
+
+172.16.131.130 = VM linux appli
+172.16.131.2025 = VM linux agent
+
 ---
 
 ## Particularités macOS (tests sur Mac)
