@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 /**
- * Coquille de l'application : barre latérale (si connecté), barre du haut sur mobile,
- * message temporaire, page courante avec transition, et alerte des remontées non lues
- * pour le gestionnaire (RG-23). Sans utilisateur connecté, la page est centrée (connexion).
+ * Coquille de l'application : menu (si connecté ; barre flottante en haut, tiroir sur mobile),
+ * barre du haut sur mobile, message temporaire, page courante avec transition, et alerte des
+ * remontées non lues pour le gestionnaire (RG-23). Sans utilisateur connecté, la page est centrée (connexion).
  * Transition entre les pages : le navigateur s'en charge s'il connaît l'API View Transitions
  * (router/view-transition.ts) ; sinon, fondu de Vue (<Transition name="page">).
  */
@@ -25,11 +25,11 @@ const {currentUser, logout} = useAuth();
 const {visibleLinks} = useNavLinks();
 const {clear: clearFlash} = useFlashMessage();
 const {unreadCount, visible: showReportAlert, dismiss: dismissReportAlert} = useUnreadReports();
-/** Menu latéral ouvert (mobile uniquement : sur grand écran il est toujours visible). */
+/** Tiroir du menu ouvert (mobile uniquement : sur grand écran, le menu est la barre du haut). */
 const menuOpen = ref(false);
 
 //------------------ COMPUTED --------------------------------
-/** Mise en page : avec barre latérale si connecté, centrée sinon. */
+/** Mise en page : avec menu si connecté, centrée sinon. */
 const shellClass = computed(() => (currentUser.value ? 'app-shell' : 'guest-shell'));
 
 //------------------ FUNCTIONS -------------------------------
@@ -42,7 +42,7 @@ async function signOut(): Promise<void> {
   await navigateTo({name: 'login'});
 }
 
-/** Ouvre ou ferme le menu latéral. */
+/** Ouvre ou ferme le tiroir du menu. */
 function toggleMenu(): void {
   menuOpen.value = !menuOpen.value;
 }

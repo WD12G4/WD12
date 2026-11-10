@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
  * Filtres d'emplacement de la liste des matériels : bâtiment, salle, affecté ou en stock.
+ * Emplacement : trois options, choisies en un clic avec des boutons segmentés.
  * Partage l'objet de filtres de material-filters.vue (v-model).
  * Utilisé par : material-filters.vue
  * RG : RG-07 (en stock = sans salle)
@@ -11,6 +12,7 @@ import type {MaterialFilters, MaterialLocationFilter} from '../../../models/mate
 import type {Room} from '../../../models/room.model.ts';
 import type {SelectOption} from '../../../shared/composables/use-listbox.ts';
 import AppSelect from '../../../shared/components/app-select.vue';
+import SegmentedControl from '../../../shared/components/segmented-control.vue';
 
 //------------------ PROPS / EMITS ---------------------------
 const props = defineProps<{
@@ -27,7 +29,7 @@ const filters = defineModel<MaterialFilters>('filters', {required: true});
 /** RG-07 : affecté = dans une salle, en stock = sans salle. */
 const locationOptions: SelectOption<MaterialLocationFilter>[] = [
   {value: 'all', label: 'Partout'},
-  {value: 'assigned', label: 'Affecté à une salle'},
+  {value: 'assigned', label: 'Affecté'},
   {value: 'stock', label: 'En stock'},
 ];
 
@@ -65,12 +67,12 @@ const roomOptions = computed<SelectOption<number | 'all'>[]>(() => {
         :options="roomOptions"
     />
   </div>
-  <div class="field">
-    <label for="material-location-filter">Emplacement</label>
-    <AppSelect
-        id="material-location-filter"
+  <div class="field wide">
+    <span id="material-location-label" class="field-label">Emplacement</span>
+    <SegmentedControl
         v-model="filters.location"
         :options="locationOptions"
+        labelledby="material-location-label"
     />
   </div>
 </template>

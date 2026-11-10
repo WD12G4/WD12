@@ -21,6 +21,14 @@ const materialTypeLabels = {
     PERIPHERAL: 'Périphérique',
 } as const;
 
+/** Libellés courts, pour les boutons segmentés et les pastilles où la place manque. */
+const materialTypeShortLabels = {
+    UC: 'UC',
+    SCREEN: 'Écran',
+    PROJECTOR: 'Projecteur',
+    PERIPHERAL: 'Périph.',
+} as const;
+
 /** Longueur maximale du numéro de série, identique au backend (RG-01). */
 const serialNumberMaxLength = 100;
 
@@ -74,7 +82,7 @@ interface MaterialFilters {
     showArchived: boolean;
 }
 
-export {materialTypes, materialTypeLabels, serialNumberMaxLength};
+export {materialTypes, materialTypeLabels, materialTypeShortLabels, serialNumberMaxLength};
 export type {
     MaterialType, Material, MaterialInput, MaterialTypeFilter, MaterialLocationFilter, MaterialFilters,
 };

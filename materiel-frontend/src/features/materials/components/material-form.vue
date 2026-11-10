@@ -78,7 +78,8 @@ watch(() => props.initial, material => {
 </script>
 
 <template>
-  <form class="form-grid" @submit.prevent="submit">
+  <!-- « stepped » : chaque champ est numéroté (01, 02…) par un compteur CSS -->
+  <form class="form-grid stepped" @submit.prevent="submit">
     <MaterialIdentityFields v-model="draft" />
     <MaterialStateFields v-model="draft" :rooms="rooms" />
     <div class="full-width">

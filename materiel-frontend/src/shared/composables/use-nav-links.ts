@@ -1,6 +1,6 @@
 /**
  * Liens du menu principal, filtrés selon le rôle de l'utilisateur connecté.
- * Utilisé par : App.vue
+ * Utilisé par : App.vue, app-nav.vue
  * RG : RG-16, RG-17, RG-31, RG-32 (un lien n'apparaît que si la page est accessible)
  */
 import {computed} from 'vue';
@@ -19,6 +19,8 @@ interface NavLink {
     minRole: Role;
     /** Pages de la rubrique : le lien reste surligné sur ses fiches et formulaires. */
     section: readonly RouteNames[];
+    /** Lien d'action : bouton mis en avant à droite de la barre du haut. */
+    primary?: boolean;
 }
 
 /** Tous les liens, dans l'ordre d'affichage. Les rôles reprennent meta.roles des routes. */
@@ -30,7 +32,10 @@ const allLinks: readonly NavLink[] = [
     },
     {to: {name: 'rooms'}, label: 'Salles', icon: 'room', minRole: 'USER', section: ['rooms', 'room-detail']},
     {to: {name: 'buildings'}, label: 'Bâtiments', icon: 'building', minRole: 'USER', section: ['buildings']},
-    {to: {name: 'report-new'}, label: 'Signaler un problème', icon: 'alert', minRole: 'USER', section: ['report-new']},
+    {
+        to: {name: 'report-new'}, label: 'Signaler un problème', icon: 'alert', minRole: 'USER',
+        section: ['report-new'], primary: true,
+    },
     {to: {name: 'reports'}, label: 'Remontées', icon: 'inbox', minRole: 'MANAGER', section: ['reports', 'report-document']},
     {to: {name: 'supervision'}, label: 'Supervision', icon: 'activity', minRole: 'USER', section: ['supervision']},
     {to: {name: 'users'}, label: 'Comptes', icon: 'users', minRole: 'ADMIN', section: ['users']},

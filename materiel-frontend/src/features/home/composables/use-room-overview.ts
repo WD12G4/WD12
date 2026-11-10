@@ -6,17 +6,9 @@
  * Besoin : vue des salles simple et lisible (entretien 4, 19:36). RG : RG-07, RG-24
  */
 import {computed, type Ref} from 'vue';
-import {type Material, type MaterialType, materialTypes} from '../../../models/material.model.ts';
+import {type Material, type MaterialType, materialTypes, materialTypeShortLabels} from '../../../models/material.model.ts';
 import type {Room} from '../../../models/room.model.ts';
 import {isMaterialExpiring} from '../../../shared/composables/use-material-status.ts';
-
-/** Libellés courts des pastilles, pour qu'elles tiennent à plusieurs sur une ligne de tuile. */
-const shortTypeLabels: Readonly<Record<MaterialType, string>> = {
-    UC: 'UC',
-    SCREEN: 'Écran',
-    PROJECTOR: 'Projecteur',
-    PERIPHERAL: 'Périph.',
-};
 
 /** Nombre de matériels d'un type, pour les pastilles d'une tuile. */
 interface TypeCount {
@@ -47,13 +39,15 @@ interface RoomSummary extends MaterialSummary {
 
 /**
  * Résume un lot de matériels : total, répartition par type, alertes de fin de disponibilité.
+ * Libellés courts (materialTypeShortLabels) : les pastilles tiennent à plusieurs sur une ligne de tuile.
  * @param materials matériels non archivés
+ * @param horizon nombre de jours pour « bientôt en fin de disponibilité »
  */
-function summarize(materials: Material[]): MaterialSummary {
+function summarize(materials: Material[], horizon: number): MaterialSummary {
     const byType = materialTypes
-        .map(type => ({type, label: shortTypeLabels[type], count: materials.filter(m => m.materialType === type).length}))
+        .map(type => ({type, label: materialTypeShortLabels[type], count: materials.filter(m => m.materialType === type).length}))
         .filter(typeCount => typeCount.count > 0);
-    const expiring = materials.filter(isMaterialExpiring).length;
+    const expiring = materials.filter(material => isMaterialExpiring(material, horizon)).length;
     return {total: materials.length, byType, expiring, hasMaterials: materials.length > 0, hasExpiring: expiring > 0};
 }
 
@@ -76,9 +70,10 @@ function compareRooms(a: Room, b: Room): number {
 
 /**
  * Crée la vue d'ensemble à partir des listes chargées par la vue.
+ * @param horizon nombre de jours pour « bientôt en fin de disponibilité »
  * @returns roomSummaries (une tuile par salle, triées) et stockSummary (matériel sans salle, RG-07)
  */
-export function useRoomOverview(rooms: Ref<Room[]>, materials: Ref<Material[]>) {
+export function useRoomOverview(rooms: Ref<Room[]>, materials: Ref<Material[]>, horizon: Readonly<Ref<number>>) {
     const activeMaterials = computed(() => materials.value.filter(material => !material.archived));
 
     const roomSummaries = computed<RoomSummary[]>(() => {
@@ -87,11 +82,11 @@ export function useRoomOverview(rooms: Ref<Room[]>, materials: Ref<Material[]>) 
             room,
             title: `Salle ${room.number}`,
             subtitle: `Bâtiment ${room.building.number}`,
-            ...summarize(byRoom.get(room.id) ?? []),
+            ...summarize(byRoom.get(room.id) ?? [], horizon.value),
         }));
     });
 
-    const stockSummary = computed(() => summarize(activeMaterials.value.filter(material => material.room === null)));
+    const stockSummary = computed(() => summarize(activeMaterials.value.filter(material => material.room === null), horizon.value));
 
     return {roomSummaries, stockSummary};
 }

@@ -38,16 +38,32 @@ async function checkAccess(to: RouteLocationNormalized): Promise<true | RouteLoc
     return true;
 }
 
+/** Dernière page demandée, même si sa navigation n'est pas finie : on y revient après reconnexion. */
+let requestedPath = '/';
+/** Vrai dès que la redirection vers la connexion est lancée (plusieurs requêtes peuvent échouer ensemble). */
+let redirectingToLogin = false;
+
+/**
+ * Session expirée : rechargement complet de la page de connexion, et non une navigation interne.
+ * Une navigation interne pouvait croiser celle en cours (transition de page) : l'adresse passait à
+ * /connexion mais l'ancienne page restait affichée. Le rechargement efface aussi l'écran et les
+ * données de la session terminée. Le message est affiché par login-view.vue (?session=expiree).
+ */
+function redirectToLogin(router: Router): void {
+    if (redirectingToLogin) return;
+    redirectingToLogin = true;
+    window.location.assign(router.resolve({name: 'login', query: {redirect: requestedPath, session: 'expiree'}}).href);
+}
+
 /**
  * Installe la garde sur le router et la redirection en cas de session expirée.
  * Les redirections utilisent des objets { name } : jamais de chemin en chaîne.
  * @param router instance créée dans index.ts
  */
 export function installGuards(router: Router): void {
-    router.beforeEach(checkAccess);
-
-    onSessionExpired(() => {
-        show('Votre session a expiré. Reconnectez-vous.', 'error');
-        void router.push({name: 'login', query: {redirect: router.currentRoute.value.fullPath}});
+    router.beforeEach(to => {
+        if (!to.meta.public) requestedPath = to.fullPath;
+        return checkAccess(to);
     });
+    onSessionExpired(() => redirectToLogin(router));
 }

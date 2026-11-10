@@ -4,7 +4,9 @@
  * <select> est celui du système (impossible à styliser sous Safari).
  * Accessible : bouton role="combobox" relié à son <label for> par l'id, liste role="listbox",
  * clavier complet (voir use-select.ts). La liste est rendue dans <body> (voir use-dropdown.ts).
- * Utilisé par : room-select, user-role-select, report-material-select, filtres et formulaires.
+ * Slot « trigger » : contenu du bouton (par défaut, le libellé de l'option choisie).
+ * Utilisé par : room-select, user-role-select, report-material-select, filtres et formulaires,
+ * dev-user-switch (slot « trigger »).
  */
 import {useSelect} from '../composables/use-select.ts';
 import type {SelectOption} from '../composables/use-listbox.ts';
@@ -52,7 +54,9 @@ const {
       @click="onClick"
       @keydown="onKeydown"
   >
-    <span class="select-value">{{ selectedLabel }}</span>
+    <slot name="trigger" :label="selectedLabel">
+      <span class="select-value">{{ selectedLabel }}</span>
+    </slot>
   </button>
   <Teleport to="body">
     <Transition name="select-pop">

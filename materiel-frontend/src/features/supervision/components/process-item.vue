@@ -1,34 +1,40 @@
 <script setup lang="ts">
 /**
- * Un processus lancé sur un poste, avec le bouton pour l'arrêter.
+ * Une application ouverte sur un poste (panneau de détail) : icône, nom, depuis quand, bouton Arrêter.
  * Composant de présentation.
  * Utilisé par : process-list.vue
  * RG : RG-26 (arrêt en un clic)
  */
 import {computed} from 'vue';
 import type {ProcessInfo} from '../../../models/supervision.model.ts';
-import {formatDateTime} from '../../../shared/composables/use-dates.ts';
+import {formatDateTime, formatElapsed} from '../../../shared/composables/use-dates.ts';
+import AppGlyph from './app-glyph.vue';
 
 //------------------ PROPS / EMITS ---------------------------
 const props = defineProps<{
-  /** Processus affiché. */
+  /** Application affichée. */
   process: ProcessInfo;
   /** Vrai pendant une action, pour éviter les doubles clics. */
   busy: boolean;
 }>();
 
 const emit = defineEmits<{
-  /** Demande d'arrêt du processus. */
+  /** Demande d'arrêt de l'application. */
   kill: [process: ProcessInfo];
 }>();
 
 //------------------ COMPUTED --------------------------------
-const startedAt = computed(() => `lancé le ${formatDateTime(props.process.startedAt)}`);
+const elapsed = computed(() => formatElapsed(props.process.startedAt));
+/** Date exacte, en info-bulle de la durée. */
+const startedAt = computed(() => `Lancée le ${formatDateTime(props.process.startedAt)}`);
 </script>
 
 <template>
-  <span>{{ process.name }}</span>
-  <span class="muted">{{ startedAt }}</span>
+  <AppGlyph :name="process.name" />
+  <span class="process-text">
+    <strong>{{ process.name }}</strong>
+    <span class="muted" :title="startedAt">{{ elapsed }}</span>
+  </span>
   <button
       type="button"
       class="delete-button"
