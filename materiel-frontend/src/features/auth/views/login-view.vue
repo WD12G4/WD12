@@ -1,8 +1,11 @@
 <script setup lang="ts">
 /**
  * Page de connexion. Seule page accessible sans être connecté (meta.public).
+ * Après une session expirée (?session=expiree, voir router/guards.ts), un message l'explique.
  * RG : RG-14 (rôles liés à des comptes), RG-19 (un compte désactivé est refusé par le backend)
  */
+import {computed} from 'vue';
+import {useRoute} from 'vue-router';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {ApiError} from '../../../services/api-error.ts';
@@ -13,6 +16,10 @@ import LoginForm from '../components/login-form.vue';
 //------------------ DATAS -----------------------------------
 const {login} = useAuth();
 const {loading, errorMessage, run} = useAsyncState();
+const route = useRoute();
+
+//------------------ COMPUTED --------------------------------
+const sessionExpired = computed(() => route.query.session === 'expiree');
 
 //------------------ FUNCTIONS -------------------------------
 /**
@@ -45,6 +52,13 @@ async function signIn(username: string, password: string): Promise<void> {
 
   <Card title="Connexion">
     <template #header>
+      <p
+          v-if="sessionExpired"
+          class="flash error"
+          role="alert"
+      >
+        Votre session a expiré. Reconnectez-vous : vous reviendrez sur la page demandée.
+      </p>
       <p>Connectez-vous avec le compte fourni par l'administrateur.</p>
     </template>
     <template #body>
