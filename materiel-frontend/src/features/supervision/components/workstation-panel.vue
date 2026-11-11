@@ -37,6 +37,8 @@ const macAddress = computed(() => props.view?.workstation.macAddress ?? '—');
 const status = computed(() => (props.view ? statusLabel(props.view.workstation) : ''));
 const isOnline = computed(() => props.view?.workstation.status === 'online');
 const emptyLabel = computed(() => (props.view ? `${openAppsLabel(props.view.workstation, 0)}.` : ''));
+/** Total affiché à côté du titre de la section (« Applications ouvertes · 21 »). */
+const openCount = computed(() => props.view?.processes.length ?? 0);
 /** Poste à masteriser (administrateur seulement), ou null pour masquer le bouton. */
 const reimageTarget = computed(() => (props.canReimage ? props.view : null));
 /** Pas de masterisation sur un poste éteint ou déjà en cours de masterisation. */
@@ -57,7 +59,9 @@ const reimageDisabled = computed(() => props.busy || !isOnline.value);
         <div class="full-width"><dt>Nom d'hôte</dt><dd class="code">{{ hostname }}</dd></div>
       </dl>
       <section class="panel-section">
-        <h3 class="eyebrow">Applications ouvertes</h3>
+        <h3 class="eyebrow">
+          Applications ouvertes · <span class="panel-count">{{ openCount }}</span>
+        </h3>
         <ProcessList
             :processes="view.processes"
             :empty-label="emptyLabel"
