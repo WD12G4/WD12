@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Gestion des comptes (ADMIN) : création, modification du rôle, du mot de passe et de l'activation,
- * suppression.
+ * archivage (le compte est désactivé et ne peut plus se connecter ; il reste réactivable).
  * RG : RG-14, RG-19, RG-20, RG-32
  */
 import {computed, onMounted, ref} from 'vue';
@@ -64,13 +64,12 @@ async function update(input: UserUpdateInput): Promise<void> {
   await saveThen(() => usersServices.update(user.id, input), `Le compte ${user.username} a été modifié.`);
 }
 
-/** Supprime après confirmation (suppression définitive côté backend). */
-async function remove(user: User): Promise<void> {
-  if (!window.confirm(`Supprimer définitivement le compte ${user.username} ?`)) return;
-  await run(async () => {
-    await usersServices.delete(user.id);
-    users.value = await usersServices.findAll();
-  });
+/** Archive un compte actif (après confirmation) ou réactive un compte archivé (RG-19). */
+async function toggleArchive(user: User): Promise<void> {
+  const archiving = user.enabled;
+  if (archiving && !window.confirm(`Archiver le compte ${user.username} ? Il ne pourra plus se connecter (réactivable à tout moment).`)) return;
+  const message = `Le compte ${user.username} a été ${archiving ? 'archivé' : 'réactivé'}.`;
+  await saveThen(() => usersServices.update(user.id, {password: '', role: user.role, enabled: !archiving}), message);
 }
 
 //------------------ LIFECYCLE -------------------------------
@@ -111,7 +110,7 @@ onMounted(load);
           :users="users"
           :current-user-id="currentUserId"
           @edit="editing = $event"
-          @remove="remove"
+          @toggle-archive="toggleArchive"
       />
     </template>
   </Card>

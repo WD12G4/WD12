@@ -19,7 +19,7 @@ const emit = defineEmits<{
   /** Demande de modification d'un compte. */
   edit: [user: User];
   /** Demande de suppression d'un compte. */
-  remove: [user: User];
+  toggleArchive: [user: User];
 }>();
 </script>
 
@@ -40,7 +40,7 @@ const emit = defineEmits<{
             :user="user"
             :is-current-user="user.id === currentUserId"
             @edit="emit('edit', $event)"
-            @remove="emit('remove', $event)"
+            @toggle-archive="emit('toggleArchive', $event)"
         />
       </tr>
     </tbody>
