@@ -6,9 +6,12 @@ import net.ent.etnc.dtos.supervision.ProcessInfoDto;
 import net.ent.etnc.dtos.supervision.WorkstationDto;
 import net.ent.etnc.models.KillEvent;
 import net.ent.etnc.models.Material;
+import net.ent.etnc.models.User;
 import net.ent.etnc.models.enums.EMaterialType;
+import net.ent.etnc.models.enums.ERole;
 import net.ent.etnc.repositories.MaterialRepository;
 import net.ent.etnc.services.KillEventService;
+import net.ent.etnc.services.UserService;
 import net.ent.etnc.websocket.AgentWebSocketHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -42,10 +45,14 @@ class SupervisionServiceImplTest {
     @Mock
     private KillEventService killEventService;
 
+    @Mock
+    private UserService userService;
+
     @InjectMocks
     private SupervisionServiceImpl supervisionService;
 
     private Material sampleUc;
+    private User sampleUser;
 
     @BeforeEach
     void setUp() {
@@ -53,6 +60,11 @@ class SupervisionServiceImplTest {
         sampleUc.setId(10L);
         sampleUc.setSerialNumber("UC-TEST-01");
         sampleUc.setMaterialType(EMaterialType.UC);
+
+        sampleUser = new User();
+        sampleUser.setId(3L);
+        sampleUser.setUsername("formateur");
+        sampleUser.setRole(ERole.USER);
     }
 
     @Test
@@ -94,6 +106,7 @@ class SupervisionServiceImplTest {
         when(materialRepository.findById(10L)).thenReturn(Optional.of(sampleUc));
         when(agentWebSocketHandler.executeKill(eq("UC-TEST-01"), eq(4321), anyLong()))
                 .thenReturn(new AgentWebSocketHandler.AgentKillResult(true, 4321, "code.exe", ""));
+        when(userService.currentUser()).thenReturn(sampleUser);
 
         KillEvent savedEvent = new KillEvent();
         savedEvent.setId(99L);
@@ -112,6 +125,7 @@ class SupervisionServiceImplTest {
         assertThat(captured.getResult()).isTrue();
         assertThat(captured.getProcessName()).isEqualTo("code.exe");
         assertThat(captured.getUc()).isEqualTo(sampleUc);
+        assertThat(captured.getUser()).isEqualTo(sampleUser);
     }
 
     @Test
@@ -120,6 +134,7 @@ class SupervisionServiceImplTest {
         when(materialRepository.findById(10L)).thenReturn(Optional.of(sampleUc));
         when(agentWebSocketHandler.executeKill(eq("UC-TEST-01"), eq(1), anyLong()))
                 .thenReturn(new AgentWebSocketHandler.AgentKillResult(false, 1, "systemd", "Action interdite : processus système"));
+        when(userService.currentUser()).thenReturn(sampleUser);
 
         KillEvent failedEvent = new KillEvent();
         failedEvent.setId(101L);
@@ -139,5 +154,6 @@ class SupervisionServiceImplTest {
         assertThat(captured.getResult()).isFalse();
         assertThat(captured.getProcessName()).isEqualTo("systemd");
         assertThat(captured.getUc()).isEqualTo(sampleUc);
+        assertThat(captured.getUser()).isEqualTo(sampleUser);
     }
 }

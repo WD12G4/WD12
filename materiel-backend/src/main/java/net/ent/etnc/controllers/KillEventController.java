@@ -32,11 +32,16 @@ public class KillEventController {
 
     /**
      * Liste paginée des {@link KillEvent}.
+     * Permet le filtrage optionnel par utilisateur (réservé à l'ADMIN ou à l'utilisateur lui-même).
      */
     @GetMapping
-    public Page<KillEventResponse> getAll(@PageableDefault(size = 20, sort = "id") Pageable pageable) {
-        return this.killEventService.findAll(pageable)
-                .map(this.killEventDtoAssembler::toDto);
+    public Page<KillEventResponse> getAll(
+            @RequestParam(required = false) Long userId,
+            @PageableDefault(size = 20, sort = "id") Pageable pageable) {
+        Page<KillEvent> events = (userId != null)
+                ? this.killEventService.findByUserId(userId, pageable)
+                : this.killEventService.findAll(pageable);
+        return events.map(this.killEventDtoAssembler::toDto);
     }
 
     /**

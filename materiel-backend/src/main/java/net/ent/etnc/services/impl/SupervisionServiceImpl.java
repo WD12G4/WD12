@@ -11,6 +11,7 @@ import net.ent.etnc.models.enums.EMaterialType;
 import net.ent.etnc.repositories.MaterialRepository;
 import net.ent.etnc.services.KillEventService;
 import net.ent.etnc.services.SupervisionService;
+import net.ent.etnc.services.UserService;
 import net.ent.etnc.services.commons.ResourceNotFoundException;
 import net.ent.etnc.services.commons.ServiceException;
 import net.ent.etnc.websocket.AgentWebSocketHandler;
@@ -34,14 +35,17 @@ public class SupervisionServiceImpl implements SupervisionService {
     private final MaterialRepository materialRepository;
     private final AgentWebSocketHandler agentWebSocketHandler;
     private final KillEventService killEventService;
+    private final UserService userService;
 
     @Autowired
     public SupervisionServiceImpl(MaterialRepository materialRepository,
                                   AgentWebSocketHandler agentWebSocketHandler,
-                                  KillEventService killEventService) {
+                                  KillEventService killEventService,
+                                  UserService userService) {
         this.materialRepository = materialRepository;
         this.agentWebSocketHandler = agentWebSocketHandler;
         this.killEventService = killEventService;
+        this.userService = userService;
     }
 
     @Override
@@ -188,6 +192,7 @@ public class SupervisionServiceImpl implements SupervisionService {
         KillEvent killEvent = new KillEvent();
         killEvent.setProcessName(processName);
         killEvent.setUc(uc);
+        killEvent.setUser(this.userService.currentUser());
         killEvent.setKillDateTime(LocalDateTime.now());
         killEvent.setResult(result.success());
 

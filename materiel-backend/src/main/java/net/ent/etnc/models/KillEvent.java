@@ -17,9 +17,9 @@ import java.time.format.DateTimeFormatter;
  */
 @Entity
 @Table(name = "killevents",
-        uniqueConstraints = @UniqueConstraint(name = "uk__killevent__process_name__uc__kill_date_time",
-                columnNames = {"process_name", "uc_id", "kill_date_time"}))
-@EqualsAndHashCode(callSuper = false, of = {"processName", "uc", "killDateTime"})
+        uniqueConstraints = @UniqueConstraint(name = "uk__killevent__process_name__uc__user__kill_date_time",
+                columnNames = {"process_name", "uc_id", "user_id", "kill_date_time"}))
+@EqualsAndHashCode(callSuper = false, of = {"processName", "uc", "user", "killDateTime"})
 public class KillEvent extends AbstractPersistableWithIdSetter<Long> {
 
     @Getter
@@ -38,6 +38,16 @@ public class KillEvent extends AbstractPersistableWithIdSetter<Long> {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uc_id", nullable = false, foreignKey = @ForeignKey(name = "fk__killevents__materials"))
     private Material uc;
+
+    /**
+     * Utilisateur ayant initié l'arrêt du processus.
+     */
+    @Getter
+    @Setter
+    @NotNull(message = "L'utilisateur doit être renseigné")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk__killevents__users"))
+    private User user;
 
     @Getter
     @Setter
@@ -60,6 +70,7 @@ public class KillEvent extends AbstractPersistableWithIdSetter<Long> {
         return "KillEvent{" +
                 "processName='" + processName + '\'' +
                 ", uc_SN=" + (uc != null ? uc.getSerialNumber() : "NONE") +
+                ", user=" + (user != null ? user.getUsername() : "NONE") +
                 ", killDateTime=" + (killDateTime != null ? killDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : "NONE") +
                 ", result=" + result +
                 '}';
