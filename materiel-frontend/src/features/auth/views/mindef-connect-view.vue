@@ -43,7 +43,7 @@ const cancelTarget = computed<RouteTarget>(() => {
 //------------------ FUNCTIONS -------------------------------
 /** « Mot de passe oublié ? » et « Créer un compte » : les comptes sont gérés par l'administrateur. */
 function explainAccounts(): void {
-  show("Simulation : les comptes et les mots de passe sont gérés par l'administrateur de Gestion du parc.");
+  show("Simulation : les comptes et les mots de passe sont gérés par l'administrateur de BASTION.");
 }
 
 /**
@@ -77,13 +77,13 @@ async function signIn(username: string, password: string): Promise<void> {
       </p>
     </header>
     <p class="sso-sim-notice" role="note">
-      Écran simulé pour la démonstration de Gestion du parc : ce n'est pas le service MinDef Connect.
+      Écran simulé pour la démonstration de BASTION : ce n'est pas le service MinDef Connect.
     </p>
     <section class="sso-panel" aria-labelledby="sso-title">
       <h1 id="sso-title">MindefConnect</h1>
       <h2>Se connecter avec son compte</h2>
       <p class="sso-intro">
-        <strong>Gestion du parc</strong> demande à vous identifier.
+        <strong>BASTION</strong> demande à vous identifier.
       </p>
 
       <LoginForm
@@ -113,7 +113,7 @@ async function signIn(username: string, password: string): Promise<void> {
       />
 
       <p class="sso-cancel">
-        <Link :to="cancelTarget">Annuler et revenir à Gestion du parc</Link>
+        <Link :to="cancelTarget">Annuler et revenir à BASTION</Link>
       </p>
     </section>
   </div>

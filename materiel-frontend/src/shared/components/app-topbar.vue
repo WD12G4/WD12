@@ -30,7 +30,7 @@ const emit = defineEmits<{
     >
       <AppIcon name="menu" />
     </button>
-    <span class="brand-logo" aria-hidden="true">GP</span>
-    <span class="brand-name">Gestion du parc</span>
+    <span class="brand-logo" aria-hidden="true">B</span>
+    <span class="brand-name">BASTION</span>
   </header>
 </template>

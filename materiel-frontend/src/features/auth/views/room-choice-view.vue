@@ -74,7 +74,7 @@ onMounted(load);
 <template>
   <div class="room-choice">
     <div class="login-brand">
-      <span class="brand-logo" aria-hidden="true">GP</span>
+      <span class="brand-logo" aria-hidden="true">B</span>
       <h1>{{ greeting }}</h1>
       <p>Dans quelle salle faites-vous cours ?</p>
     </div>

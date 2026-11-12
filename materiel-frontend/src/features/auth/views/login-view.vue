@@ -32,8 +32,8 @@ const ssoTarget = computed<RouteTarget>(() => {
 <template>
   <!-- Marque -->
   <div class="login-brand">
-    <span class="brand-logo" aria-hidden="true">GP</span>
-    <h1>Gestion du parc</h1>
+    <span class="brand-logo" aria-hidden="true">B</span>
+    <h1>BASTION</h1>
     <p>Le matériel informatique et les salles de l'école, au même endroit.</p>
   </div>
 
