@@ -40,9 +40,18 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
             String serialNumber,
             String hostname,
             String macAddress,
+            String username,
             WebSocketSession session,
             Instant connectedAt
-    ) {}
+    ) {
+        public AgentConnection(String serialNumber, String hostname, String macAddress, WebSocketSession session, Instant connectedAt) {
+            this(serialNumber, hostname, macAddress, null, session, connectedAt);
+        }
+
+        public AgentConnection withUsername(String newUsername) {
+            return new AgentConnection(serialNumber, hostname, macAddress, newUsername, session, connectedAt);
+        }
+    }
 
     public record AgentProcessInfo(
             int pid,
@@ -70,9 +79,9 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
 
             switch (type) {
                 case "REGISTER" -> handleRegister(session, root);
-                case "PROCESS_LIST" -> handleProcessList(root);
+                case "PROCESS_LIST" -> handleProcessList(session, root);
                 case "KILL_RESULT" -> handleKillResult(root);
-                case "PONG" -> log.trace("Pong reçu de l'agent [sessionId={}]", session.getId());
+                case "PONG" -> handlePong(session, root);
                 default -> log.warn("Message WebSocket agent inconnu : {}", type);
             }
         } catch (Exception e) {
@@ -80,25 +89,35 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
+    private void handlePong(WebSocketSession session, JsonObject root) {
+        log.trace("Pong reçu de l'agent [sessionId={}]", session.getId());
+        updateUsernameIfPresent(session, root);
+    }
+
     private void handleRegister(WebSocketSession session, JsonObject root) {
         String serialNumber = root.getString("serialNumber", "");
         String hostname = root.getString("hostname", "");
         String macAddress = root.getString("macAddress", "");
+        String username = root.containsKey("username") && !root.isNull("username")
+                ? root.getString("username", null)
+                : null;
 
         if (serialNumber.isBlank()) {
             log.warn("Tentative d'enregistrement agent sans serialNumber [sessionId={}]", session.getId());
             return;
         }
 
-        AgentConnection connection = new AgentConnection(serialNumber, hostname, macAddress, session, Instant.now());
+        AgentConnection connection = new AgentConnection(serialNumber, hostname, macAddress, username, session, Instant.now());
         connectedAgents.put(serialNumber, connection);
         sessionToSerialNumber.put(session.getId(), serialNumber);
 
-        log.info("Agent enregistré avec succès [serialNumber={}, hostname={}, macAddress={}]",
-                serialNumber, hostname, macAddress);
+        log.info("Agent enregistré avec succès [serialNumber={}, hostname={}, macAddress={}, username={}]",
+                serialNumber, hostname, macAddress, username);
     }
 
-    private void handleProcessList(JsonObject root) {
+    private void handleProcessList(WebSocketSession session, JsonObject root) {
+        updateUsernameIfPresent(session, root);
+
         String requestId = root.getString("requestId", "");
         CompletableFuture<List<AgentProcessInfo>> future = pendingProcessRequests.remove(requestId);
         if (future == null) {
@@ -120,6 +139,18 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
             }
         }
         future.complete(processes);
+    }
+
+    private void updateUsernameIfPresent(WebSocketSession session, JsonObject root) {
+        if (root.containsKey("username") && !root.isNull("username")) {
+            String updatedUser = root.getString("username", "");
+            if (!updatedUser.isBlank()) {
+                String serialNumber = sessionToSerialNumber.get(session.getId());
+                if (serialNumber != null) {
+                    connectedAgents.computeIfPresent(serialNumber, (s, conn) -> conn.withUsername(updatedUser));
+                }
+            }
+        }
     }
 
     private void handleKillResult(JsonObject root) {

@@ -41,6 +41,10 @@ public class OutboundResponse
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? MacAddress { get; set; }
 
+    [JsonPropertyName("username")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Username { get; set; }
+
     [JsonPropertyName("os")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Os { get; set; }

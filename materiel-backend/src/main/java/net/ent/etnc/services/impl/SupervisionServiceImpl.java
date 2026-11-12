@@ -87,11 +87,16 @@ public class SupervisionServiceImpl implements SupervisionService {
             String hostname = conn.map(AgentWebSocketHandler.AgentConnection::hostname)
                     .filter(h -> !h.isBlank())
                     .orElse(null);
+            String username = conn.map(AgentWebSocketHandler.AgentConnection::username)
+                    .filter(u -> !u.isBlank())
+                    .orElse(null);
 
             String name = (hostname != null && !hostname.isBlank())
                     ? hostname + " (" + uc.getSerialNumber() + ")"
                     : "Poste " + index + " (" + uc.getSerialNumber() + ")";
-            String traineeLabel = online ? "Poste connecté" : "Poste éteint / Agent déconnecté";
+            String traineeLabel = (username != null && !username.isBlank())
+                    ? username
+                    : (online ? "Poste connecté" : "Poste éteint / Agent déconnecté");
 
             workstations.add(new WorkstationDto(
                     uc.getId(),
@@ -100,7 +105,8 @@ public class SupervisionServiceImpl implements SupervisionService {
                     traineeLabel,
                     macAddress,
                     online,
-                    hostname
+                    hostname,
+                    username
             ));
             index++;
         }
@@ -112,14 +118,17 @@ public class SupervisionServiceImpl implements SupervisionService {
                     Material uc = materialRepository.findBySerialNumber(agent.serialNumber()).orElse(null);
                     if (uc != null) {
                         seenSerials.add(agent.serialNumber());
+                        String username = (agent.username() != null && !agent.username().isBlank()) ? agent.username() : null;
+                        String traineeLabel = (username != null && !username.isBlank()) ? username : "Poste connecté";
                         workstations.add(new WorkstationDto(
                                 uc.getId(),
                                 null,
                                 (agent.hostname() != null && !agent.hostname().isBlank() ? agent.hostname() : "Poste") + " (" + agent.serialNumber() + ")",
-                                "Poste connecté",
+                                traineeLabel,
                                 agent.macAddress(),
                                 true,
-                                agent.hostname()
+                                agent.hostname(),
+                                username
                         ));
                     }
                 }

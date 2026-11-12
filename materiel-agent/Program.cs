@@ -17,6 +17,7 @@ public class Program
         var cfg = Config.Load(args);
         string hostname = Environment.MachineName;
         string macAddress = Config.GetMacAddress();
+        string sessionUser = Config.GetActiveSessionUsername();
         string os = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "windows" :
                     RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux" : "osx";
 
@@ -26,6 +27,7 @@ public class Program
         Console.WriteLine($"Système         : {RuntimeInformation.OSDescription} ({RuntimeInformation.OSArchitecture})");
         Console.WriteLine($"Machine         : {hostname}");
         Console.WriteLine($"Adresse MAC     : {macAddress}");
+        Console.WriteLine($"Session active  : {sessionUser}");
         Console.WriteLine($"UC Serial Number: {cfg.SerialNumber}");
         Console.WriteLine($"Serveur cible   : {cfg.ServerUrl}");
         Console.WriteLine("==========================================================");
@@ -72,6 +74,7 @@ public class Program
                     SerialNumber = cfg.SerialNumber,
                     Hostname = hostname,
                     MacAddress = macAddress,
+                    Username = Config.GetActiveSessionUsername(),
                     Os = os
                 };
 
@@ -135,7 +138,8 @@ public class Program
                 var pong = new OutboundResponse
                 {
                     Type = "PONG",
-                    SerialNumber = serialNumber
+                    SerialNumber = serialNumber,
+                    Username = Config.GetActiveSessionUsername()
                 };
 
                 await SendJsonAsync(ws, pong, ct);
@@ -190,6 +194,7 @@ public class Program
                             Type = "PROCESS_LIST",
                             RequestId = cmd.RequestId,
                             SerialNumber = serialNumber,
+                            Username = Config.GetActiveSessionUsername(),
                             Processes = procs
                         };
                         await SendJsonAsync(ws, procResp, ct);
@@ -210,13 +215,13 @@ public class Program
                         break;
 
                     default:
-                        Console.WriteLine($"[AVERTISSEMENT] Action non supportée : {cmd.Action}");
+                        Console.WriteLine($"[AVERTISSEMENT] Action inconnue reçue : {cmd.Action}");
                         break;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ERREUR] Erreur de traitement message : {ex.Message}");
+                Console.WriteLine($"[ERREUR] Échec de traitement du message serveur : {ex.Message}");
             }
         }
     }
@@ -224,6 +229,7 @@ public class Program
     private static async Task SendJsonAsync(ClientWebSocket ws, object payload, CancellationToken ct)
     {
         if (ws.State != WebSocketState.Open) return;
+
         string json = JsonSerializer.Serialize(payload, JsonOptions);
         byte[] bytes = Encoding.UTF8.GetBytes(json);
         await ws.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, ct);

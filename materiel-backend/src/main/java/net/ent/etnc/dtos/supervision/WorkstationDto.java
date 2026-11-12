@@ -10,9 +10,14 @@ public record WorkstationDto(
         String traineeLabel,
         String macAddress,
         boolean online,
-        String hostname
+        String hostname,
+        String username
 ) {
     public WorkstationDto(Long id, Long roomId, String name, String traineeLabel, String macAddress, boolean online) {
-        this(id, roomId, name, traineeLabel, macAddress, online, null);
+        this(id, roomId, name, traineeLabel, macAddress, online, null, null);
+    }
+
+    public WorkstationDto(Long id, Long roomId, String name, String traineeLabel, String macAddress, boolean online, String hostname) {
+        this(id, roomId, name, traineeLabel, macAddress, online, hostname, null);
     }
 }
