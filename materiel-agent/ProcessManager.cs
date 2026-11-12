@@ -7,23 +7,88 @@ public static class ProcessManager
 {
     private static readonly HashSet<string> ProtectedNames = new(StringComparer.OrdinalIgnoreCase)
     {
-        // Windows
+        // Windows - Processus système et d'arrière-plan
         "system",
         "registry",
+        "memory compression",
+        "smss",
         "smss.exe",
+        "csrss",
         "csrss.exe",
+        "wininit",
         "wininit.exe",
+        "services",
         "services.exe",
+        "lsass",
         "lsass.exe",
+        "svchost",
         "svchost.exe",
+        "fontdrvhost",
         "fontdrvhost.exe",
+        "winlogon",
         "winlogon.exe",
+        "dwm",
         "dwm.exe",
+        "explorer",
         "explorer.exe",
+        "spoolsv",
         "spoolsv.exe",
+        "taskhostw",
         "taskhostw.exe",
+        "sihost",
         "sihost.exe",
+        "runtimebroker",
         "runtimebroker.exe",
+        "startmenuexperiencehost",
+        "startmenuexperiencehost.exe",
+        "searchhost",
+        "searchhost.exe",
+        "searchindexer",
+        "searchindexer.exe",
+        "shellexperiencehost",
+        "shellexperiencehost.exe",
+        "applicationframehost",
+        "applicationframehost.exe",
+        "ctfmon",
+        "ctfmon.exe",
+        "logonui",
+        "logonui.exe",
+        "smartscreen",
+        "smartscreen.exe",
+        "securityhealthservice",
+        "securityhealthservice.exe",
+        "securityhealthsystray",
+        "securityhealthsystray.exe",
+        "msmpeng",
+        "msmpeng.exe",
+        "nissrv",
+        "nissrv.exe",
+        "sgrmbroker",
+        "sgrmbroker.exe",
+        "aggregatorhost",
+        "aggregatorhost.exe",
+        "usoclient",
+        "usoclient.exe",
+        "mousocoreworker",
+        "mousocoreworker.exe",
+        "wudfhost",
+        "wudfhost.exe",
+        "wmiprvse",
+        "wmiprvse.exe",
+        "rdpclip",
+        "rdpclip.exe",
+        "dllhost",
+        "dllhost.exe",
+        "conhost",
+        "conhost.exe",
+        "taskmgr",
+        "taskmgr.exe",
+        "textinputhost",
+        "textinputhost.exe",
+        "systemsettings",
+        "systemsettings.exe",
+        "microsoftedgeupdate",
+        "microsoftedgeupdate.exe",
 
         // Linux
         "systemd",
@@ -66,14 +131,27 @@ public static class ProcessManager
                 return true;
             }
 
-            // 2. Nom dans la liste noire
+            // 2. Spécifique Windows : filtrer la Session 0 (démons et services système d'arrière-plan)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                try
+                {
+                    if (p.SessionId == 0)
+                    {
+                        return true;
+                    }
+                }
+                catch { }
+            }
+
+            // 3. Nom dans la liste noire
             string name = p.ProcessName;
             if (ProtectedNames.Contains(name) || ProtectedNames.Contains(name + ".exe"))
             {
                 return true;
             }
 
-            // 3. Spécifique Linux : vérifier UID si accessible dans /proc/{id}/status
+            // 4. Spécifique Linux : vérifier UID si accessible dans /proc/{id}/status
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 int uid = GetLinuxProcessUid(p.Id);
@@ -83,7 +161,7 @@ public static class ProcessManager
                 }
             }
 
-            // 4. Spécifique macOS : filtrer les démons système et sous-processus helpers
+            // 5. Spécifique macOS : filtrer les démons système et sous-processus helpers
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 string? mainExe = GetProcessMainModuleFileName(p);
@@ -203,7 +281,7 @@ public static class ProcessManager
 
     public static List<ProcessInfo> GetUserProcesses()
     {
-        var result = new List<ProcessInfo>();
+        var appCandidates = new Dictionary<string, (int pid, long startedAt, bool hasWindow)>(StringComparer.OrdinalIgnoreCase);
         var processes = Process.GetProcesses();
 
         foreach (var p in processes)
@@ -217,6 +295,13 @@ public static class ProcessManager
 
                 string name = GetDisplayName(p);
 
+                bool hasWindow = false;
+                try
+                {
+                    hasWindow = p.MainWindowHandle != IntPtr.Zero;
+                }
+                catch { }
+
                 long startedAt;
                 try
                 {
@@ -227,7 +312,22 @@ public static class ProcessManager
                     startedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 }
 
-                result.Add(new ProcessInfo(p.Id, name, startedAt));
+                // Dédoublonnage des sous-processus d'une même application (ex: Edge, Chrome, Firefox, VS Code, Discord) :
+                // On privilégie le processus principal qui possède une fenêtre graphique, sinon le plus ancien / parent.
+                if (!appCandidates.TryGetValue(name, out var existing))
+                {
+                    appCandidates[name] = (p.Id, startedAt, hasWindow);
+                }
+                else
+                {
+                    bool shouldReplace = (!existing.hasWindow && hasWindow) ||
+                                         (existing.hasWindow == hasWindow && startedAt < existing.startedAt);
+
+                    if (shouldReplace)
+                    {
+                        appCandidates[name] = (p.Id, startedAt, hasWindow);
+                    }
+                }
             }
             catch
             {
@@ -237,6 +337,12 @@ public static class ProcessManager
             {
                 p.Dispose();
             }
+        }
+
+        var result = new List<ProcessInfo>();
+        foreach (var (name, candidate) in appCandidates)
+        {
+            result.Add(new ProcessInfo(candidate.pid, name, candidate.startedAt));
         }
 
         return result;
