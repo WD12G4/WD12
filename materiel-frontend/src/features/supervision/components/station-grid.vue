@@ -4,7 +4,6 @@
  * Composant de présentation.
  * Utilisé par : supervision-view.vue
  */
-import type {ProcessInfo} from '../../../models/supervision.model.ts';
 import type {WorkstationView} from '../composables/use-supervision.ts';
 import StationTile from './station-tile.vue';
 
@@ -14,15 +13,11 @@ const props = defineProps<{
   views: WorkstationView[];
   /** Identifiant du poste ouvert dans le panneau, ou null. */
   selectedId: number | null;
-  /** Vrai pendant une action. */
-  busy: boolean;
 }>();
 
 const emit = defineEmits<{
   /** Ouverture du détail d'un poste (son identifiant). */
   open: [workstationId: number];
-  /** Fermeture d'une application. */
-  kill: [process: ProcessInfo];
 }>();
 
 //------------------ FUNCTIONS -------------------------------
@@ -42,9 +37,7 @@ const cascade = (index: number): Record<string, number> => ({'--i': index});
       <StationTile
           :view="view"
           :selected="isSelected(view)"
-          :busy="busy"
           @open="emit('open', $event.workstation.id)"
-          @kill="emit('kill', $event)"
       />
     </li>
   </ul>

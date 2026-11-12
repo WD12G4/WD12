@@ -9,7 +9,7 @@ import HomeView from '../features/home/views/home-view.vue';
 import LoginView from '../features/auth/views/login-view.vue';
 
 export const routes = [
-    //------------------ ACCUEIL ET CONNEXION --------------------
+    //------------------ ACCUEIL, CONNEXION, SALLE DU FORMATEUR (guards.ts)
     {
         path: '/',
         name: 'home',
@@ -21,6 +21,12 @@ export const routes = [
         name: 'login',
         component: LoginView,
         meta: {roles: [], public: true},
+    },
+    {
+        path: '/choix-salle',
+        name: 'room-choice',
+        component: () => import('../features/auth/views/room-choice-view.vue'),
+        meta: {roles: ['USER']},
     },
     //------------------ MATÉRIEL (lot 2) -----------------------
     {

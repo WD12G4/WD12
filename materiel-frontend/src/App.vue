@@ -3,6 +3,7 @@
  * Coquille de l'application : menu (si connecté ; barre flottante en haut, tiroir sur mobile),
  * barre du haut sur mobile, message temporaire, page courante avec transition, et alerte des
  * remontées non lues pour le gestionnaire (RG-23). Sans utilisateur connecté, la page est centrée (connexion).
+ * Formateur sans salle de cours : le menu n'a pas de liens tant qu'il ne l'a pas choisie (room-choice-view.vue).
  * Transition entre les pages : le navigateur s'en charge s'il connaît l'API View Transitions
  * (router/view-transition.ts) ; sinon, fondu de Vue (<Transition name="page">).
  */
@@ -11,6 +12,7 @@ import {useRoute} from 'vue-router';
 import {useAuth} from './shared/composables/use-auth.ts';
 import {useFlashMessage} from './shared/composables/use-flash-message.ts';
 import {useNavLinks} from './shared/composables/use-nav-links.ts';
+import {useTeachingRoom} from './shared/composables/use-teaching-room.ts';
 import {navigateTo} from './router/navigation.ts';
 import {viewTransitionsSupported} from './router/view-transition.ts';
 import AppNav from './shared/components/app-nav.vue';
@@ -23,6 +25,7 @@ import {useUnreadReports} from './features/reports/composables/use-unread-report
 const route = useRoute();
 const {currentUser, logout} = useAuth();
 const {visibleLinks} = useNavLinks();
+const {needsRoomChoice} = useTeachingRoom();
 const {clear: clearFlash} = useFlashMessage();
 const {unreadCount, visible: showReportAlert, dismiss: dismissReportAlert} = useUnreadReports();
 /** Tiroir du menu ouvert (mobile uniquement : sur grand écran, le menu est la barre du haut). */
@@ -31,6 +34,8 @@ const menuOpen = ref(false);
 //------------------ COMPUTED --------------------------------
 /** Mise en page : avec menu si connecté, centrée sinon. */
 const shellClass = computed(() => (currentUser.value ? 'app-shell' : 'guest-shell'));
+/** Formateur qui n'a pas encore choisi sa salle : pas de liens, seulement la déconnexion. */
+const menuLinks = computed(() => (needsRoomChoice.value ? [] : visibleLinks.value));
 
 //------------------ FUNCTIONS -------------------------------
 /** Déconnecte l'utilisateur puis affiche la page de connexion (sans message de l'utilisateur précédent). */
@@ -59,7 +64,7 @@ watch(() => route.fullPath, () => {
     <!-- Menu, seulement pour un utilisateur connecté -->
     <template v-if="currentUser">
       <AppNav
-          :links="visibleLinks"
+          :links="menuLinks"
           :open="menuOpen"
           :user="currentUser"
           @close="menuOpen = false"

@@ -1,6 +1,6 @@
 /**
  * Garde de route : restaure la session, renvoie vers la connexion si besoin,
- * et refuse les pages réservées à un rôle supérieur.
+ * refuse les pages réservées à un rôle supérieur, et impose au formateur le choix de sa salle.
  * Utilisé par : router/index.ts
  * RG : RG-14 à RG-18 (droits par rôle), RG-31, RG-32
  *
@@ -10,9 +10,11 @@
 import type {RouteLocationNormalized, RouteLocationRaw, Router} from 'vue-router';
 import {useAuth} from '../shared/composables/use-auth.ts';
 import {useFlashMessage} from '../shared/composables/use-flash-message.ts';
+import {useTeachingRoom} from '../shared/composables/use-teaching-room.ts';
 
 const {isAuthenticated, restoreSession, hasRole, onSessionExpired} = useAuth();
 const {show} = useFlashMessage();
+const {isTrainer, needsRoomChoice} = useTeachingRoom();
 
 /**
  * Décide si la navigation est permise.
@@ -35,7 +37,19 @@ async function checkAccess(to: RouteLocationNormalized): Promise<true | RouteLoc
         show("Vous n'avez pas accès à cette page.", 'error');
         return {name: 'home'};
     }
-    return true;
+    return checkTeachingRoom(to);
+}
+
+/**
+ * Formateur sans salle : choix de la salle d'abord, puis retour à la page demandée (?redirect=).
+ * Les autres rôles n'ont pas de salle à choisir.
+ * @param to route demandée
+ * @returns true pour laisser passer, ou la route vers laquelle rediriger
+ */
+function checkTeachingRoom(to: RouteLocationNormalized): true | RouteLocationRaw {
+    if (to.name === 'room-choice') return isTrainer.value ? true : {name: 'home'};
+    if (!needsRoomChoice.value) return true;
+    return to.fullPath === '/' ? {name: 'room-choice'} : {name: 'room-choice', query: {redirect: to.fullPath}};
 }
 
 /** Dernière page demandée, même si sa navigation n'est pas finie : on y revient après reconnexion. */

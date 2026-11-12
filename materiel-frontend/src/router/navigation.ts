@@ -5,7 +5,7 @@
  * - replaceWith / returnTo : après un formulaire, il ne reste pas dans l'historique ;
  * - backLinkTarget / followBackLink : le lien « ← Retour » ramène à la page d'où l'on vient
  *   (Vue Router range le chemin de la page précédente dans history.state.back) ;
- * - navigateAfterLogin : après la connexion, retour à la page demandée.
+ * - navigateAfterLogin : après la connexion (et le choix de la salle), retour à la page demandée.
  * Utilisé par : les vues, shared/components/back-link.vue
  */
 import type {RouteLocationResolved} from 'vue-router';
@@ -92,12 +92,18 @@ export function followBackLink(back: BackLinkTarget) {
     return router.push(back.to);
 }
 
-/** Après la connexion : la page demandée avant (?redirect=), si c'est une page de l'application ; sinon le tableau de bord. */
+/** Pages où l'on ne revient pas après la connexion ou le choix de la salle. */
+const afterLoginExcluded: readonly RouteNames[] = ['login', 'room-choice', 'not-found'];
+
+/**
+ * Après la connexion ou le choix de la salle (formateur) : la page demandée avant (?redirect=),
+ * si c'est une page de l'application ; sinon le tableau de bord.
+ */
 export function navigateAfterLogin() {
     const redirect = router.currentRoute.value.query.redirect;
     if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
         const resolved = router.resolve(redirect);
-        if (resolved.matched.length > 0 && resolved.name !== 'login' && resolved.name !== 'not-found') return router.replace(resolved);
+        if (resolved.matched.length > 0 && !afterLoginExcluded.includes(resolved.name as RouteNames)) return router.replace(resolved);
     }
     return router.replace({name: 'home'});
 }

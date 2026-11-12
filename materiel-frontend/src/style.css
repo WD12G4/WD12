@@ -697,6 +697,9 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 .supervision-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem; margin: 1.25rem 0; }
 .supervision-toolbar .field:last-child { margin-left: auto; }
 .supervision-toolbar .segmented { min-height: 0; }
+/* Formateur : sa salle de cours, sans choix, et le lien pour en changer. */
+.locked-room { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.9rem; min-height: 2.5rem; margin: 0; color: var(--title); }
+.locked-room a { font-size: 0.88rem; font-weight: 600; }
 
 /* Résumé de la salle : trois chiffres, et les applications ouvertes sur plusieurs postes. */
 .room-summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 0.9rem; margin-bottom: 1.25rem; }
@@ -747,7 +750,7 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 .station-tile.reimaging .station-status::before { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); animation: pulse 1.2s ease-in-out infinite; }
 .station-count { margin: auto 0 0; color: var(--muted); font-size: 0.8rem; line-height: 1.3; }
 
-/* Applications ouvertes, façon Dock : un clic sur une icône ferme l'application (« × » au survol). */
+/* Applications ouvertes, façon Dock : simple aperçu (on ferme une application depuis le panneau du poste). */
 .app-dock { display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 2.5rem; margin: 0; padding: 0; list-style: none; }
 .app-glyph {
   display: inline-grid; place-items: center; flex-shrink: 0; width: 2.5rem; height: 2.5rem; border-radius: 0.72rem;
@@ -765,18 +768,6 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 .app-glyph.tone-graphite { background: var(--app-graphite); }
 .app-glyph.tone-sky { background: var(--app-sky); }
 .app-glyph.tone-teal { background: var(--app-teal); }
-.app-kill { position: relative; z-index: 1; padding: 0; border: none; border-radius: 0.72rem; background: none; box-shadow: none; }
-.app-kill:hover { transform: translateY(-2px) scale(1.06); box-shadow: none; filter: none; }
-.app-kill::after {
-  content: '×'; position: absolute; top: -0.4rem; left: -0.4rem;
-  display: grid; place-items: center; width: 1.2rem; height: 1.2rem; border-radius: 50%;
-  background: var(--thumb); color: var(--title); font-size: 0.9rem; font-weight: 700; line-height: 1;
-  box-shadow: var(--thumb-shadow); opacity: 0; transform: scale(0.5);
-  transition: opacity var(--speed) var(--ease), transform var(--speed) var(--spring);
-}
-.app-kill:is(:hover, :focus-visible)::after { opacity: 1; transform: none; }
-/* Écran tactile : pas de survol, le « × » reste visible. */
-@media (hover: none) { .app-kill::after { opacity: 1; transform: none; } }
 /* Application fermée : l'icône rétrécit puis disparaît ; une nouvelle apparaît avec un léger rebond. */
 .app-pop-enter-active { transition: opacity 240ms var(--ease), transform 320ms var(--spring); }
 .app-pop-leave-active { transition: opacity 240ms var(--ease), transform 240ms var(--ease); }

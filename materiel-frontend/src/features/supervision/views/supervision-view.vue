@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * Supervision d'une salle : les postes en tuiles (état, stagiaire, applications ouvertes), une
- * application fermée en un clic, le détail d'un poste dans le panneau latéral, un résumé de la salle
- * et le journal des actions. L'administrateur peut aussi masteriser un poste.
+ * Supervision d'une salle : les postes en tuiles (état, applications ouvertes), le détail d'un poste
+ * dans le panneau latéral (où l'on ferme une application en un clic), un résumé de la salle et le
+ * journal des actions. L'administrateur peut aussi masteriser un poste.
+ * Le formateur voit sa salle de cours, choisie à la connexion ; les autres rôles choisissent la salle.
  * Données de l'agent de supervision (API /supervision), relues toutes les 10 s ; masterisation simulée.
  * RG : RG-25, RG-26, RG-28 ; journal (entretien 4). RG-27 (liste noire) : bonus, pas encore d'écran.
  */
@@ -10,9 +11,8 @@ import {computed, onMounted, ref, watch} from 'vue';
 import type {ProcessInfo} from '../../../models/supervision.model.ts';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
-import {useLocations} from '../../../shared/composables/use-locations.ts';
-import {byBuildingThenNumber} from '../../../shared/composables/use-room-label.ts';
 import {type SupervisionTab, type WorkstationView, useSupervision} from '../composables/use-supervision.ts';
+import {useSupervisionRooms} from '../composables/use-supervision-rooms.ts';
 import Card from '../../../shared/components/card.vue';
 import DemoBanner from '../../../shared/components/demo-banner.vue';
 import FormError from '../../../shared/components/form-error.vue';
@@ -28,9 +28,8 @@ const {hasRole} = useAuth();
 /** Chargements (salles, postes) : indicateur visible. Actions : boutons désactivés, sans indicateur. */
 const {loading, errorMessage, run} = useAsyncState();
 const {loading: busy, errorMessage: actionError, run: act} = useAsyncState();
-const {rooms, loadLocations} = useLocations();
+const {rooms, selectedRoomId, lockedRoom, loadRooms} = useSupervisionRooms();
 const {workstationViews, events, loadRoom, killProcess, killEverywhere, reimage} = useSupervision();
-const selectedRoomId = ref<number | null>(null);
 const tab = ref<SupervisionTab>('stations');
 const openedId = ref<number | null>(null);
 
@@ -43,10 +42,9 @@ const showJournal = computed(() => tab.value === 'journal');
 const openedView = computed(() => workstationViews.value.find(view => view.workstation.id === openedId.value) ?? null);
 
 //------------------ FUNCTIONS -------------------------------
-/** Charge les salles et choisit la première (par bâtiment, puis par numéro). */
+/** Charge les salles et choisit la salle affichée (use-supervision-rooms.ts). */
 async function load(): Promise<void> {
-  await run(loadLocations);
-  selectedRoomId.value ??= [...rooms.value].sort(byBuildingThenNumber)[0]?.id ?? null;
+  await run(loadRooms);
 }
 
 /** Ferme une application en un clic, sans confirmation (RG-26 : « en un clic »). */
@@ -78,13 +76,14 @@ watch(selectedRoomId, roomId => {
   <Card class="supervision-card" title="Supervision des postes">
     <template #header>
       <DemoBanner>Postes, applications et arrêts réels (agent de supervision) ; seule la masterisation est simulée.</DemoBanner>
-      <p>Survolez une application pour la fermer d'un clic ; cliquez sur un poste pour voir son détail.</p>
+      <p>Cliquez sur un poste pour voir ses applications et en fermer une.</p>
     </template>
     <template #body>
       <SupervisionToolbar
           v-model:room-id="selectedRoomId"
           v-model:tab="tab"
           :rooms="rooms"
+          :locked-room="lockedRoom"
       />
       <LoadState
           :loading="loading"
@@ -101,9 +100,7 @@ watch(selectedRoomId, roomId => {
         <StationGrid
             :views="workstationViews"
             :selected-id="openedId"
-            :busy="busy"
             @open="openedId = $event"
-            @kill="kill"
         />
       </template>
       <SupervisionJournal v-if="showJournal" :events="events" />
