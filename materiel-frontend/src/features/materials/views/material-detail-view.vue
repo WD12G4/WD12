@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Fiche d'un matériel, avec les actions autorisées par le rôle :
- * modifier et archiver (ADMIN, RG-16), changer d'emplacement (MANAGER et ADMIN, RG-17).
+ * modifier et archiver (MANAGER et ADMIN, RG-16), changer d'emplacement (MANAGER et ADMIN, RG-17).
  */
 import {computed, onMounted, ref, watch} from 'vue';
 import type {Material} from '../../../models/material.model.ts';
@@ -34,7 +34,7 @@ const material = ref<Material | null>(null);
 
 //------------------ COMPUTED --------------------------------
 const materialId = computed(() => Number(props.id));
-const canEdit = computed(() => hasRole('ADMIN'));
+const canEdit = computed(() => hasRole('MANAGER'));
 const canAssign = computed(() => hasRole('MANAGER'));
 const isNotFound = computed(() => errorStatus.value === 404);
 

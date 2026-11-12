@@ -3,7 +3,7 @@
  * Liste et recherche du matériel : l'écran le plus important pour le client
  * (besoin « scroller, chercher, vérifier », entretien 1, 0:31).
  * ?emplacement=stock|salle dans l'URL ouvre la liste déjà filtrée (liens du tableau de bord).
- * RG : RG-07, RG-10, RG-16 (création et archivage réservés à l'administrateur)
+ * RG : RG-07, RG-10, RG-16 (création et archivage : gestionnaire et administrateur, comme le backend)
  */
 import {computed, onMounted, ref} from 'vue';
 import {useRoute} from 'vue-router';
@@ -29,8 +29,8 @@ const materials = ref<Material[]>([]);
 const {filters, visibleMaterials} = useMaterialFilters(materials, filtersFromQuery(useRoute().query));
 
 //------------------ COMPUTED --------------------------------
-/** RG-16 : seul l'administrateur crée et archive. */
-const isAdmin = computed(() => hasRole('ADMIN'));
+/** RG-16 : le gestionnaire et l'administrateur créent et archivent (backend : ADMIN ou MANAGER). */
+const canManage = computed(() => hasRole('MANAGER'));
 const isLoaded = computed(() => !loading.value && errorMessage.value === null);
 
 //------------------ FUNCTIONS -------------------------------
@@ -60,7 +60,7 @@ onMounted(load);
     <template #header>
       <p>Retrouvez un matériel par son numéro de série, sa salle ou son bâtiment.</p>
       <Link
-          v-if="isAdmin"
+          v-if="canManage"
           class="button-link"
           :to="{ name: 'material-new' }"
       >
@@ -81,7 +81,7 @@ onMounted(load);
       <MaterialList
           v-if="isLoaded"
           :materials="visibleMaterials"
-          :can-archive="isAdmin"
+          :can-archive="canManage"
           @archive="archive"
       />
     </template>

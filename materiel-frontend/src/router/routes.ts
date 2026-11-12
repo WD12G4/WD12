@@ -40,7 +40,7 @@ export const routes = [
         path: '/materiel/nouveau',
         name: 'material-new',
         component: () => import('../features/materials/views/material-create-view.vue'),
-        meta: {roles: ['ADMIN']},
+        meta: {roles: ['MANAGER']},
     },
     {
         path: '/materiel/:id',
@@ -54,7 +54,7 @@ export const routes = [
         name: 'material-edit',
         component: () => import('../features/materials/views/material-edit-view.vue'),
         props: true,
-        meta: {roles: ['ADMIN']},
+        meta: {roles: ['MANAGER']},
     },
     //------------------ SALLES, BÂTIMENTS, COMPTES (lot 3) ------
     {

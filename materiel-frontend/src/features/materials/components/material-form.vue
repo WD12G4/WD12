@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Formulaire de création ou de modification d'un matériel (ADMIN).
+ * Formulaire de création ou de modification d'un matériel (gestionnaire et administrateur).
  * Composant de présentation : il émet la saisie, la vue appelle le service et lui repasse l'erreur.
  * Utilisé par : material-create-view.vue, material-edit-view.vue
  * RG : RG-01, RG-03, RG-04, RG-05, RG-06, RG-16

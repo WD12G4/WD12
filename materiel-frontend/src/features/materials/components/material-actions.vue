@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * Boutons d'administration d'une fiche matériel : modifier et archiver (ADMIN).
+ * Boutons de gestion d'une fiche matériel : modifier et archiver (gestionnaire et administrateur).
  * Composant de présentation : les droits arrivent par la prop canEdit.
  * Utilisé par : material-detail-view.vue
- * RG : RG-10 (archivage), RG-16 (réservé à l'administrateur)
+ * RG : RG-10 (archivage), RG-16 (gestionnaire et administrateur)
  */
 import {computed} from 'vue';
 import type {Material} from '../../../models/material.model.ts';
@@ -14,7 +14,7 @@ import FormError from '../../../shared/components/form-error.vue';
 const props = defineProps<{
   /** Matériel affiché. */
   material: Material;
-  /** Vrai si l'utilisateur est administrateur. */
+  /** Vrai si l'utilisateur est gestionnaire ou administrateur. */
   canEdit: boolean;
   /** Erreur de l'archivage, ou null. */
   errorMessage: string | null;

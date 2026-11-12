@@ -3,7 +3,7 @@
  * Aperçu latéral d'un matériel : la fiche s'ouvre à droite de la liste, sans la quitter ni perdre ses
  * filtres (panneau partagé side-panel.vue). Un clic sur un autre matériel change l'aperçu.
  * Utilisé par : material-list.vue (liste du matériel, fiche d'une salle)
- * RG : RG-16 (« Modifier » réservé à l'administrateur)
+ * RG : RG-16 (« Modifier » : gestionnaire et administrateur)
  */
 import {computed} from 'vue';
 import type {Material} from '../../../models/material.model.ts';
@@ -27,7 +27,7 @@ const emit = defineEmits<{
 const {hasRole} = useAuth();
 
 //------------------ COMPUTED --------------------------------
-const canEdit = computed(() => hasRole('ADMIN'));
+const canEdit = computed(() => hasRole('MANAGER'));
 const materialId = computed(() => props.material?.id ?? 0);
 const panelKey = computed(() => props.material?.id ?? null);
 const title = computed(() => props.material?.serialNumber ?? '');

@@ -1,8 +1,8 @@
 /**
- * Archivage d'un matériel avec confirmation (ADMIN).
+ * Archivage d'un matériel avec confirmation (gestionnaire et administrateur).
  * Partagé par la liste et la fiche pour ne pas dupliquer la confirmation.
  * Utilisé par : material-view.vue, material-detail-view.vue
- * RG : RG-10 (suppression = archivage), RG-16 (réservé à l'administrateur)
+ * RG : RG-10 (suppression = archivage), RG-16 (gestionnaire et administrateur)
  */
 import type {Material} from '../../../models/material.model.ts';
 import {materialsServices} from '../../../services/materials.services.ts';

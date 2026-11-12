@@ -17,7 +17,7 @@ import MaterialStatusBadge from '../../../shared/components/material-status-badg
 const props = defineProps<{
   /** Matériel à afficher. */
   material: Material;
-  /** Vrai si l'utilisateur peut archiver (ADMIN, RG-16). */
+  /** Vrai si l'utilisateur peut archiver (gestionnaire et administrateur, RG-16). */
   canArchive: boolean;
 }>();
 

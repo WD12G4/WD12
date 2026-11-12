@@ -14,7 +14,7 @@ import MaterialPreview from './material-preview.vue';
 defineProps<{
   /** Matériels à afficher (déjà filtrés). */
   materials: Material[];
-  /** Vrai si l'utilisateur peut archiver (ADMIN, RG-16). */
+  /** Vrai si l'utilisateur peut archiver (gestionnaire et administrateur, RG-16). */
   canArchive: boolean;
 }>();
 
