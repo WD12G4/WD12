@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
- * Tuile d'un poste : nom, état, stagiaire connecté (session ouverte, RG-30) et applications ouvertes
- * en icônes façon Dock (les 8 premières, puis
+ * Tuile d'un poste : en titre le stagiaire connecté (session ouverte, RG-30), sinon le nom du poste ;
+ * en dessous le logo du système et le nom du poste (ou « Aucune session ouverte ») ; l'état ; les
+ * applications ouvertes en icônes façon Dock (les 8 premières, puis
  * « +N » : le détail complet est dans le panneau).
  * Un clic sur la tuile ouvre le détail (panneau à droite), où l'on ferme une application (RG-26) :
  * les icônes de la tuile ne ferment rien, pour éviter une fermeture par un clic malheureux.
@@ -15,8 +16,8 @@ import {computed} from 'vue';
 import type {WorkstationView} from '../composables/use-supervision.ts';
 import {openAppsLabel, statusLabel} from '../composables/use-station-labels.ts';
 import {resetTilt, tiltTowardsPointer} from '../../../shared/composables/use-motion.ts';
-import AppIcon from '../../../shared/components/app-icon.vue';
 import AppGlyph from './app-glyph.vue';
+import OsLogo from './os-logo.vue';
 
 //------------------ PROPS / EMITS ---------------------------
 const props = defineProps<{
@@ -47,11 +48,18 @@ const moreLabel = computed(() => {
 });
 const status = computed(() => statusLabel(props.view.workstation));
 const countLabel = computed(() => openAppsLabel(props.view.workstation, props.view.processes.length));
-const openLabel = computed(() => `${name.value}${sessionUser.value ? `, ${sessionUser.value}` : ''}, ${status.value} : voir le détail`);
+const openLabel = computed(() => `${[sessionUser.value, name.value].filter(Boolean).join(' sur ')}, ${status.value} : voir le détail`);
 const progress = computed(() => props.view.workstation.reimage);
-/** Stagiaire connecté ; « Aucune session ouverte » pour un poste en ligne sans session, rien s'il est éteint. */
+/** Stagiaire connecté (identifiant de session), ou null. */
 const sessionUser = computed(() => props.view.workstation.sessionUser);
-const showNoSession = computed(() => !sessionUser.value && props.view.workstation.status === 'online');
+/** Titre : le stagiaire, sinon le nom du poste. */
+const title = computed(() => sessionUser.value ?? name.value);
+/** Sous le titre : le nom du poste s'il y a un stagiaire, « Aucune session ouverte » s'il est en ligne, rien s'il est éteint. */
+const subtitle = computed(() => {
+  if (sessionUser.value) return name.value;
+  return props.view.workstation.status === 'online' ? 'Aucune session ouverte' : '';
+});
+const os = computed(() => props.view.workstation.os);
 </script>
 
 <template>
@@ -69,16 +77,15 @@ const showNoSession = computed(() => !sessionUser.value && props.view.workstatio
             :aria-label="openLabel"
             @click="emit('open', view)"
         >
-          {{ name }}
+          {{ title }}
         </button>
       </h3>
       <span class="station-status">{{ status }}</span>
     </div>
-    <p v-if="sessionUser" class="station-user">
-      <AppIcon name="user" />
-      <span>{{ sessionUser }}</span>
+    <p v-if="subtitle" class="station-meta">
+      <OsLogo v-if="os" :os="os" />
+      <span>{{ subtitle }}</span>
     </p>
-    <p v-else-if="showNoSession" class="station-user empty">Aucune session ouverte</p>
     <span
         v-if="view.workstation.simulated"
         class="sim-badge"

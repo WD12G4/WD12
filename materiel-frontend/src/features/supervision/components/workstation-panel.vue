@@ -8,10 +8,11 @@
  * RG : RG-26, RG-28 (masterisation par l'administrateur), RG-29 (identification du poste)
  */
 import {computed} from 'vue';
-import type {ProcessInfo} from '../../../models/supervision.model.ts';
+import {type ProcessInfo, workstationOsLabels} from '../../../models/supervision.model.ts';
 import type {WorkstationView} from '../composables/use-supervision.ts';
 import {openAppsLabel, statusLabel} from '../composables/use-station-labels.ts';
 import SidePanel from '../../../shared/components/side-panel.vue';
+import OsLogo from './os-logo.vue';
 import ProcessList from './process-list.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -37,6 +38,10 @@ const title = computed(() => props.view?.workstation.name ?? '');
 const sessionUser = computed(() => props.view?.workstation.sessionUser ?? (isOnline.value ? 'Aucune session ouverte' : '—'));
 const eyebrow = computed(() => (props.view?.workstation.simulated ? 'Poste simulé · démonstration' : 'Poste de la salle'));
 const installed = computed(() => props.view?.installed ?? null);
+/** Système remonté par l'agent (vrai poste ; un poste simulé affiche son système installé). */
+const realOs = computed(() => (installed.value ? null : props.view?.workstation.os ?? null));
+const realOsLabel = computed(() => (realOs.value ? workstationOsLabels[realOs.value] : ''));
+const serialNumber = computed(() => props.view?.workstation.serialNumber ?? null);
 const hostname = computed(() => props.view?.workstation.hostname ?? 'Inconnu (agent non connecté)');
 const macAddress = computed(() => props.view?.workstation.macAddress ?? '—');
 const status = computed(() => (props.view ? statusLabel(props.view.workstation) : ''));
@@ -62,7 +67,9 @@ const reimageDisabled = computed(() => props.busy || !isOnline.value);
         <div class="full-width"><dt>Stagiaire (session ouverte)</dt><dd>{{ sessionUser }}</dd></div>
         <div><dt>État</dt><dd>{{ status }}</dd></div>
         <div><dt>Adresse MAC</dt><dd class="code">{{ macAddress }}</dd></div>
-        <div class="full-width"><dt>Nom d'hôte</dt><dd class="code">{{ hostname }}</dd></div>
+        <div><dt>Nom d'hôte</dt><dd class="code">{{ hostname }}</dd></div>
+        <div v-if="serialNumber"><dt>N° de série</dt><dd class="code">{{ serialNumber }}</dd></div>
+        <div v-if="realOs"><dt>Système</dt><dd class="os-line"><OsLogo :os="realOs" />{{ realOsLabel }}</dd></div>
         <template v-if="installed">
           <div><dt>Système</dt><dd>{{ installed.system }}</dd></div>
           <div><dt>Image</dt><dd>{{ installed.image }}</dd></div>

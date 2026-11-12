@@ -12,9 +12,19 @@ const workstationStatusLabels = {
     reimaging: 'Masterisation…',
 } as const;
 
+/** Noms des systèmes remontés par l'agent. */
+const workstationOsLabels = {
+    windows: 'Windows',
+    linux: 'Linux',
+    macos: 'macOS',
+} as const;
+
 //----------------- TYPES --------------------------------
 /** État d'un poste : agent connecté, agent déconnecté (poste éteint), masterisation en cours (simulée). */
 type WorkstationStatus = keyof typeof workstationStatusLabels;
+
+/** Système d'un poste, remonté par l'agent : décide du logo affiché (os-logo.vue). */
+type WorkstationOs = keyof typeof workstationOsLabels;
 
 /** Avancement d'une masterisation simulée : étape en cours et pourcentage global. */
 interface ReimageProgress {
@@ -33,8 +43,12 @@ interface Workstation {
     /** Identifiant de l'UC (matériel), comme dans KillEvent. */
     id: number;
     roomId: number | null;
-    /** Nom donné par le backend : « nom d'hôte (n° de série) », ou « Poste N (n° de série) » sans agent. */
+    /** Nom affiché : nom d'hôte, ou « Poste N » sans agent (le n° de série est à part). */
     name: string;
+    /** N° de série de l'UC, ou null (poste simulé). */
+    serialNumber: string | null;
+    /** Système remonté par l'agent, ou null s'il est inconnu (agent non connecté). */
+    os: WorkstationOs | null;
     /** Nom d'hôte remonté par l'agent, ou null s'il n'est pas connecté. */
     hostname: string | null;
     /** Identifiant de la session ouverte sur le poste (le stagiaire), ou null : aucune session ou agent déconnecté. */
@@ -77,5 +91,5 @@ interface SupervisionEvent {
     detail: string | null;
 }
 
-export {workstationStatusLabels};
-export type {Workstation, WorkstationStatus, ReimageProgress, ProcessInfo, SupervisionEvent};
+export {workstationStatusLabels, workstationOsLabels};
+export type {Workstation, WorkstationStatus, WorkstationOs, ReimageProgress, ProcessInfo, SupervisionEvent};

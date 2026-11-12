@@ -3,11 +3,15 @@
  * Source : WorkstationDto, ProcessInfoDto, KillProcessRequest, KillProcessResponse
  * (backend, package dtos.supervision).
  */
-import type {ProcessInfo, Workstation} from './supervision.model.ts';
+import type {ProcessInfo, Workstation, WorkstationOs} from './supervision.model.ts';
 import {parseApiDateTime} from './date-time.dto.ts';
 
 /** Valeur renvoyée par le backend quand l'adresse MAC est inconnue (agent déconnecté). */
 const UNKNOWN_MAC = 'N/A';
+/** Nom du backend : « nom d'hôte (n° de série) » ou « Poste N (n° de série) ». */
+const NAME_WITH_SERIAL = /^(.*) \(([^()]+)\)$/;
+/** Système envoyé par l'agent (« windows », « linux », « osx ») vers celui du modèle. */
+const OS_FROM_AGENT: Readonly<Record<string, WorkstationOs>> = {windows: 'windows', linux: 'linux', osx: 'macos', macos: 'macos'};
 
 /** Réponse de l'API pour un poste (une UC de la salle). */
 export interface WorkstationDto {
@@ -21,6 +25,8 @@ export interface WorkstationDto {
     hostname: string | null;
     /** Utilisateur de la session ouverte sur le poste (agent C#), ou null. */
     username: string | null;
+    /** Système de l'agent (« windows », « linux », « osx »), ou null. */
+    os?: string | null;
 }
 
 /** Réponse de l'API pour un processus. */
@@ -50,10 +56,13 @@ export interface KillProcessResponseDto {
  * @param dto poste reçu
  */
 export function workstationFromDto(dto: WorkstationDto): Workstation {
+    const [, baseName, serialNumber] = NAME_WITH_SERIAL.exec(dto.name) ?? [dto.name, dto.name, null];
     return {
         id: dto.id,
         roomId: dto.roomId,
-        name: dto.name,
+        name: dto.hostname || baseName,
+        serialNumber,
+        os: OS_FROM_AGENT[dto.os?.toLowerCase() ?? ''] ?? null,
         hostname: dto.hostname || null,
         sessionUser: dto.username?.trim() || null,
         macAddress: dto.macAddress && dto.macAddress !== UNKNOWN_MAC ? dto.macAddress : null,

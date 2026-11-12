@@ -9,7 +9,7 @@
  */
 import type {ProcessInfo, ReimageProgress, SupervisionEvent, Workstation} from '../models/supervision.model.ts';
 import type {InstalledConfig, ReimageConfig} from '../models/reimage.model.ts';
-import {configFor, configSummary, describeConfig, processName} from './simulation-catalog.mock.ts';
+import {configFor, configSummary, describeConfig, findOs, processName} from './simulation-catalog.mock.ts';
 
 /** Système et image de départ de chaque poste simulé d'une salle. */
 const INITIAL_CONFIGS: [osId: string, profileId: string][] = [['windows-11', 'dev'], ['windows-11', 'dev'], ['ubuntu-24', 'dev'], ['windows-11', 'office']];
@@ -51,7 +51,7 @@ function createStations(roomId: number): SimStation[] {
         const n = String(index + 1).padStart(2, '0');
         const workstation: Workstation = {
             id: -(roomId * 100 + index + 1), roomId, name: `PC-S${n}`, hostname: `pc-s${n}`, sessionUser: TRAINEES[index] ?? null,
-            macAddress: `02:00:00:${hex}:00:${n}`, status: 'online', simulated: true, reimage: null,
+            macAddress: `02:00:00:${hex}:00:${n}`, status: 'online', simulated: true, reimage: null, serialNumber: null, os: null,
         };
         const station: SimStation = {workstation, config: configFor(osId, profileId), processes: [], job: null};
         station.processes = openApps(station, 90);
@@ -107,10 +107,11 @@ function addEvent(station: SimStation, event: Pick<SupervisionEvent, 'kind' | 'p
 }
 
 export const simulationServices = {
-    /** Postes simulés d'une salle, avec leur masterisation en cours (pendant laquelle aucune session n'est ouverte). */
+    /** Postes simulés d'une salle : système installé, masterisation en cours (sans session ouverte pendant ce temps). */
     findWorkstations: (roomId: number): Workstation[] => stationsOf(roomId).map(station => {
         const reimage = settle(station);
-        return {...station.workstation, status: reimage ? 'reimaging' : 'online', reimage, sessionUser: reimage ? null : station.workstation.sessionUser};
+        const os = findOs(station.config.osId).family;
+        return {...station.workstation, status: reimage ? 'reimaging' : 'online', reimage, os, sessionUser: reimage ? null : station.workstation.sessionUser};
     }),
 
     /** Processus des postes simulés d'une salle (aucun pendant une masterisation). */
