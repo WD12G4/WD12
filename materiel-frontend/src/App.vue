@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 /**
  * Coquille de l'application : menu (si connecté ; barre flottante en haut, tiroir sur mobile),
- * barre du haut sur mobile, message temporaire, page courante avec transition, et alerte des
- * remontées non lues pour le gestionnaire (RG-23). Sans utilisateur connecté, la page est centrée (connexion).
+ * barre du haut sur mobile, message temporaire et page courante avec transition. Charge aussi le
+ * nombre de remontées à traiter du gestionnaire, affiché à côté de « Remontées » (RG-23). Sans utilisateur connecté, la page est centrée (connexion).
  * Formateur sans salle de cours : pas de menu, page centrée comme la connexion (room-choice-view.vue).
  * Transition entre les pages : le navigateur s'en charge s'il connaît l'API View Transitions
  * (router/view-transition.ts) ; sinon, fondu de Vue (<Transition name="page">).
@@ -18,7 +18,6 @@ import {viewTransitionsSupported} from './router/view-transition.ts';
 import AppNav from './shared/components/app-nav.vue';
 import AppTopbar from './shared/components/app-topbar.vue';
 import FlashMessage from './shared/components/flash-message.vue';
-import ReportAlert from './features/reports/components/report-alert.vue';
 import {useUnreadReports} from './features/reports/composables/use-unread-reports.ts';
 
 //------------------ DATAS -----------------------------------
@@ -27,7 +26,7 @@ const {currentUser, logout} = useAuth();
 const {visibleLinks} = useNavLinks();
 const {needsRoomChoice} = useTeachingRoom();
 const {clear: clearFlash} = useFlashMessage();
-const {unreadCount, visible: showReportAlert, dismiss: dismissReportAlert} = useUnreadReports();
+useUnreadReports();
 /** Tiroir du menu ouvert (mobile uniquement : sur grand écran, le menu est la barre du haut). */
 const menuOpen = ref(false);
 
@@ -76,11 +75,6 @@ watch(() => route.fullPath, () => {
 
     <main class="content">
       <FlashMessage />
-      <ReportAlert
-          v-if="showReportAlert"
-          :count="unreadCount"
-          @dismiss="dismissReportAlert"
-      />
 
       <!-- Page courante : animée par le navigateur (View Transitions), sinon par Vue -->
       <router-view v-slot="{ Component, route: current }">

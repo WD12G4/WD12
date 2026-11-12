@@ -40,6 +40,7 @@
   --danger: #c4001a;
   --danger-soft: #ff3b301a;
   --danger-border: #ff3b3040;
+  --on-danger: #ffffff;
   --neutral-soft: #7676801f;
   --backdrop: #1d1d1f33;
   /* Verre : fond translucide, plus opaque pour les panneaux à lire (aperçu, listes déroulantes). */
@@ -119,6 +120,7 @@
     --danger: #ff6961;
     --danger-soft: #ff453a26;
     --danger-border: #ff453a4d;
+    --on-danger: #1d1d1f;
     --neutral-soft: #7676803d;
     --backdrop: #00000080;
     --glass: #26262b8c;
@@ -171,6 +173,7 @@
     --danger: #ff7a8a;
     --danger-soft: #ff4d6d26;
     --danger-border: #ff4d6d4d;
+    --on-danger: #1d1d1f;
     --neutral-soft: #9d8fd03d;
     --backdrop: #0c0a1d99;
     --glass: #2a1f5266;
@@ -335,6 +338,11 @@ p { color: var(--muted); line-height: 1.6; }
 .nav a:hover { background: var(--surface-hover); color: var(--title); }
 /* Pastille glissante sous la rubrique courante (use-nav-indicator.ts) : barre du haut seulement. */
 .nav-pill { display: none; }
+/* Compteur rouge à côté du libellé (ex. remontées à traiter du gestionnaire, use-unread-reports.ts). */
+.nav-count {
+  display: inline-grid; place-items: center; min-width: 1.25rem; height: 1.25rem; padding-inline: 0.35rem; margin-left: 0.35rem;
+  border-radius: 999px; background: var(--danger); color: var(--on-danger); font-size: 0.72rem; font-weight: 700; line-height: 1;
+}
 .user-card { display: flex; align-items: center; gap: 0.55rem; flex-shrink: 0; }
 .avatar {
   display: grid; place-items: center; flex-shrink: 0;

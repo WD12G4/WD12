@@ -11,6 +11,7 @@ import type {Report} from '../../../models/report.model.ts';
 import {reportsServices} from '../../../services/reports.services.ts';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
+import {useUnreadReports} from '../composables/use-unread-reports.ts';
 import Card from '../../../shared/components/card.vue';
 import FormError from '../../../shared/components/form-error.vue';
 import LoadState from '../../../shared/components/load-state.vue';
@@ -22,6 +23,7 @@ const {currentUser, hasRole} = useAuth();
 const {loading, errorMessage, run} = useAsyncState();
 /** Traitement d'une remontée : le tableau reste affiché (pas d'indicateur de chargement). */
 const {errorMessage: actionError, run: act} = useAsyncState();
+const {refresh: refreshUnread} = useUnreadReports();
 const reports = ref<Report[]>([]);
 const openedId = ref<number | null>(null);
 
@@ -43,11 +45,15 @@ async function load(): Promise<void> {
   });
 }
 
-/** Marque une remontée comme traitée, ou la rouvre ; seule la ligne concernée est remplacée. */
+/**
+ * Marque une remontée comme traitée, ou la rouvre ; seule la ligne concernée est remplacée.
+ * Le compteur du menu est rechargé (une autre personne a pu en traiter entre-temps).
+ */
 async function toggleHandled(report: Report): Promise<void> {
   await act(async () => {
     const updated = await reportsServices.setHandled(report.id, !report.handled);
     reports.value = reports.value.map(item => (item.id === updated.id ? updated : item));
+    await refreshUnread();
   });
 }
 

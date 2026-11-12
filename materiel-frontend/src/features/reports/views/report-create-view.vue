@@ -12,6 +12,7 @@ import {replaceWith} from '../../../router/navigation.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {useFlashMessage} from '../../../shared/composables/use-flash-message.ts';
 import {useLocations} from '../../../shared/composables/use-locations.ts';
+import {useUnreadReports} from '../composables/use-unread-reports.ts';
 import Card from '../../../shared/components/card.vue';
 import LoadState from '../../../shared/components/load-state.vue';
 import ReportForm from '../components/report-form.vue';
@@ -21,6 +22,7 @@ const {loading, errorMessage, run} = useAsyncState();
 const {loading: sending, errorMessage: sendError, run: runSend} = useAsyncState();
 const {rooms, loadLocations} = useLocations();
 const {show} = useFlashMessage();
+const {refresh: refreshUnread} = useUnreadReports();
 const materials = ref<Material[]>([]);
 
 //------------------ FUNCTIONS -------------------------------
@@ -32,10 +34,11 @@ async function load(): Promise<void> {
   });
 }
 
-/** Enregistre la remontée puis ouvre la liste des remontées, où elle apparaît en tête. */
+/** Enregistre la remontée, met à jour le compteur du menu, puis ouvre la liste des remontées, où elle apparaît en tête. */
 async function send(input: ReportInput): Promise<void> {
   await runSend(async () => {
     await reportsServices.create(input);
+    await refreshUnread();
     show('Votre remontée a été transmise au gestionnaire.', 'success');
     await replaceWith({name: 'reports'});
   });

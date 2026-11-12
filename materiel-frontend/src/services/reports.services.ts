@@ -47,7 +47,7 @@ export const reportsServices = {
         return reportFromDto(dto);
     },
 
-    /** Nombre de remontées à traiter, pour la pop-up de connexion du gestionnaire (RG-23). */
+    /** Nombre de remontées à traiter, affiché à côté de « Remontées » dans le menu du gestionnaire (RG-23). */
     countUnhandled: async (): Promise<number> => {
         const page = await apiRequest<PageDto<ReportDto>>('/reports?handled=false&size=1');
         return page.totalElements;

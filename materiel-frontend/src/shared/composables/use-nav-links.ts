@@ -1,13 +1,15 @@
 /**
  * Liens du menu principal, filtrés selon le rôle de l'utilisateur connecté.
  * Utilisé par : App.vue, app-nav.vue
- * RG : RG-16, RG-17, RG-31, RG-32 (un lien n'apparaît que si la page est accessible)
+ * RG : RG-16, RG-17, RG-31, RG-32 (un lien n'apparaît que si la page est accessible),
+ * RG-23 (« Remontées » porte le nombre de remontées à traiter du gestionnaire)
  */
 import {computed} from 'vue';
 import type {Role} from '../../models/user.model.ts';
 import type {RouteNames, RouteTarget} from '../../router/route-types.ts';
 import type {IconName} from '../components/app-icon.vue';
 import {useAuth} from './use-auth.ts';
+import {useUnreadReports} from '../../features/reports/composables/use-unread-reports.ts';
 
 /** Lien du menu. */
 interface NavLink {
@@ -21,6 +23,8 @@ interface NavLink {
     section: readonly RouteNames[];
     /** Lien d'action : bouton mis en avant à droite de la barre du haut. */
     primary?: boolean;
+    /** Nombre affiché en pastille rouge à côté du libellé (absent ou 0 : pas de pastille). */
+    count?: number;
 }
 
 /** Tous les liens, dans l'ordre d'affichage. Les rôles reprennent meta.roles des routes. */
@@ -43,11 +47,14 @@ const allLinks: readonly NavLink[] = [
 
 /**
  * Liens visibles pour l'utilisateur connecté.
- * @returns un computed avec les liens autorisés (vide si personne n'est connecté)
+ * @returns un computed avec les liens autorisés (vide si personne n'est connecté), compteurs compris
  */
 export function useNavLinks() {
     const {hasRole} = useAuth();
-    const visibleLinks = computed(() => allLinks.filter(link => hasRole(link.minRole)));
+    const {unreadCount} = useUnreadReports();
+    const visibleLinks = computed(() => allLinks
+        .filter(link => hasRole(link.minRole))
+        .map(link => (link.to.name === 'reports' ? {...link, count: unreadCount.value} : link)));
     return {visibleLinks};
 }
 

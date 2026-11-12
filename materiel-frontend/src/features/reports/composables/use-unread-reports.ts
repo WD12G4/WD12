@@ -1,36 +1,39 @@
 /**
- * Nombre de remontées à traiter (non traitées), chargé à la connexion d'un gestionnaire (RG-23 : pop-up
- * à la connexion, pas de mail). Le formateur n'est pas concerné : il ne consulte pas les remontées.
- * Utilisé par : App.vue
+ * Nombre de remontées à traiter (non traitées), affiché en pastille rouge à côté du lien « Remontées »
+ * du menu pour le gestionnaire (RG-23 : notification dans l'application, pas de mail).
+ * Le formateur n'est pas concerné : il ne traite pas les remontées.
+ * L'état est partagé au niveau du module : App.vue lance le chargement, le menu affiche, les vues des
+ * remontées rechargent le compteur après une action.
+ * Utilisé par : App.vue, shared/composables/use-nav-links.ts, report-view.vue, report-create-view.vue
  */
-import {computed, ref, watch} from 'vue';
+import {ref, watch} from 'vue';
 import {reportsServices} from '../../../services/reports.services.ts';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
 
+//------------------ DATAS -----------------------------------
+const unreadCount = ref(0);
+/** Vrai une fois la surveillance de la connexion installée (une seule fois pour toute l'application). */
+let watching = false;
+
+//------------------ FUNCTIONS -------------------------------
 /**
- * Charge le compteur pour un gestionnaire, 0 sinon.
- * Une erreur n'empêche pas d'utiliser l'application : la pop-up ne s'affiche simplement pas.
- * @param isManager vrai si l'utilisateur connecté est gestionnaire ou administrateur
+ * Recharge le compteur pour un gestionnaire, 0 sinon.
+ * Une erreur n'empêche pas d'utiliser l'application : la pastille ne s'affiche simplement pas.
  */
-async function fetchUnreadCount(isManager: boolean): Promise<number> {
-    return isManager ? reportsServices.countUnhandled().catch(() => 0) : 0;
+async function refresh(): Promise<void> {
+    const {hasRole} = useAuth();
+    unreadCount.value = hasRole('MANAGER') ? await reportsServices.countUnhandled().catch(() => 0) : 0;
 }
 
 /**
- * Surveille la connexion et charge le nombre de remontées non lues.
- * @returns unreadCount, visible (la pop-up est à afficher) et dismiss() (la fermer)
+ * Nombre de remontées non traitées, rechargé à chaque connexion (changement d'utilisateur).
+ * @returns unreadCount (lecture) et refresh() (recharger après une action sur les remontées)
  */
 export function useUnreadReports() {
-    const {currentUser, hasRole} = useAuth();
-    const unreadCount = ref(0);
-    const dismissed = ref(false);
-    const visible = computed(() => !dismissed.value && unreadCount.value > 0);
-
-    // Chaque nouvelle connexion (changement d'utilisateur) recharge le compteur et réaffiche la pop-up.
-    watch(() => currentUser.value?.id, async () => {
-        dismissed.value = false;
-        unreadCount.value = await fetchUnreadCount(hasRole('MANAGER'));
-    }, {immediate: true});
-
-    return {unreadCount, visible, dismiss: () => { dismissed.value = true; }};
+    if (!watching) {
+        watching = true;
+        const {currentUser} = useAuth();
+        watch(() => currentUser.value?.id, refresh, {immediate: true});
+    }
+    return {unreadCount, refresh};
 }
