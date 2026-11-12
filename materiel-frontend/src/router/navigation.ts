@@ -98,12 +98,15 @@ const afterLoginExcluded: readonly RouteNames[] = ['login', 'room-choice', 'not-
 /**
  * Après la connexion ou le choix de la salle (formateur) : la page demandée avant (?redirect=),
  * si c'est une page de l'application ; sinon le tableau de bord.
+ * @param query paramètres ajoutés à l'adresse (ex. { salle: '12' } après le choix de la salle)
  */
-export function navigateAfterLogin() {
+export function navigateAfterLogin(query: Record<string, string> = {}) {
     const redirect = router.currentRoute.value.query.redirect;
     if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
         const resolved = router.resolve(redirect);
-        if (resolved.matched.length > 0 && !afterLoginExcluded.includes(resolved.name as RouteNames)) return router.replace(resolved);
+        if (resolved.matched.length > 0 && !afterLoginExcluded.includes(resolved.name as RouteNames)) {
+            return router.replace({path: resolved.path, query: {...resolved.query, ...query}, hash: resolved.hash});
+        }
     }
-    return router.replace({name: 'home'});
+    return router.replace({name: 'home', query});
 }

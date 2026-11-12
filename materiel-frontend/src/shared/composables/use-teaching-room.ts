@@ -1,45 +1,52 @@
 /**
  * Salle de cours du formateur : choisie juste après la connexion, obligatoire pour le formateur.
- * La supervision affiche alors seulement les postes de cette salle (supervision-view.vue).
- * L'état est déclaré au niveau du module, comme use-auth.ts : toutes les pages partagent la même salle.
- * Il reste EN MÉMOIRE (pas de stockage navigateur) : une nouvelle connexion, un changement de compte
- * ou un rechargement de la page redemandent la salle.
- * Utilisé par : router/guards.ts, App.vue, room-choice-view.vue, user-card.vue, supervision-view.vue
+ * Elle est dans l'adresse de chaque page (?salle=12) : la garde (router/guards.ts) la recopie d'une
+ * page à l'autre et la lit ici. Un rechargement ou un lien copié garde donc la salle.
+ * La supervision affiche ensuite seulement les postes de cette salle (supervision-view.vue).
+ * Utilisé par : router/guards.ts, App.vue, room-choice-view.vue, use-supervision-rooms.ts, use-dev-accounts.ts
  */
-import {computed, ref, watch} from 'vue';
-import type {Room} from '../../models/room.model.ts';
+import {computed, ref} from 'vue';
+import type {LocationQuery} from 'vue-router';
 import {useAuth} from './use-auth.ts';
 
 //------------------ DATAS -----------------------------------
+/** Nom du paramètre d'adresse qui porte la salle de cours. */
+const TEACHING_ROOM_QUERY = 'salle';
 const {currentUser} = useAuth();
-const teachingRoom = ref<Room | null>(null);
+/** Salle lue dans l'adresse par la garde, à chaque navigation ; null si l'adresse n'en a pas. */
+const teachingRoomId = ref<number | null>(null);
 
 //------------------ COMPUTED --------------------------------
 /** Vrai pour un formateur (rôle USER) : le gestionnaire et l'administrateur ne choisissent pas de salle. */
 const isTrainer = computed(() => currentUser.value?.role === 'USER');
-/** Vrai tant qu'un formateur connecté n'a pas choisi sa salle : la garde l'envoie sur le choix. */
-const needsRoomChoice = computed(() => isTrainer.value && teachingRoom.value === null);
+/** Vrai tant qu'un formateur connecté n'a pas de salle : la garde l'envoie sur le choix. */
+const needsRoomChoice = computed(() => isTrainer.value && teachingRoomId.value === null);
 
 //------------------ FUNCTIONS -------------------------------
 /**
- * Enregistre la salle de cours choisie.
- * @param room salle choisie par le formateur
+ * Salle de cours écrite dans l'adresse.
+ * @param query paramètres d'adresse d'une route
+ * @returns l'identifiant de la salle, ou null s'il est absent ou invalide
  */
-function chooseRoom(room: Room): void {
-    teachingRoom.value = room;
+function roomIdFromQuery(query: LocationQuery): number | null {
+    const id = Number(query[TEACHING_ROOM_QUERY]);
+    return Number.isInteger(id) && id > 0 ? id : null;
 }
-
-//------------------ LIFECYCLE -------------------------------
-// Connexion, changement de compte, déconnexion ou session restaurée : la salle est redemandée.
-// « sync » : remise à zéro immédiate, avant que la garde ne lise needsRoomChoice.
-watch(currentUser, () => {
-    teachingRoom.value = null;
-}, {flush: 'sync'});
 
 /**
- * Accès à la salle de cours partagée.
- * @returns la salle choisie, le rôle formateur, le besoin de choisir et l'action de choix
+ * Enregistre la salle lue dans l'adresse (appelé par la garde).
+ * @param id identifiant de la salle, ou null
+ */
+function setTeachingRoomId(id: number | null): void {
+    teachingRoomId.value = id;
+}
+
+/**
+ * Accès à la salle de cours.
+ * @returns la salle de l'adresse, le rôle formateur, le besoin de choisir et la lecture de l'adresse
  */
 export function useTeachingRoom() {
-    return {teachingRoom, isTrainer, needsRoomChoice, chooseRoom};
+    return {teachingRoomId, isTrainer, needsRoomChoice, roomIdFromQuery, setTeachingRoomId};
 }
+
+export {TEACHING_ROOM_QUERY};

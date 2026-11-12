@@ -10,6 +10,7 @@ import {router} from '../../router/index.ts';
 import type {SelectOption} from './use-listbox.ts';
 import {useAuth} from './use-auth.ts';
 import {useFlashMessage} from './use-flash-message.ts';
+import {useTeachingRoom} from './use-teaching-room.ts';
 
 /** Compte de démonstration (mots de passe de la base locale uniquement). */
 interface DemoAccount {
@@ -34,11 +35,13 @@ export const demoAccountOptions: SelectOption<string>[] = demoAccounts.map(accou
 
 const {login, hasRole} = useAuth();
 const {show} = useFlashMessage();
+const {needsRoomChoice} = useTeachingRoom();
 
 //------------------ FUNCTIONS -------------------------------
 /**
  * Se connecte avec un autre compte de démonstration. La session en cours n'est remplacée qu'en cas
- * de succès. Si la page affichée est interdite au nouveau rôle, retour au tableau de bord.
+ * de succès. Si la page affichée est interdite au nouveau rôle, retour au tableau de bord ; un formateur
+ * sans salle choisit d'abord sa salle.
  * @param username identifiant du compte de démonstration
  * @returns vrai si le changement a réussi
  */
@@ -53,6 +56,8 @@ export async function switchAccount(username: string): Promise<boolean> {
     }
     const allowed = router.currentRoute.value.meta.roles.some(hasRole);
     if (!allowed) await router.replace({name: 'home'});
+    // Formateur sans salle dans l'adresse : même passage obligatoire qu'après une vraie connexion.
+    else if (needsRoomChoice.value) await router.replace({name: 'room-choice', query: {redirect: router.currentRoute.value.fullPath}});
     const role = roleLabels[account.role];
     show(allowed ? `Vous testez en tant que ${role} (« ${username} »).` : `Vous testez en tant que ${role} : page non autorisée, retour au tableau de bord.`);
     return true;
