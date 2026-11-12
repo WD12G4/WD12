@@ -61,8 +61,41 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     CONSTRAINT fk__refresh_tokens__users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- 6. Table des signalements
+CREATE TABLE IF NOT EXISTS reports (
+    id BIGSERIAL PRIMARY KEY,
+    version BIGINT NOT NULL DEFAULT 0,
+    description TEXT NOT NULL,
+    report_date_time TIMESTAMP NOT NULL,
+    user_id BIGINT NOT NULL,
+    material_id BIGINT NOT NULL,
+    handle_date_time TIMESTAMP,
+    handled BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT uk__report__report_date_time__user__material UNIQUE (material_id, user_id, report_date_time),
+    CONSTRAINT fk__reports__users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk__reports__materials FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE CASCADE
+);
+
+-- 7. Table des événements d'arrêt (kill events)
+CREATE TABLE IF NOT EXISTS killevents (
+    id BIGSERIAL PRIMARY KEY,
+    version BIGINT NOT NULL DEFAULT 0,
+    process_name VARCHAR(100) NOT NULL,
+    uc_id BIGINT NOT NULL,
+    user_id BIGINT,
+    kill_date_time TIMESTAMP NOT NULL,
+    result BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT uk__killevent__process_name__uc__kill_date_time UNIQUE (process_name, uc_id, kill_date_time),
+    CONSTRAINT fk__killevents__materials FOREIGN KEY (uc_id) REFERENCES materials(id) ON DELETE CASCADE,
+    CONSTRAINT fk__killevents__users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
 -- Index pour optimiser les requêtes fréquentes
 CREATE INDEX IF NOT EXISTS idx__rooms__building_id ON rooms(building_id);
 CREATE INDEX IF NOT EXISTS idx__materials__room_id ON materials(room_id);
 CREATE INDEX IF NOT EXISTS idx__materials__material_type ON materials(material_type);
 CREATE INDEX IF NOT EXISTS idx__refresh_tokens__user_id ON refresh_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx__reports__user_id ON reports(user_id);
+CREATE INDEX IF NOT EXISTS idx__reports__material_id ON reports(material_id);
+CREATE INDEX IF NOT EXISTS idx__killevents__user_id ON killevents(user_id);
+CREATE INDEX IF NOT EXISTS idx__killevents__uc_id ON killevents(uc_id);
