@@ -12,6 +12,7 @@ import {computed} from 'vue';
 import {useRoute} from 'vue-router';
 import type {RouteTarget} from '../../../router/route-types.ts';
 import Card from '../../../shared/components/card.vue';
+import AppIcon from '../../../shared/components/app-icon.vue';
 import Link from '../../../shared/components/Link.vue';
 
 //------------------ DATAS -----------------------------------
@@ -48,8 +49,13 @@ const ssoTarget = computed<RouteTarget>(() => {
       <p>L'accès se fait avec MinDef Connect, l'authentification unique du ministère.</p>
     </template>
     <template #body>
-      <Link class="button-link sso-button" :to="ssoTarget">
-        Se connecter avec MinDef Connect
+      <!-- Bouton « S'identifier avec MinDefConnect » : pastille avec une clé, libellé sur deux lignes -->
+      <Link class="sso-button" :to="ssoTarget">
+        <span class="sso-button-logo"><AppIcon name="key" /></span>
+        <span class="sso-button-text">
+          S'identifier avec
+          <strong>MinDefConnect</strong>
+        </span>
       </Link>
     </template>
   </Card>
