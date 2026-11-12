@@ -75,7 +75,11 @@ watch(() => props.id, load);
       <p>Matériel actuellement affecté à cette salle. L'archivage se fait depuis la fiche du matériel.</p>
     </template>
     <template #body>
-      <MaterialList :materials="materials" :can-archive="false" />
+      <MaterialList
+          :materials="materials"
+          :can-manage="false"
+          @updated="load"
+      />
     </template>
   </Card>
 </template>

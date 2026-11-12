@@ -51,12 +51,17 @@ async function archive(material: Material): Promise<void> {
   });
 }
 
+/** Remplace un matériel modifié depuis l'aperçu, sans recharger toute la liste. */
+function replace(material: Material): void {
+  materials.value = materials.value.map(item => (item.id === material.id ? material : item));
+}
+
 //------------------ LIFECYCLE -------------------------------
 onMounted(load);
 </script>
 
 <template>
-  <Card title="Matériel">
+  <Card class="materials-card" title="Matériel">
     <template #header>
       <p>Retrouvez un matériel par son numéro de série, sa salle ou son bâtiment.</p>
       <Link
@@ -81,8 +86,9 @@ onMounted(load);
       <MaterialList
           v-if="isLoaded"
           :materials="visibleMaterials"
-          :can-archive="canManage"
+          :can-manage="canManage"
           @archive="archive"
+          @updated="replace"
       />
     </template>
   </Card>

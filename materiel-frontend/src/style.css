@@ -401,7 +401,7 @@ p { color: var(--muted); line-height: 1.6; }
 
 @media (min-width: 901px) {
   .main-menu {
-    inset: 1rem 0 auto; margin-inline: auto; width: min(1280px, calc(100% - 2rem));
+    inset: 1rem 0 auto; margin-inline: auto; width: min(1440px, calc(100% - 2rem));
     align-items: center; gap: 0.75rem; padding: 0.4rem 0.45rem 0.4rem 0.5rem; border-radius: 999px;
   }
   .nav { flex: 1; min-width: 0; align-items: stretch; gap: 0.1rem; }
@@ -432,21 +432,25 @@ p { color: var(--muted); line-height: 1.6; }
   .nav a.primary .icon { width: 1.05rem; height: 1.05rem; }
   .user-card { padding-left: 0.25rem; }
 }
-/* Écrans moyens : on retire d'abord le rôle et le nom de l'utilisateur, puis le nom de l'application. */
-@media (min-width: 901px) and (max-width: 1399px) { .user-meta { display: none; } }
-@media (min-width: 901px) and (max-width: 1279px) { .brand-name { display: none; } }
-/* Tablette en paysage : « Signaler un problème » ne garde que son icône (libellé lu par les lecteurs d'écran). */
-@media (min-width: 901px) and (max-width: 1099px) {
-  .nav a { padding-inline: 0.65rem; }
+/* Quand la place manque, la barre se replie par paliers (mesurés pour le rôle le plus chargé, le
+   formateur avec son bouton de salle) : jamais deux éléments l'un sur l'autre.
+   1. sous 1440px : nom et rôle de l'utilisateur retirés ;
+   2. sous 1300px : nom de l'application retiré ;
+   3. sous 1200px : « Signaler un problème » ne garde que son icône (libellé lu par les lecteurs d'écran) ;
+   4. sous 1100px : liens resserrés ;
+   5. sous 1024px : le bouton de salle ne garde que son icône, liens plus petits. */
+@media (min-width: 901px) and (max-width: 1439px) { .user-meta { display: none; } }
+@media (min-width: 901px) and (max-width: 1299px) { .brand-name { display: none; } }
+@media (min-width: 901px) and (max-width: 1199px) {
   .nav a.primary { padding-inline: 0.6rem; }
   .nav a.primary span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
-/* Avec le changement de compte (mode démonstration), la place manque plus tôt : le nom et le rôle
-   ne s'affichent qu'à partir de 1500px, « Signaler un problème » garde son icône seule sous 1200px. */
-@media (min-width: 901px) and (max-width: 1499px) { .user-switch .user-meta { display: none; } }
-@media (min-width: 901px) and (max-width: 1199px) {
-  .main-menu:has(.user-switch) .nav a.primary { padding-inline: 0.6rem; }
-  .main-menu:has(.user-switch) .nav a.primary span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (min-width: 901px) and (max-width: 1099px) { .nav a { padding-inline: 0.6rem; } }
+@media (min-width: 901px) and (max-width: 1023px) {
+  .main-menu { gap: 0.5rem; }
+  .nav a { padding-inline: 0.5rem; font-size: 0.84rem; }
+  .room-switch .select-trigger span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .room-switch .select-trigger { padding-inline: 0.7rem 1.6rem; }
 }
 
 /* ------------------ CARTES ET MESSAGES --------------------- */
@@ -758,6 +762,8 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 .drawer-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .drawer-header h2 { margin: 0.2rem 0 0; word-break: break-word; }
 .drawer .detail-grid { grid-template-columns: 1fr 1fr; }
+/* Modification dans l'aperçu (material-preview.vue) : formulaire sur une colonne, panneau étroit. */
+.drawer .form-grid { grid-template-columns: 1fr; margin-top: 0.75rem; }
 .drawer-backdrop { position: fixed; inset: 0; z-index: 45; background: var(--backdrop); }
 .drawer-enter-active, .drawer-leave-active { transition: transform 280ms var(--ease); }
 .drawer-enter-from, .drawer-leave-to { transform: translateX(calc(100% + 1.5rem)); }
@@ -860,9 +866,9 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
    - à partir de 1200px, contenu de 1200px centré, retrait de 3rem : 468px - 48px - (100vw - 1200px) / 2,
      soit 1020px - 50vw.
    (Écrit en deux formules simples : l'expression imbriquée équivalente fait planter le minificateur CSS.) */
-:is(.supervision-card, .reports-card) { transition: margin-right 280ms var(--ease); }
-@media (min-width: 901px) { body:has(.drawer) :is(.supervision-card, .reports-card) { margin-right: calc(468px - 4vw); } }
-@media (min-width: 1200px) { body:has(.drawer) :is(.supervision-card, .reports-card) { margin-right: max(0px, 1020px - 50vw); } }
+:is(.supervision-card, .reports-card, .materials-card) { transition: margin-right 280ms var(--ease); }
+@media (min-width: 901px) { body:has(.drawer) :is(.supervision-card, .reports-card, .materials-card) { margin-right: calc(468px - 4vw); } }
+@media (min-width: 1200px) { body:has(.drawer) :is(.supervision-card, .reports-card, .materials-card) { margin-right: max(0px, 1020px - 50vw); } }
 /* Remontée ouverte : ses actions sont dans le panneau, la colonne d'actions du tableau laisse la place aux autres. */
 @media (min-width: 901px) { body:has(.drawer) .reports-card .data-table :is(th, td):last-child { display: none; } }
 

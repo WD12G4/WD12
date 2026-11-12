@@ -3,7 +3,8 @@
  * Une ligne du tableau des matériels.
  * Composant de présentation : n'appelle aucun service, émet des événements.
  * Un clic sur le numéro de série ouvre l'aperçu latéral (material-preview.vue) ; Cmd ou Ctrl + clic
- * ouvre la fiche complète dans un nouvel onglet.
+ * ouvre la fiche complète dans un nouvel onglet. « Modifier » ouvre l'aperçu directement en
+ * modification ; « Archiver » demande l'archivage.
  * Utilisé par : material-list.vue
  */
 import {computed} from 'vue';
@@ -17,8 +18,8 @@ import MaterialStatusBadge from '../../../shared/components/material-status-badg
 const props = defineProps<{
   /** Matériel à afficher. */
   material: Material;
-  /** Vrai si l'utilisateur peut archiver (gestionnaire et administrateur, RG-16). */
-  canArchive: boolean;
+  /** Vrai si l'utilisateur peut modifier et archiver (gestionnaire et administrateur, RG-16). */
+  canManage: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -26,6 +27,8 @@ const emit = defineEmits<{
   archive: [material: Material];
   /** Clic simple sur le numéro de série : aperçu latéral. */
   preview: [material: Material];
+  /** « Modifier » : aperçu latéral en modification. */
+  edit: [material: Material];
 }>();
 
 //------------------ DATAS -----------------------------------
@@ -36,7 +39,7 @@ const router = useRouter();
 const location = computed(() => locationLabel(props.material.room));
 const endDate = computed(() => formatDate(props.material.endAvailabilityDate));
 /** Le bouton Archiver n'a pas de sens pour un matériel déjà archivé. */
-const showArchive = computed(() => props.canArchive && !props.material.archived);
+const showArchive = computed(() => props.canManage && !props.material.archived);
 /** Adresse de la fiche, pour Cmd ou Ctrl + clic (nouvel onglet). */
 const detailHref = computed(() => router.resolve({name: 'material-detail', params: {id: props.material.id}}).href);
 
@@ -69,6 +72,14 @@ function onSerialClick(event: MouseEvent): void {
     <MaterialStatusBadge :material="material" />
   </td>
   <td class="row-actions">
+    <button
+        v-if="canManage"
+        class="secondary-button"
+        type="button"
+        @click="emit('edit', material)"
+    >
+      Modifier
+    </button>
     <button
         v-if="showArchive"
         class="delete-button"
