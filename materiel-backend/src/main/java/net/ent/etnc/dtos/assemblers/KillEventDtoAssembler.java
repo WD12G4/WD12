@@ -1,11 +1,13 @@
 package net.ent.etnc.dtos.assemblers;
 
 import net.ent.etnc.dtos.assemblers.commons.DtoAssembler;
+import net.ent.etnc.dtos.auth.UserSummaryResponse;
 import net.ent.etnc.dtos.killevent.KillEventRequest;
 import net.ent.etnc.dtos.killevent.KillEventResponse;
 import net.ent.etnc.dtos.material.MaterialResponse;
 import net.ent.etnc.models.KillEvent;
 import net.ent.etnc.models.Material;
+import net.ent.etnc.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -16,21 +18,26 @@ import org.springframework.stereotype.Component;
 public class KillEventDtoAssembler implements DtoAssembler<KillEvent, KillEventRequest, KillEventResponse> {
 
     private final MaterialDtoAssembler materialDtoAssembler;
+    private final UserDtoAssembler userDtoAssembler;
 
     @Autowired
-    public KillEventDtoAssembler(final MaterialDtoAssembler materialDtoAssembler) {
+    public KillEventDtoAssembler(final MaterialDtoAssembler materialDtoAssembler,
+                                 final UserDtoAssembler userDtoAssembler) {
         this.materialDtoAssembler = materialDtoAssembler;
+        this.userDtoAssembler = userDtoAssembler;
     }
 
     @Override
     public KillEventResponse toDto(final KillEvent entity) {
         if (entity == null) return null;
         MaterialResponse materialResponse = entity.getUc() != null ? this.materialDtoAssembler.toDto(entity.getUc()) : null;
+        UserSummaryResponse userResponse = entity.getUser() != null ? this.userDtoAssembler.toSummaryDto(entity.getUser()) : null;
         return new KillEventResponse(
                 entity.getId(),
                 entity.getVersion(),
                 entity.getProcessName(),
                 materialResponse,
+                userResponse,
                 entity.getKillDateTime(),
                 entity.getResult());
     }
@@ -59,6 +66,14 @@ public class KillEventDtoAssembler implements DtoAssembler<KillEvent, KillEventR
             killEvent.setUc(material);
         } else {
             killEvent.setUc(null);
+        }
+
+        if (request.userId() != null) {
+            User user = new User();
+            user.setId(request.userId());
+            killEvent.setUser(user);
+        } else {
+            killEvent.setUser(null);
         }
     }
 }

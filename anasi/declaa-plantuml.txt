@@ -9,10 +9,18 @@ enum EMaterialType <<enumeration>> {
   + SCREEN
   + PROJECTOR
   + PERIPHERAL
+}
+
+enum ERole <<enumeration>> {
+  + USER
+  + MANAGER
+  + ADMIN
   --
-  - libelle: String
+  - parents: Set<ERole>
   --
-  + getLibelle(): String
+  + getParents(): Set<ERole>
+  + getAllRoles(): Set<ERole>
+  + hasRole(role: ERole): boolean
 }
 
 class Building <<entity>> {
@@ -24,6 +32,7 @@ class Building <<entity>> {
 
 class Room <<entity>> {
   - number: Integer {0 <= value <= 999}
+  - building: Building
   --
   + getNumber(): Integer
   + setNumber(number: Integer): void
@@ -35,6 +44,8 @@ class Material <<entity>> {
   - serialNumber: String {unique, 1..100 chars}
   - materialType: EMaterialType
   - endAvailabilityDate: LocalDate
+  - room: Room
+  - archived: boolean
   --
   + getSerialNumber(): String
   + setSerialNumber(serialNumber: String): void
@@ -44,13 +55,84 @@ class Material <<entity>> {
   + setEndAvailabilityDate(date: LocalDate): void
   + getRoom(): Room
   + setRoom(room: Room): void
+  + isArchived(): boolean
+  + setArchived(archived: boolean): void
+}
+
+class User <<entity>> {
+  - username: String {unique, 1..100 chars}
+  - password: String {1..255 chars}
+  - role: ERole
+  - enabled: boolean
+  --
+  + getUsername(): String
+  + setUsername(username: String): void
+  + getPassword(): String
+  + setPassword(password: String): void
+  + getRole(): ERole
+  + setRole(role: ERole): void
+  + isEnabled(): boolean
+  + setEnabled(enabled: boolean): void
+  + getAuthorities(): Collection
+}
+
+class Report <<entity>> {
+  - description: String {1..500 chars}
+  - reportDateTime: LocalDateTime
+  - user: User
+  - material: Material
+  - handleDateTime: LocalDateTime
+  - handled: boolean
+  --
+  + getDescription(): String
+  + setDescription(description: String): void
+  + getReportDateTime(): LocalDateTime
+  + setReportDateTime(date: LocalDateTime): void
+  + getUser(): User
+  + setUser(user: User): void
+  + getMaterial(): Material
+  + setMaterial(material: Material): void
+  + getHandleDateTime(): LocalDateTime
+  + setHandleDateTime(date: LocalDateTime): void
+  + isHandled(): boolean
+  + setHandled(handled: boolean): void
+}
+
+class KillEvent <<entity>> {
+  - processName: String {1..100 chars}
+  - uc: Material
+  - user: User
+  - killDateTime: LocalDateTime
+  - result: Boolean
+  --
+  + getProcessName(): String
+  + setProcessName(name: String): void
+  + getUc(): Material
+  + setUc(uc: Material): void
+  + getUser(): User
+  + setUser(user: User): void
+  + getKillDateTime(): LocalDateTime
+  + setKillDateTime(date: LocalDateTime): void
+  + getResult(): Boolean
+  + setResult(result: Boolean): void
+  + isResult(): Boolean
 }
 
 ' Relations et multiplicités
-Room "1" --> "1" Building : -building > \n{fk: building_id, not null}
+Room "*" --> "1" Building : -building > \n{fk: building_id, not null}
 note on link: Contrainte d'unicité composite:\n{unique: (building, number)}
 
 Material "*" --> "0..1" Room : -room > \n{fk: room_id}
-Material ..> EMaterialType : <<uses>>
+Material --> "1" EMaterialType : -materialType >
+
+User --> "1" ERole : -role >
+
+Report "*" --> "1" User : -user > \n{fk: user_id, not null}
+Report "*" --> "1" Material : -material > \n{fk: material_id, not null}
+note on link: Contrainte d'unicité composite:\n{unique: (material, user, reportDateTime)}
+
+KillEvent "*" --> "1" Material : -uc > \n{fk: uc_id, not null}
+KillEvent "*" --> "1" User : -user > \n{fk: user_id, not null}
+note on link: Contrainte d'unicité composite:\n{unique: (processName, uc, user, killDateTime)}
 
 @enduml

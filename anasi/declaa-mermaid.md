@@ -1,5 +1,5 @@
 classDiagram
-    direction LR
+    direction TB
 
     class Building {
         -Integer number
@@ -21,6 +21,7 @@ classDiagram
         -EMaterialType materialType
         -LocalDate endAvailabilityDate
         -Room room
+        -boolean archived
         +getSerialNumber() String
         +setSerialNumber(String serialNumber) void
         +getMaterialType() EMaterialType
@@ -29,6 +30,64 @@ classDiagram
         +setEndAvailabilityDate(LocalDate endAvailabilityDate) void
         +getRoom() Room
         +setRoom(Room room) void
+        +isArchived() boolean
+        +setArchived(boolean archived) void
+    }
+
+    class User {
+        -String username
+        -String password
+        -ERole role
+        -boolean enabled
+        +getUsername() String
+        +setUsername(String username) void
+        +getPassword() String
+        +setPassword(String password) void
+        +getRole() ERole
+        +setRole(ERole role) void
+        +isEnabled() boolean
+        +setEnabled(boolean enabled) void
+        +getAuthorities() Collection
+    }
+
+    class Report {
+        -String description
+        -LocalDateTime reportDateTime
+        -User user
+        -Material material
+        -LocalDateTime handleDateTime
+        -boolean handled
+        +getDescription() String
+        +setDescription(String description) void
+        +getReportDateTime() LocalDateTime
+        +setReportDateTime(LocalDateTime reportDateTime) void
+        +getUser() User
+        +setUser(User user) void
+        +getMaterial() Material
+        +setMaterial(Material material) void
+        +getHandleDateTime() LocalDateTime
+        +setHandleDateTime(LocalDateTime handleDateTime) void
+        +isHandled() boolean
+        +setHandled(boolean handled) void
+    }
+
+    class KillEvent {
+        -String processName
+        -Material uc
+        -User user
+        -LocalDateTime killDateTime
+        -Boolean result
+        +getProcessName() String
+        +setProcessName(String processName) void
+        +getUc() Material
+        +setUc(Material uc) void
+        +getUser() User
+        +setUser(User user) void
+        +getKillDateTime() LocalDateTime
+        +setKillDateTime(LocalDateTime killDateTime) void
+        +getResult() Boolean
+        +setResult(Boolean result) void
+        +isResult() Boolean
     }
 
     class EMaterialType {
@@ -37,10 +96,25 @@ classDiagram
         SCREEN
         PROJECTOR
         PERIPHERAL
-        -String libelle
-        +getLibelle() String
     }
 
-    Room "1" --> "1" Building : building
+    class ERole {
+        <<enumeration>>
+        USER
+        MANAGER
+        ADMIN
+        -Set~ERole~ parents
+        +getParents() Set~ERole~
+        +getAllRoles() Set~ERole~
+        +hasRole(ERole role) boolean
+    }
+
+    %% Associations
+    Room "*" --> "1" Building : building
     Material "*" --> "0..1" Room : room
-    Material --> EMaterialType : materialType
+    Material --> "1" EMaterialType : materialType
+    User --> "1" ERole : role
+    Report "*" --> "1" User : user
+    Report "*" --> "1" Material : material
+    KillEvent "*" --> "1" Material : uc
+    KillEvent "*" --> "1" User : user
