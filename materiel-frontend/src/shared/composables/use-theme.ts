@@ -1,7 +1,8 @@
 /**
- * Apparence de l'application (esprit « Liquid Glass ») : thème (Givre, Nuit, Aurore, Lagon, Sauge)
- * et disposition du menu (barre du haut ou barre latérale), combinables.
- * Le thème est l'attribut data-theme de <html>, la disposition data-layout ; style.css les décrit.
+ * Apparence de l'application (esprit « Liquid Glass ») : thème (Givre, Nuit, Aurore, Lagon, Sauge),
+ * disposition du menu (barre du haut ou latérale) et affichage du contenu (bloc central ou pleine
+ * largeur, sans cadre), combinables. Attributs de <html> : data-theme, data-layout, data-frame ;
+ * style.css les décrit.
  * Au chargement, index.html choisit Givre ou Nuit selon le réglage du système.
  * Le choix reste EN MÉMOIRE (pas de stockage navigateur, cadre du projet) : un rechargement
  * revient au thème du système.
@@ -25,16 +26,25 @@ const layouts = [
     {id: 'sidebar', label: 'Barre latérale'},
 ] as const;
 
+/** Affichage du contenu : dans un bloc central en verre, ou en pleine largeur sans cadre. */
+const frames = [
+    {id: 'card', label: 'Bloc central'},
+    {id: 'open', label: 'Pleine largeur'},
+] as const;
+
 /** Identifiant d'un thème. */
 type ThemeId = (typeof themes)[number]['id'];
 /** Identifiant d'une disposition. */
 type LayoutId = (typeof layouts)[number]['id'];
+/** Identifiant d'un affichage du contenu. */
+type FrameId = (typeof frames)[number]['id'];
 
 //------------------ DATAS -----------------------------------
 const isTheme = (value: string | undefined): value is ThemeId => themes.some(theme => theme.id === value);
 const initial = document.documentElement.dataset.theme;
 const currentTheme = ref<ThemeId>(isTheme(initial) ? initial : 'givre');
 const currentLayout = ref<LayoutId>('top');
+const currentFrame = ref<FrameId>('card');
 
 //------------------ FUNCTIONS -------------------------------
 /**
@@ -58,11 +68,20 @@ function setLayout(id: LayoutId): void {
 }
 
 /**
- * Accès à l'apparence partagée.
- * @returns thèmes et dispositions proposés, choix courants, setTheme() et setLayout()
+ * Applique un affichage du contenu à toute la page.
+ * @param id affichage choisi
  */
-export function useTheme() {
-    return {themes, layouts, currentTheme, currentLayout, setTheme, setLayout};
+function setFrame(id: FrameId): void {
+    currentFrame.value = id;
+    document.documentElement.dataset.frame = id;
 }
 
-export type {ThemeId, LayoutId};
+/**
+ * Accès à l'apparence partagée.
+ * @returns choix proposés, choix courants, setTheme(), setLayout() et setFrame()
+ */
+export function useTheme() {
+    return {themes, layouts, frames, currentTheme, currentLayout, currentFrame, setTheme, setLayout, setFrame};
+}
+
+export type {ThemeId, LayoutId, FrameId};

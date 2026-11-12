@@ -500,7 +500,7 @@ p { color: var(--muted); line-height: 1.6; }
 .theme-option-text { display: grid; gap: 0.1rem; }
 .theme-option-text strong { color: var(--title); font-size: 0.9rem; }
 .theme-option-text span { color: var(--muted); font-size: 0.78rem; }
-/* Deux sections : thèmes, puis disposition du menu (layout-options.vue). */
+/* Sections : thèmes, puis disposition du menu et affichage du contenu (appearance-choice.vue). */
 .theme-panel > .eyebrow { padding: 0.35rem 0.5rem 0.1rem; }
 .theme-options { display: grid; gap: 0.3rem; }
 .layout-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; padding: 0 0.15rem 0.15rem; }
@@ -515,6 +515,12 @@ p { color: var(--muted); line-height: 1.6; }
 .layout-preview span { position: absolute; border-radius: 0.3rem; background: var(--accent); opacity: 0.75; }
 .layout-preview.top span { top: 0.3rem; left: 0.4rem; right: 0.4rem; height: 0.45rem; }
 .layout-preview.sidebar span { top: 0.3rem; bottom: 0.3rem; left: 0.3rem; width: 0.9rem; }
+/* Contenu : un bloc encadré au centre, ou des éléments sur toute la largeur, sans cadre. */
+.layout-preview.card span { inset: 0.35rem 0.9rem; border: 1.5px solid var(--accent); background: var(--accent-soft-hover); opacity: 1; }
+.layout-preview.open span {
+  inset: 0.45rem 0.25rem; opacity: 0.7;
+  background: repeating-linear-gradient(90deg, var(--accent) 0 30%, transparent 30% 35%);
+}
 /* Aperçu : la vignette porte data-theme, donc les couleurs du thème qu'elle montre. */
 .theme-preview {
   display: grid; place-items: center; flex-shrink: 0; width: 3.6rem; height: 2.6rem; border-radius: 0.75rem; overflow: hidden;
@@ -644,6 +650,34 @@ p { color: var(--muted); line-height: 1.6; }
 }
 @media (min-width: 1496px) {
   [data-layout='sidebar'] body:has(.drawer) :is(.supervision-card, .reports-card, .materials-card) { margin-right: max(0px, 1916px - 100vw); }
+}
+
+/* ------------------ CONTENU « PLEINE LARGEUR » (data-frame='open') */
+/* Le grand bloc de verre de chaque page disparaît (son contenu reste) et la page prend la largeur
+   de la barre du haut. Seul le bloc de la page est visé (.page > .card dans .app-shell) : les cartes
+   des fenêtres, de l'assistant et de la connexion gardent leur cadre. Les éléments posés dessus
+   (tuiles, filtres, chiffres) prennent alors le flou du verre, puisqu'ils sont directement sur le fond. */
+[data-frame='open'] .app-shell .page > .card {
+  padding: 0.25rem 0.25rem 0; border: none; border-radius: 0; background: none; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+[data-frame='open'] :is(.overview-tile, .filters, .detail-grid > div, .plain-list > li, .station-tile, .journal-item,
+  .summary-figures > div, .shared-apps, .process-list li) {
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+}
+@media (min-width: 901px) {
+  [data-frame='open'] .app-shell .content { width: min(1440px, calc(100% - 2rem)); padding-inline: 0; }
+  [data-frame='open'][data-layout='sidebar'] .app-shell .content { width: calc(100% - 19.5rem); margin: 0 1rem 0 18.5rem; }
+}
+/* Aperçu ouvert : la page se resserre à gauche du panneau (le contenu va jusqu'à 1rem du bord, ou
+   est centré sur 1440px au-delà de 1472px). */
+@media (min-width: 901px) {
+  [data-frame='open'] body:has(.drawer) :is(.supervision-card, .reports-card, .materials-card) { margin-right: 452px; }
+}
+@media (min-width: 1472px) {
+  [data-frame='open']:not([data-layout='sidebar']) body:has(.drawer) :is(.supervision-card, .reports-card, .materials-card) {
+    margin-right: max(0px, 1188px - 50vw);
+  }
 }
 
 /* ------------------ CARTES ET MESSAGES --------------------- */

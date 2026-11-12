@@ -1,19 +1,19 @@
 <script setup lang="ts">
 /**
- * Apparence : bouton palette du menu, qui ouvre un panneau en verre avec le choix du thème (Givre,
- * Nuit, Aurore, Lagon, Sauge) et de la disposition du menu (layout-options.vue). Chaque thème a un aperçu vivant : une vignette qui porte son data-theme, donc
- * ses vraies couleurs (fond à reflets, plaque de verre, pastille d'accent). Échap ou un clic
- * ailleurs referment le panneau ; il reste ouvert après un choix, pour comparer. Le panneau est rendu dans <body> : dans la barre de menu (déjà
- * floutée), son verre ne flouterait pas la page dessous.
+ * Apparence : bouton palette du menu, qui ouvre un panneau en verre avec le thème (theme-options.vue),
+ * la disposition du menu et l'affichage du contenu (appearance-choice.vue). Échap ou un clic ailleurs
+ * le referment ; il reste ouvert après un choix, pour comparer. Le panneau est rendu dans <body> :
+ * dans la barre de menu (déjà floutée), son verre ne flouterait pas la page dessous.
  * Utilisé par : app-nav.vue
  */
 import {computed, type CSSProperties, nextTick, onBeforeUnmount, ref, useTemplateRef, watch} from 'vue';
 import {useTheme} from '../composables/use-theme.ts';
 import AppIcon from './app-icon.vue';
-import LayoutOptions from './layout-options.vue';
+import AppearanceChoice from './appearance-choice.vue';
+import ThemeOptions from './theme-options.vue';
 
 //------------------ DATAS -----------------------------------
-const {themes, currentTheme, currentLayout, setTheme} = useTheme();
+const {themes, layouts, frames, currentTheme, currentLayout, currentFrame, setLayout, setFrame} = useTheme();
 /** Sous cette largeur, le menu est un tiroir : le panneau s'ouvre en bas de l'écran. */
 const DRAWER_MAX_WIDTH_PX = 900;
 const open = ref(false);
@@ -46,7 +46,6 @@ function onDocumentEvent(event: Event): void {
   const outside = event instanceof PointerEvent && !inside;
   if (outside || (event instanceof KeyboardEvent && event.key === 'Escape')) open.value = false;
 }
-
 
 /** Écoute (ou n'écoute plus) les clics et Échap dans la page, tant que le panneau est ouvert. */
 function listen(enabled: boolean): void {
@@ -85,31 +84,21 @@ onBeforeUnmount(() => listen(false));
             :style="panelStyle"
         >
           <span class="eyebrow">Thème</span>
-          <div
-              class="theme-options"
-              role="radiogroup"
-              aria-label="Thème"
-          >
-            <button
-                v-for="theme in themes"
-                :key="theme.id"
-                type="button"
-                role="radio"
-                class="theme-option"
-                :aria-checked="theme.id === currentTheme"
-                @click="setTheme(theme.id)"
-            >
-              <span class="theme-preview" :data-theme="theme.id">
-                <span class="theme-preview-glass"><span class="theme-preview-dot" /></span>
-              </span>
-              <span class="theme-option-text">
-                <strong>{{ theme.label }}</strong>
-                <span>{{ theme.description }}</span>
-              </span>
-            </button>
-          </div>
+          <ThemeOptions />
           <span class="eyebrow">Disposition</span>
-          <LayoutOptions />
+          <AppearanceChoice
+              label="Disposition du menu"
+              :options="layouts"
+              :selected="currentLayout"
+              @choose="setLayout"
+          />
+          <span class="eyebrow">Contenu</span>
+          <AppearanceChoice
+              label="Affichage du contenu"
+              :options="frames"
+              :selected="currentFrame"
+              @choose="setFrame"
+          />
         </div>
       </Transition>
     </Teleport>
