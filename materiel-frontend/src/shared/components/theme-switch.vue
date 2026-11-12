@@ -1,18 +1,19 @@
 <script setup lang="ts">
 /**
- * Choix du thème (Givre, Nuit, Aurore, Lagon) : bouton palette dans la barre du haut, qui ouvre un
- * panneau en verre. Chaque thème a un aperçu vivant : une vignette qui porte son data-theme, donc
+ * Apparence : bouton palette du menu, qui ouvre un panneau en verre avec le choix du thème (Givre,
+ * Nuit, Aurore, Lagon, Sauge) et de la disposition du menu (layout-options.vue). Chaque thème a un aperçu vivant : une vignette qui porte son data-theme, donc
  * ses vraies couleurs (fond à reflets, plaque de verre, pastille d'accent). Échap ou un clic
- * ailleurs referment le panneau. Le panneau est rendu dans <body> : dans la barre de menu (déjà
+ * ailleurs referment le panneau ; il reste ouvert après un choix, pour comparer. Le panneau est rendu dans <body> : dans la barre de menu (déjà
  * floutée), son verre ne flouterait pas la page dessous.
  * Utilisé par : app-nav.vue
  */
-import {computed, type CSSProperties, onBeforeUnmount, ref, useTemplateRef, watch} from 'vue';
-import {type ThemeId, useTheme} from '../composables/use-theme.ts';
+import {computed, type CSSProperties, nextTick, onBeforeUnmount, ref, useTemplateRef, watch} from 'vue';
+import {useTheme} from '../composables/use-theme.ts';
 import AppIcon from './app-icon.vue';
+import LayoutOptions from './layout-options.vue';
 
 //------------------ DATAS -----------------------------------
-const {themes, currentTheme, setTheme} = useTheme();
+const {themes, currentTheme, currentLayout, setTheme} = useTheme();
 /** Sous cette largeur, le menu est un tiroir : le panneau s'ouvre en bas de l'écran. */
 const DRAWER_MAX_WIDTH_PX = 900;
 const open = ref(false);
@@ -24,13 +25,19 @@ const panelStyle = ref<CSSProperties>({});
 const buttonLabel = computed(() => `Thème : ${themes.find(theme => theme.id === currentTheme.value)?.label ?? ''}`);
 
 //------------------ FUNCTIONS -------------------------------
-/** Place le panneau sous le bouton (aligné à droite), ou en bas de l'écran dans le tiroir (mobile). */
+/**
+ * Place le panneau : sous le bouton (barre du haut), à sa droite (barre latérale), ou en bas de
+ * l'écran dans le tiroir (mobile).
+ */
 function place(): void {
   const rect = root.value?.getBoundingClientRect();
   if (!rect) return;
-  panelStyle.value = window.innerWidth <= DRAWER_MAX_WIDTH_PX
-    ? {left: '1rem', right: '1rem', bottom: '1rem'}
-    : {top: `${rect.bottom + 12}px`, right: `${Math.max(8, window.innerWidth - rect.right - 48)}px`};
+  if (window.innerWidth <= DRAWER_MAX_WIDTH_PX) panelStyle.value = {left: '1rem', right: '1rem', bottom: '1rem'};
+  else if (currentLayout.value === 'sidebar') {
+    const menuRight = root.value?.closest('.main-menu')?.getBoundingClientRect().right ?? rect.right;
+    panelStyle.value = {left: `${menuRight + 12}px`, bottom: `${Math.max(8, window.innerHeight - rect.bottom)}px`};
+  }
+  else panelStyle.value = {top: `${rect.bottom + 12}px`, right: `${Math.max(8, window.innerWidth - rect.right - 48)}px`};
 }
 
 /** Ferme le panneau sur Échap, ou sur un clic en dehors du bouton et du panneau. */
@@ -40,11 +47,6 @@ function onDocumentEvent(event: Event): void {
   if (outside || (event instanceof KeyboardEvent && event.key === 'Escape')) open.value = false;
 }
 
-/**
- * Applique un thème ; le panneau reste ouvert pour comparer.
- * @param id thème choisi
- */
-const choose = (id: ThemeId): void => setTheme(id);
 
 /** Écoute (ou n'écoute plus) les clics et Échap dans la page, tant que le panneau est ouvert. */
 function listen(enabled: boolean): void {
@@ -54,6 +56,7 @@ function listen(enabled: boolean): void {
 }
 
 //------------------ LIFECYCLE -------------------------------
+watch(currentLayout, () => void nextTick(place));
 watch(open, isOpen => {
   if (isOpen) place();
   listen(isOpen);
@@ -79,27 +82,34 @@ onBeforeUnmount(() => listen(false));
             v-if="open"
             ref="panel"
             class="theme-panel"
-            role="radiogroup"
-            aria-label="Thème"
             :style="panelStyle"
         >
-        <button
-            v-for="theme in themes"
-            :key="theme.id"
-            type="button"
-            role="radio"
-            class="theme-option"
-            :aria-checked="theme.id === currentTheme"
-            @click="choose(theme.id)"
-        >
-          <span class="theme-preview" :data-theme="theme.id">
-            <span class="theme-preview-glass"><span class="theme-preview-dot" /></span>
-          </span>
-          <span class="theme-option-text">
-            <strong>{{ theme.label }}</strong>
-            <span>{{ theme.description }}</span>
-          </span>
-        </button>
+          <span class="eyebrow">Thème</span>
+          <div
+              class="theme-options"
+              role="radiogroup"
+              aria-label="Thème"
+          >
+            <button
+                v-for="theme in themes"
+                :key="theme.id"
+                type="button"
+                role="radio"
+                class="theme-option"
+                :aria-checked="theme.id === currentTheme"
+                @click="setTheme(theme.id)"
+            >
+              <span class="theme-preview" :data-theme="theme.id">
+                <span class="theme-preview-glass"><span class="theme-preview-dot" /></span>
+              </span>
+              <span class="theme-option-text">
+                <strong>{{ theme.label }}</strong>
+                <span>{{ theme.description }}</span>
+              </span>
+            </button>
+          </div>
+          <span class="eyebrow">Disposition</span>
+          <LayoutOptions />
         </div>
       </Transition>
     </Teleport>
