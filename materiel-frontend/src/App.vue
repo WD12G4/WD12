@@ -31,6 +31,7 @@ const {unreadCount, visible: showReportAlert, dismiss: dismissReportAlert} = use
 /** Tiroir du menu ouvert (mobile uniquement : sur grand écran, le menu est la barre du haut). */
 const menuOpen = ref(false);
 
+
 //------------------ COMPUTED --------------------------------
 /** Menu affiché : utilisateur connecté qui n'est pas en train de choisir sa première salle. */
 const showMenu = computed(() => currentUser.value !== null && !needsRoomChoice.value);

@@ -2,15 +2,14 @@ name: Frontend CI/CD
 
 on:
   push:
-    branches: [ "main", "proto-backend-frontend", "frontBase_ESL", "feature/supervision-agent" ]
+    branches: [ "main", "proto-backend-frontend", "frontBase_ESL" ]
     paths:
       - 'materiel-frontend/**'
       - '.github/workflows/frontend.yml'
       - 'docker-compose.yml'
       - 'docker-compose.prod.yml'
-      - 'docker-compose.supervision.yml'
   pull_request:
-    branches: [ "main", "proto-backend-frontend", "frontBase_ESL", "feature/supervision-agent" ]
+    branches: [ "main", "proto-backend-frontend", "frontBase_ESL" ]
     paths:
       - 'materiel-frontend/**'
       - '.github/workflows/frontend.yml'
@@ -132,13 +131,7 @@ jobs:
           REF_NAME="${GITHUB_REF_NAME:-frontend}"
           BRANCH_CLEAN=$(echo "$REF_NAME" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
 
-          # Si on est sur la branche feature/supervision-agent, publier sous un package distinct
-          if [ "$REF_NAME" = "feature/supervision-agent" ]; then
-            IMAGE_NAME="ghcr.io/${REPO_LOWER}-supervision-frontend"
-            echo "Publication sous le package distinct : ${IMAGE_NAME}"
-          else
-            IMAGE_NAME="ghcr.io/${REPO_LOWER}-frontend"
-          fi
+          IMAGE_NAME="ghcr.io/${REPO_LOWER}-frontend"
 
           TAGS_ARGS=()
           PUSH_TAGS=()
@@ -148,14 +141,7 @@ jobs:
             PUSH_TAGS+=("${IMAGE_NAME}:${{ inputs.image_tag }}")
           fi
 
-          if [ "$REF_NAME" = "feature/supervision-agent" ]; then
-            TAGS_ARGS+=(-t "${IMAGE_NAME}:latest")
-            TAGS_ARGS+=(-t "${IMAGE_NAME}:${BRANCH_CLEAN}")
-            TAGS_ARGS+=(-t "${IMAGE_NAME}:${SHA_TAG}")
-            PUSH_TAGS+=("${IMAGE_NAME}:latest")
-            PUSH_TAGS+=("${IMAGE_NAME}:${BRANCH_CLEAN}")
-            PUSH_TAGS+=("${IMAGE_NAME}:${SHA_TAG}")
-          elif [ "$REF_NAME" = "main" ]; then
+          if [ "$REF_NAME" = "main" ]; then
             TAGS_ARGS+=(-t "${IMAGE_NAME}:latest")
             TAGS_ARGS+=(-t "${IMAGE_NAME}:${SHA_TAG}")
             PUSH_TAGS+=("${IMAGE_NAME}:latest")
@@ -207,29 +193,36 @@ jobs:
           REF_NAME="${GITHUB_REF_NAME:-frontend}"
           BRANCH_CLEAN=$(echo "$REF_NAME" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
 
+          IMAGE_NAME="ghcr.io/${REPO_LOWER}-frontend"
+
           INPUT_TAG="${{ inputs.image_tag }}"
           if [ -n "$INPUT_TAG" ]; then
             TEST_TAG="$INPUT_TAG"
-          elif [ "$REF_NAME" = "feature/supervision-agent" ]; then
-            IMAGE_NAME="ghcr.io/${REPO_LOWER}-supervision-frontend"
-            TEST_TAG="latest"
           elif [ "$REF_NAME" = "main" ]; then
-            IMAGE_NAME="ghcr.io/${REPO_LOWER}-frontend"
             TEST_TAG="latest"
           else
-            IMAGE_NAME="ghcr.io/${REPO_LOWER}-frontend"
             TEST_TAG="$BRANCH_CLEAN"
-          fi
-
-          if [ -z "$IMAGE_NAME" ]; then
-            if [ "$REF_NAME" = "feature/supervision-agent" ]; then
-              IMAGE_NAME="ghcr.io/${REPO_LOWER}-supervision-frontend"
-            else
-              IMAGE_NAME="ghcr.io/${REPO_LOWER}-frontend"
-            fi
           fi
 
           echo "Pulling image: ${IMAGE_NAME}:${TEST_TAG}..."
           docker pull "${IMAGE_NAME}:${TEST_TAG}"
           echo "Image récupérée avec succès :"
           docker images | grep "${IMAGE_NAME}" || true
+
+      - name: Clean up runner Docker images
+        if: always()
+        shell: bash
+        run: |
+          echo "=========================================================="
+          echo "Nettoyage des images Docker éphémères sur le runner"
+          echo "=========================================================="
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          SHA_TAG=$(echo "${{ github.sha }}" | cut -c1-7)
+
+          IMAGE_NAME="ghcr.io/${REPO_LOWER}-frontend"
+
+          echo "Suppression du tag éphémère du commit (${IMAGE_NAME}:${SHA_TAG})..."
+          docker rmi "${IMAGE_NAME}:${SHA_TAG}" 2>/dev/null || true
+
+          echo "Suppression des couches orphelines (dangling)..."
+          docker image prune -f
