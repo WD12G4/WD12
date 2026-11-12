@@ -7,11 +7,10 @@
  * vérifiés par le backend (/auth/login/), et l'écran est marqué « Simulation ».
  * « Mot de passe oublié ? » et « Créer un compte » n'existent pas dans la simulation : ils rappellent
  * que les comptes sont gérés par l'administrateur (RG-14).
- * En mode démonstration, un bouton par rôle connecte en un clic (demo-login.vue).
- * Mode démonstration : actif en développement et, par défaut, dans la version construite (présentation
- * sur la VM). Pour une vraie mise en production, construire avec VITE_DEMO_ACCOUNTS=false : les comptes
- * de démonstration et leurs mots de passe sont alors retirés du build (condition écrite telle quelle
- * pour que Vite la remplace par une constante).
+ * Présentation : système de design de l'État (DSFR), quel que soit le thème choisi dans l'application
+ * (data-theme="dsfr" sur la page) ; en-tête avec le bloc-marque et un avertissement « écran simulé »
+ * bien visible, pour ne jamais le confondre avec le vrai service.
+ * Mode démonstration (VITE_DEMO_ACCOUNTS ≠ false) : un bouton par rôle connecte en un clic (demo-login.vue).
  * RG : RG-14 (rôles liés à des comptes), RG-19 (un compte désactivé est refusé par le backend)
  */
 import {computed, defineAsyncComponent} from 'vue';
@@ -68,43 +67,54 @@ async function signIn(username: string, password: string): Promise<void> {
 </script>
 
 <template>
-  <!-- Écran du fournisseur d'identité (simulé) : sa propre mise en page, hors thème de l'application -->
-  <section class="sso-panel" aria-labelledby="sso-title">
-    <h1 id="sso-title">MindefConnect</h1>
-    <span class="sim-badge">Simulation</span>
-    <h2>Se connecter avec son compte</h2>
-    <p class="sso-intro">
-      <strong>Gestion du parc</strong> demande à vous identifier.
+  <!-- Écran du fournisseur d'identité (simulé) : page DSFR, hors thème de l'application -->
+  <div class="sso-page" data-theme="dsfr">
+    <header class="sso-header">
+      <p class="fr-logo">République<br>Française</p>
+      <p class="sso-service">
+        <strong>MinDef Connect</strong>
+        <span class="sim-badge">Simulation</span>
+      </p>
+    </header>
+    <p class="sso-sim-notice" role="note">
+      Écran simulé pour la démonstration de Gestion du parc : ce n'est pas le service MinDef Connect.
     </p>
+    <section class="sso-panel" aria-labelledby="sso-title">
+      <h1 id="sso-title">MindefConnect</h1>
+      <h2>Se connecter avec son compte</h2>
+      <p class="sso-intro">
+        <strong>Gestion du parc</strong> demande à vous identifier.
+      </p>
 
-    <LoginForm
-        :submitting="loading"
-        :error-message="errorMessage"
-        @submit="signIn"
-        @forgot-password="explainAccounts"
-    />
+      <LoginForm
+          :submitting="loading"
+          :error-message="errorMessage"
+          @submit="signIn"
+          @forgot-password="explainAccounts"
+      />
 
-    <!-- Séparateur « Ou » -->
-    <p class="sso-divider"><span>Ou</span></p>
+      <!-- Séparateur « Ou » -->
+      <p class="sso-divider"><span>Ou</span></p>
 
-    <h2>Vous n'avez pas de compte ?</h2>
-    <button
-        type="button"
-        class="sso-outline-button"
-        @click="explainAccounts"
-    >
-      Créer un compte
-    </button>
+      <h2>Vous n'avez pas de compte ?</h2>
+      <button
+          type="button"
+          class="sso-outline-button"
+          @click="explainAccounts"
+      >
+        Créer un compte
+      </button>
 
-    <component
-        :is="DemoLogin"
-        v-if="DemoLogin"
-        :submitting="loading"
-        @submit="signIn"
-    />
+      <component
+          :is="DemoLogin"
+          v-if="DemoLogin"
+          :submitting="loading"
+          @submit="signIn"
+      />
 
-    <p class="sso-cancel">
-      <Link :to="cancelTarget">Annuler et revenir à Gestion du parc</Link>
-    </p>
-  </section>
+      <p class="sso-cancel">
+        <Link :to="cancelTarget">Annuler et revenir à Gestion du parc</Link>
+      </p>
+    </section>
+  </div>
 </template>

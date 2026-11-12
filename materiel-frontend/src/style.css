@@ -435,6 +435,28 @@ p { color: var(--muted); line-height: 1.6; }
 /* ------------------ MINDEF CONNECT SIMULÉ (mindef-connect-view.vue, login-form.vue) --
    Écran du fournisseur d'identité : panneau gris à angles droits, champs soulignés, bouton bleu plein. */
 .guest-shell .content:has(.sso-panel) { width: min(600px, 100%); }
+/* Page DSFR (data-theme="dsfr" sur .sso-page, quel que soit le thème de l'application) : blanche, sur
+   toute la largeur, en-tête avec le bloc-marque, avertissement « écran simulé », formulaire au centre. */
+.guest-shell:has(.sso-page) { display: block; padding: 0; }
+.guest-shell:has(.sso-page) .content { width: 100%; }
+.sso-page { display: flow-root; min-height: 100vh; background: var(--background); color: var(--text); }
+.sso-header {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 2rem; padding: 0.75rem 2rem;
+  border-bottom: 1px solid var(--border); box-shadow: 0 1px 3px var(--shadow);
+}
+.sso-header .fr-logo { margin: 0; }
+.sso-service { display: flex; align-items: center; gap: 0.75rem; margin: 0; }
+.sso-service strong { color: var(--title); font-size: 1.25rem; font-weight: 700; }
+.sso-sim-notice {
+  width: min(600px, calc(100% - 2rem)); margin: 1.5rem auto 0; padding: 0.6rem 1rem; border-left: 4px solid var(--warning);
+  background: var(--warning-soft); color: var(--warning); font-size: 0.88rem; font-weight: 500; line-height: 1.45;
+}
+.sso-page .sso-panel { width: min(600px, calc(100% - 2rem)); margin: 1rem auto 3rem; font-family: inherit; }
+/* Message temporaire (« Mot de passe oublié ? ») : en bas de l'écran, au-dessus de la page. */
+.guest-shell:has(.sso-page) .flash {
+  position: fixed; right: 1rem; bottom: 1rem; left: 1rem; z-index: 70; max-width: 600px; margin: 0 auto;
+  box-shadow: 0 3px 9px #00001229;
+}
 .sso-panel {
   padding: 2.5rem clamp(1rem, 4vw, 1.25rem) 2rem; background: var(--sso-surface); color: var(--sso-text);
   font-family: Arial, Helvetica, sans-serif; text-align: center;
