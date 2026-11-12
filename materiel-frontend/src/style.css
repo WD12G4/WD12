@@ -306,6 +306,71 @@
     --select-chevron-active: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%233e6b4b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
 }
 
+/* ------------------ THÈME DSFR (Système de design de l'État) */
+/* Source : paquet officiel @gouvfr/dsfr 1.15.4 (Service d'information du Gouvernement, licence
+   Etalab 2.0 et modalités d'utilisation v1.0.1 acceptées par le projet : materiel-frontend/.dsfr.yml).
+   Couleurs officielles (thème clair) : bleu France #000091, survol #1212ff, rouge Marianne #c9191e,
+   texte #3a3a3a, titres #161616, mention #666, bordures #ddd, fonds #f6f6f6 et #eee, focus #0a76f6.
+   Police Marianne, chargée depuis le paquet seulement quand ce thème est actif. Pas de verre. */
+@font-face { font-family: Marianne; font-style: normal; font-weight: 300; font-display: swap; src: url('../node_modules/@gouvfr/dsfr/dist/fonts/Marianne-Light.woff2') format('woff2'), url('../node_modules/@gouvfr/dsfr/dist/fonts/Marianne-Light.woff') format('woff'); }
+@font-face { font-family: Marianne; font-style: normal; font-weight: 400; font-display: swap; src: url('../node_modules/@gouvfr/dsfr/dist/fonts/Marianne-Regular.woff2') format('woff2'), url('../node_modules/@gouvfr/dsfr/dist/fonts/Marianne-Regular.woff') format('woff'); }
+@font-face { font-family: Marianne; font-style: normal; font-weight: 500; font-display: swap; src: url('../node_modules/@gouvfr/dsfr/dist/fonts/Marianne-Medium.woff2') format('woff2'), url('../node_modules/@gouvfr/dsfr/dist/fonts/Marianne-Medium.woff') format('woff'); }
+@font-face { font-family: Marianne; font-style: normal; font-weight: 700; font-display: swap; src: url('../node_modules/@gouvfr/dsfr/dist/fonts/Marianne-Bold.woff2') format('woff2'), url('../node_modules/@gouvfr/dsfr/dist/fonts/Marianne-Bold.woff') format('woff'); }
+[data-theme='dsfr'] {
+    color-scheme: light;
+    font-family: Marianne, arial, sans-serif;
+    --text: #3a3a3a;
+    --title: #161616;
+    --muted: #666;
+    --background: #fff;
+    --surface: #fff;
+    --surface-soft: #f6f6f6;
+    --surface-input: #eee;
+    --surface-hover: #0000000a;
+    --border: #ddd;
+    --border-input: #ddd;
+    --accent: #000091;
+    --accent-hover: #1212ff;
+    --accent-soft: #f5f5fe;
+    --accent-soft-hover: #e3e3fd;
+    --on-accent: #f5f5fe;
+    --focus: #0a76f6;
+    --shadow: #00001229;
+    --shadow-strong: #00001252;
+    --success: #18753c;
+    --success-soft: #18753c1a;
+    --warning: #b34000;
+    --warning-soft: #b340001a;
+    --danger: #ce0500;
+    --danger-soft: #ce05001a;
+    --danger-border: #ce050040;
+    --neutral-soft: #eee;
+    --backdrop: #16161666;
+    --glass: #fff;
+    --glass-strong: #fff;
+    --glass-rim: #ddd;
+    --glass-blur: none;
+    --glass-shine: none;
+    --glass-shadow: 0 1px 3px #00001229;
+    --glass-specular: transparent;
+    --thumb: #fff;
+    --thumb-shadow: 0 1px 3px #00001229;
+    --track: #eee;
+    --brand-bg: #000091;
+    --on-brand: #f5f5fe;
+    --avatar-bg: #000091;
+    --blob-1: transparent;
+    --blob-2: transparent;
+    --blob-3: transparent;
+    --blob-4: transparent;
+    --radius-sm: 0.25rem;
+    --radius: 0;
+    --radius-lg: 0;
+    --text-black-white-grey: #000;
+    --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%233a3a3a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+    --select-chevron-active: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000091' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+}
+
 /* ------------------ BASE ----------------------------------- */
 * { box-sizing: border-box; }
 body {
@@ -623,7 +688,7 @@ p { color: var(--muted); line-height: 1.6; }
     color: var(--muted); font-size: 0.92rem; font-weight: 550;
   }
   [data-layout='sidebar'] .nav a:not(.primary) .icon { display: inline-block; }
-  [data-layout='sidebar'] .nav a.current { background: var(--thumb); color: var(--title); font-weight: 650; box-shadow: var(--thumb-shadow); }
+  [data-layout='sidebar'] .nav a.current:not(.primary) { background: var(--thumb); color: var(--title); font-weight: 650; box-shadow: var(--thumb-shadow); }
   /* « Signaler un problème » : bouton en tête de la colonne, libellé toujours visible. */
   [data-layout='sidebar'] .nav a.primary { order: -1; justify-content: center; margin: 0 0 0.6rem; padding: 0.7rem 0.9rem; color: var(--on-accent); }
   [data-layout='sidebar'] .nav a.primary span { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
@@ -1035,6 +1100,64 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 @keyframes pulse { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}
+
+/* ------------------ COMPOSANTS DSFR (data-theme='dsfr') ------ */
+/* Composants à la manière du DSFR : en-tête blanc pleine largeur avec le bloc-marque, rubrique
+   courante soulignée en bleu, boutons et cartes à angles droits, champs gris à filet bas, liens
+   soulignés dans le contenu. Le bloc-marque vient du composant officiel (main.ts, classe .fr-logo). */
+.brand-marque { display: none; }
+[data-theme='dsfr'] .brand-marque { display: inline-block; margin: 0 0.75rem 0 0.25rem; }
+[data-theme='dsfr'] .brand-logo { display: none; }
+[data-theme='dsfr'] .brand-name { color: var(--title); font-size: 1.1rem; font-weight: 700; }
+[data-theme='dsfr'] :is(button, .button-link) { border-radius: 0; box-shadow: none; font-weight: 500; }
+[data-theme='dsfr'] :is(button, .button-link):hover { transform: none; filter: none; box-shadow: none; }
+[data-theme='dsfr'] :is(button[type='submit'], .button-link:not(.secondary-button)):hover { background-color: var(--accent-hover); color: var(--on-accent); }
+[data-theme='dsfr'] .secondary-button { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+[data-theme='dsfr'] .secondary-button:hover { background: var(--surface-soft); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+[data-theme='dsfr'] button.delete-button { background: transparent; color: var(--danger); border: none; box-shadow: inset 0 0 0 1px var(--danger); }
+[data-theme='dsfr'] :is(input:not([type='checkbox']), select, textarea, .select-trigger) {
+  border: none; border-radius: 0.25rem 0.25rem 0 0; background-color: var(--surface-input); box-shadow: inset 0 -2px 0 0 var(--text);
+}
+[data-theme='dsfr'] :is(input:not([type='checkbox']), select, textarea, .select-trigger):is(:focus, :focus-visible, .open) {
+  outline: 2px solid var(--focus); outline-offset: 2px; box-shadow: inset 0 -2px 0 0 var(--text);
+}
+[data-theme='dsfr'] .segmented { border-radius: 0.25rem; }
+[data-theme='dsfr'] .segmented button { border-radius: 0.25rem; }
+[data-theme='dsfr'] .segmented button[aria-checked='true'] { box-shadow: inset 0 0 0 1px var(--accent); color: var(--accent); }
+[data-theme='dsfr'] :is(.badge, .sim-badge) { border-radius: 0.25rem; font-weight: 700; text-transform: uppercase; font-size: 0.72rem; }
+[data-theme='dsfr'] .card { border: 1px solid var(--border); box-shadow: none; }
+[data-theme='dsfr'] :is(.demo-banner, .flash) { border-radius: 0.25rem; }
+[data-theme='dsfr'] .card a:not(.button-link):not(.code) { text-decoration: underline; text-underline-offset: 3px; }
+[data-theme='dsfr'] :is(.room-switch, .user-switch) .select-trigger { border-radius: 0.25rem; box-shadow: none; }
+/* Le bloc-marque prend plus de place que le logo : dans l'en-tête, l'utilisateur ne garde que sa
+   pastille (nom et rôle dans la liste), et les autres paliers de repli arrivent plus tôt. */
+@media (min-width: 901px) { [data-theme='dsfr']:not([data-layout='sidebar']) .user-meta { display: none; } }
+@media (min-width: 901px) and (max-width: 1439px) { [data-theme='dsfr']:not([data-layout='sidebar']) .brand-name { display: none; } }
+@media (min-width: 901px) and (max-width: 1299px) {
+  [data-theme='dsfr']:not([data-layout='sidebar']) .nav a.primary { padding-inline: 0.6rem; }
+  [data-theme='dsfr']:not([data-layout='sidebar']) .nav a.primary span {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+}
+@media (min-width: 901px) and (max-width: 1023px) {
+  [data-theme='dsfr']:not([data-layout='sidebar']) .nav a { padding-inline: 0.4rem; font-size: 0.8rem; }
+  [data-theme='dsfr']:not([data-layout='sidebar']) .brand-marque { zoom: 0.8; margin-right: 0.25rem; }
+}
+@media (min-width: 901px) {
+  /* En-tête : pleine largeur en haut de page, filet bas et ombre légère. */
+  [data-theme='dsfr']:not([data-layout='sidebar']) .main-menu {
+    inset: 0 0 auto; width: 100%; padding: 0.6rem max(1rem, calc((100% - 1440px) / 2)); border-radius: 0;
+    border: none; border-bottom: 1px solid var(--border);
+  }
+  [data-theme='dsfr'][data-layout='sidebar'] .main-menu { inset: 0 auto 0 0; border-radius: 0; border: none; border-right: 1px solid var(--border); }
+  [data-theme='dsfr'] .nav a { border-radius: 0; color: var(--text); }
+  [data-theme='dsfr'] .nav-pill { display: none; }
+  [data-theme='dsfr'] .nav a.current:not(.primary) { color: var(--accent); background: none; box-shadow: inset 0 -2px 0 0 var(--accent); }
+  [data-theme='dsfr'][data-layout='sidebar'] .nav a.current:not(.primary) { background: var(--accent-soft); box-shadow: inset 2px 0 0 0 var(--accent); }
+  [data-theme='dsfr'] .nav a.primary { border-radius: 0; box-shadow: none; color: var(--on-accent); }
+  [data-theme='dsfr'] .nav a.primary:hover { background: var(--accent-hover); color: var(--on-accent); filter: none; }
+  [data-theme='dsfr'] .nav a.primary.current { box-shadow: inset 0 -3px 0 0 var(--accent-soft-hover); }
 }
 
 /* ------------------ IMPRESSION (document de remontée) ------ */

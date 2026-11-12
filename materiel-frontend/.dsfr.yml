@@ -1,0 +1,3 @@
+# Système de Design de l'État (DSFR) : acceptation des modalités d'utilisation par le projet.
+# Version des modalités acceptée (doc/legal/cgu.md du paquet @gouvfr/dsfr). Exigé par l'installation.
+accept-license: 1.0.1

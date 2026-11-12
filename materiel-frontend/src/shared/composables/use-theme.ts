@@ -1,5 +1,6 @@
 /**
- * Apparence de l'application (esprit « Liquid Glass ») : thème (Givre, Nuit, Aurore, Lagon, Sauge),
+ * Apparence de l'application : thème (Givre, Nuit, Aurore, Lagon, Sauge en esprit « Liquid Glass »,
+ * et DSFR, le système de design de l'État, sans verre),
  * disposition du menu (barre du haut ou latérale) et affichage du contenu (bloc central ou pleine
  * largeur, sans cadre), combinables. Attributs de <html> : data-theme, data-layout, data-frame ;
  * style.css les décrit.
@@ -18,6 +19,7 @@ const themes = [
     {id: 'aurore', label: 'Aurore', description: 'Verre teinté, aurores violettes'},
     {id: 'lagon', label: 'Lagon', description: 'Verre aqua, lumière de lagon'},
     {id: 'sauge', label: 'Sauge', description: 'Verre dépoli, verts et tons de terre'},
+    {id: 'dsfr', label: 'DSFR', description: 'Système de design de l\'État'},
 ] as const;
 
 /** Dispositions du menu. */
