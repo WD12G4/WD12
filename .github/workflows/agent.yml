@@ -75,9 +75,12 @@ jobs:
           cp ../../config.json ./config.json.example
 
           if [ "${{ matrix.archive_ext }}" = "zip" ]; then
+            cp ../../*.bat ./ 2>/dev/null || true
             zip -r ../../packages/materiel-agent-${{ matrix.os_name }}.zip ./*
           else
             chmod +x ${{ matrix.binary_name }}
+            cp ../../*.sh ./ 2>/dev/null || true
+            chmod +x ./*.sh 2>/dev/null || true
             tar -czvf ../../packages/materiel-agent-${{ matrix.os_name }}.tar.gz ./*
           fi
 
