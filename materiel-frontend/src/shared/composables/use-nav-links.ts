@@ -36,7 +36,7 @@ const allLinks: readonly NavLink[] = [
         to: {name: 'report-new'}, label: 'Signaler un problème', icon: 'alert', minRole: 'USER',
         section: ['report-new'], primary: true,
     },
-    {to: {name: 'reports'}, label: 'Remontées', icon: 'inbox', minRole: 'MANAGER', section: ['reports', 'report-document']},
+    {to: {name: 'reports'}, label: 'Remontées', icon: 'inbox', minRole: 'USER', section: ['reports', 'report-document']},
     {to: {name: 'supervision'}, label: 'Supervision', icon: 'activity', minRole: 'USER', section: ['supervision']},
     {to: {name: 'users'}, label: 'Comptes', icon: 'users', minRole: 'ADMIN', section: ['users']},
 ];

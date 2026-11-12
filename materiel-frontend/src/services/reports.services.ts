@@ -1,7 +1,7 @@
 /**
  * Accès à la ressource /api/v1/reports (remontées de problème).
  * Toutes les méthodes lèvent ApiError si l'API répond en erreur.
- * RG : RG-21 (création), RG-22 (document), RG-23 (remontées à traiter, gestionnaire)
+ * RG : RG-21 (création), RG-22 (document), RG-23 (remontées à traiter, gestionnaire) ; historique du formateur
  */
 import type {Report, ReportInput} from '../models/report.model.ts';
 import {type ReportDto, reportFromDto, reportToRequest} from '../models/report.dto.ts';
@@ -16,6 +16,15 @@ export const reportsServices = {
      */
     findAll: async (): Promise<Report[]> => {
         const page = await apiRequest<PageDto<ReportDto>>('/reports?size=1000&sort=reportDateTime,desc');
+        return pageContent(page).map(reportFromDto);
+    },
+
+    /**
+     * Liste les remontées d'un auteur (historique du formateur), de la plus récente à la plus ancienne.
+     * @param userId identifiant du compte auteur
+     */
+    findByUser: async (userId: number): Promise<Report[]> => {
+        const page = await apiRequest<PageDto<ReportDto>>(`/reports?userId=${userId}&size=1000&sort=reportDateTime,desc`);
         return pageContent(page).map(reportFromDto);
     },
 

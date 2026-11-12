@@ -93,14 +93,14 @@ export const routes = [
         path: '/remontees',
         name: 'reports',
         component: () => import('../features/reports/views/report-view.vue'),
-        meta: {roles: ['MANAGER']},
+        meta: {roles: ['USER']},
     },
     {
         path: '/remontees/:id/document',
         name: 'report-document',
         component: () => import('../features/reports/views/report-document-view.vue'),
         props: true,
-        meta: {roles: ['MANAGER']},
+        meta: {roles: ['USER']},
     },
     //------------------ SUPERVISION (lot 6, maquette) -----------
     {

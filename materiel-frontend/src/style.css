@@ -500,6 +500,14 @@ button.delete-button:hover { color: var(--danger); background: var(--danger-bord
 .data-table td.row-actions > * + * { margin-left: 0.5rem; }
 .data-table td.row-actions button { padding: 0.45rem 0.8rem; font-size: 0.85rem; }
 .data-table tbody tr.previewed { background: var(--accent-soft); }
+/* Remontées : toute la ligne ouvre le détail (report-list.vue) ; la date est le bouton accessible au clavier. */
+.clickable-rows tbody tr { cursor: pointer; }
+.row-link {
+  padding: 0; border: none; border-radius: 0.3rem; background: none; box-shadow: none;
+  color: var(--accent); font-size: inherit; font-weight: 650;
+}
+.row-link:hover { color: var(--accent-hover); box-shadow: none; filter: none; transform: none; }
+.report-description { font-weight: 500; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
 .plain-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.75rem; }
 .plain-list > li {
   padding: 1rem 1.15rem; border-radius: var(--radius);
@@ -713,16 +721,18 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 }
 
 /* ------------------ SUPERVISION ---------------------------- */
-/* Panneau d'un poste ouvert (grand écran) : la carte se resserre à gauche du panneau, comme avec
+/* Panneau d'un poste ou d'une remontée ouvert (grand écran) : la carte se resserre à gauche du panneau, comme avec
    l'inspecteur du Finder, pour que toutes les tuiles restent visibles et cliquables.
    Marge = 468px (panneau de 420px et ses marges) moins l'espace déjà libre à droite de la carte :
    - de 901 à 1199px, contenu pleine largeur avec un retrait de 4vw : 468px - 4vw ;
    - à partir de 1200px, contenu de 1200px centré, retrait de 3rem : 468px - 48px - (100vw - 1200px) / 2,
      soit 1020px - 50vw.
    (Écrit en deux formules simples : l'expression imbriquée équivalente fait planter le minificateur CSS.) */
-.supervision-card { transition: margin-right 280ms var(--ease); }
-@media (min-width: 901px) { body:has(.drawer) .supervision-card { margin-right: calc(468px - 4vw); } }
-@media (min-width: 1200px) { body:has(.drawer) .supervision-card { margin-right: max(0px, 1020px - 50vw); } }
+:is(.supervision-card, .reports-card) { transition: margin-right 280ms var(--ease); }
+@media (min-width: 901px) { body:has(.drawer) :is(.supervision-card, .reports-card) { margin-right: calc(468px - 4vw); } }
+@media (min-width: 1200px) { body:has(.drawer) :is(.supervision-card, .reports-card) { margin-right: max(0px, 1020px - 50vw); } }
+/* Remontée ouverte : ses actions sont dans le panneau, la colonne d'actions du tableau laisse la place aux autres. */
+@media (min-width: 901px) { body:has(.drawer) .reports-card .data-table :is(th, td):last-child { display: none; } }
 
 /* Barre d'outils : salle à gauche, affichage (postes ou journal) à droite ; passe à la ligne si besoin. */
 .supervision-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem; margin: 1.25rem 0; }

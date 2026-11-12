@@ -32,12 +32,12 @@ async function load(): Promise<void> {
   });
 }
 
-/** Enregistre la remontée puis revient au tableau de bord. */
+/** Enregistre la remontée puis ouvre la liste des remontées, où elle apparaît en tête. */
 async function send(input: ReportInput): Promise<void> {
   await runSend(async () => {
     await reportsServices.create(input);
     show('Votre remontée a été transmise au gestionnaire.', 'success');
-    await replaceWith({name: 'home'});
+    await replaceWith({name: 'reports'});
   });
 }
 
