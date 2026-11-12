@@ -187,20 +187,24 @@ public class Config
 
     /// <summary>
     /// Détecte le nom d'utilisateur de la session active sur le poste de travail (cross-platform).
-    /// Si l'agent s'exécute en tant que service système (root sous Linux, SYSTEM sous Windows),
+    /// Si l'agent s'exécute en tant que service système (root sous Linux, SYSTEM / MACHINE$ sous Windows),
     /// cette méthode recherche l'utilisateur connecté à la console / session graphique.
     /// </summary>
     public static string? GetActiveSessionUsername()
     {
         try
         {
-            // 1. Si le processus tourne directement sous une session utilisateur (non-root, non-service système)
             string currentUser = Environment.UserName;
-            if (!string.IsNullOrWhiteSpace(currentUser) &&
-                !currentUser.Equals("root", StringComparison.OrdinalIgnoreCase) &&
-                !currentUser.Equals("SYSTEM", StringComparison.OrdinalIgnoreCase) &&
-                !currentUser.Equals("LOCAL SERVICE", StringComparison.OrdinalIgnoreCase) &&
-                !currentUser.Equals("NETWORK SERVICE", StringComparison.OrdinalIgnoreCase))
+            bool isSystemAccount = string.IsNullOrWhiteSpace(currentUser) ||
+                currentUser.Equals("root", StringComparison.OrdinalIgnoreCase) ||
+                currentUser.Equals("SYSTEM", StringComparison.OrdinalIgnoreCase) ||
+                currentUser.Equals("LOCAL SERVICE", StringComparison.OrdinalIgnoreCase) ||
+                currentUser.Equals("NETWORK SERVICE", StringComparison.OrdinalIgnoreCase) ||
+                currentUser.EndsWith("$") ||
+                currentUser.Equals(Environment.MachineName + "$", StringComparison.OrdinalIgnoreCase);
+
+            // 1. Si le processus tourne directement sous une session utilisateur (non-root, non-service système)
+            if (!isSystemAccount)
             {
                 return currentUser;
             }
@@ -225,7 +229,7 @@ public class Config
                 }
             }
 
-            // 4. Windows : détection via session de console si service SYSTEM
+            // 4. Windows : détection via session de console si service SYSTEM ou compte machine (ex: DESKTOP-XXX$)
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 string? winUser = DetectWindowsConsoleUser();
@@ -235,12 +239,8 @@ public class Config
                 }
             }
 
-            // Si c'est un compte système (root, SYSTEM) et qu'aucun utilisateur n'est connecté à la console
-            if (!string.IsNullOrWhiteSpace(currentUser) &&
-                (currentUser.Equals("root", StringComparison.OrdinalIgnoreCase) ||
-                 currentUser.Equals("SYSTEM", StringComparison.OrdinalIgnoreCase) ||
-                 currentUser.Equals("LOCAL SERVICE", StringComparison.OrdinalIgnoreCase) ||
-                 currentUser.Equals("NETWORK SERVICE", StringComparison.OrdinalIgnoreCase)))
+            // Si c'est un compte système (root, SYSTEM, Machine$) et qu'aucun utilisateur n'est connecté à la console
+            if (isSystemAccount)
             {
                 return null;
             }
@@ -424,7 +424,8 @@ public class Config
                         if (!string.IsNullOrWhiteSpace(user) &&
                             !user.Equals("SYSTEM", StringComparison.OrdinalIgnoreCase) &&
                             !user.Equals("LOCAL SERVICE", StringComparison.OrdinalIgnoreCase) &&
-                            !user.Equals("NETWORK SERVICE", StringComparison.OrdinalIgnoreCase))
+                            !user.Equals("NETWORK SERVICE", StringComparison.OrdinalIgnoreCase) &&
+                            !user.EndsWith("$"))
                         {
                             return user;
                         }
@@ -466,7 +467,8 @@ public class Config
                         if (parts.Length > 0 &&
                             !parts[0].Equals("SYSTEM", StringComparison.OrdinalIgnoreCase) &&
                             !parts[0].Equals("LOCAL SERVICE", StringComparison.OrdinalIgnoreCase) &&
-                            !parts[0].Equals("NETWORK SERVICE", StringComparison.OrdinalIgnoreCase))
+                            !parts[0].Equals("NETWORK SERVICE", StringComparison.OrdinalIgnoreCase) &&
+                            !parts[0].EndsWith("$"))
                         {
                             return parts[0];
                         }
