@@ -1351,6 +1351,26 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 /* Panneau d'un poste : applications ouvertes, depuis quand, bouton Arrêter. */
 .drawer > .actions { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
 .panel-section h3 { margin: 0 0 0.6rem; }
+/* En-tête compact du panneau d'un poste (workstation-panel.vue) : stagiaire et état sur une ligne,
+   puis identité du poste en deux colonnes serrées, pour laisser la place aux applications ouvertes. */
+/* Espacement resserré dans ce panneau seulement (les autres aperçus gardent le leur). */
+.drawer:has(.panel-facts) { gap: 0.75rem; }
+.panel-user { display: flex; align-items: center; gap: 0.5rem; min-width: 0; margin: 0; color: var(--title); font-size: 1.05rem; }
+.panel-user .icon { flex-shrink: 0; width: 1.1rem; height: 1.1rem; color: var(--accent); }
+.panel-user strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.panel-status { display: inline-flex; align-items: center; gap: 0.35rem; margin-left: auto; color: var(--muted); font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+.panel-status::before { content: ''; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--success); }
+.panel-status.offline::before { background: var(--muted); }
+.panel-status.reimaging::before { background: var(--accent); }
+.panel-facts {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.15rem 1rem; margin: 0; padding: 0.55rem 0.8rem;
+  border: 1px solid var(--glass-rim); border-radius: var(--radius-sm); background: var(--surface-soft);
+}
+.panel-facts > div { min-width: 0; padding: 0.25rem 0; }
+.panel-facts dt { margin: 0 0 0.05rem; font-size: 0.66rem; }
+.panel-facts dd { overflow: hidden; font-size: 0.85rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.panel-facts .os-line { display: flex; align-items: center; gap: 0.35rem; }
+.panel-facts .os-line .os-logo { width: 0.95rem; height: 0.95rem; }
 .panel-count { color: var(--title); font-variant-numeric: tabular-nums; }
 /* Une seule colonne qui ne s'élargit pas : un nom trop long est coupé (…) au lieu de pousser le bouton hors du cadre. */
 .process-list, .journal { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
@@ -1380,7 +1400,7 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 .reimage-progress progress::-webkit-progress-value { background: var(--accent); border-radius: 999px; transition: width 900ms linear; }
 .reimage-progress progress::-moz-progress-bar { background: var(--accent); border-radius: 999px; }
 .installed-apps { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
-.installed-apps li { padding: 0.3rem 0.65rem; border-radius: 999px; background: var(--surface-soft); border: 1px solid var(--glass-rim); color: var(--title); font-size: 0.82rem; font-weight: 550; }
+.installed-apps li { padding: 0.15rem 0.55rem; border-radius: 999px; background: var(--surface-soft); border: 1px solid var(--glass-rim); color: var(--title); font-size: 0.75rem; font-weight: 550; }
 .summary-actions { margin: 0.75rem 0 0; }
 
 /* Assistant de masterisation (reimage-wizard.vue) : fenêtre en verre au-dessus de la page. */

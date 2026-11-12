@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
- * Détail d'un poste dans le panneau latéral : état, nom d'hôte, adresse MAC, applications ouvertes
- * (depuis quand, bouton Arrêter). Poste simulé : marque « Simulé », système, image et applications
+ * Détail d'un poste dans le panneau latéral : en tête, sur une ligne, le stagiaire et l'état ; puis un
+ * bloc compact (nom d'hôte, système, adresse MAC, n° de série) pour laisser la place à la liste des
+ * applications ouvertes (depuis quand, bouton Arrêter). Poste simulé : marque « Simulé », système, image et applications
  * installées, et, pour l'administrateur, la masterisation (assistant), à part en bas.
  * Composant de présentation : émet des événements.
  * Utilisé par : supervision-view.vue
@@ -12,6 +13,7 @@ import {type ProcessInfo, workstationOsLabels} from '../../../models/supervision
 import type {WorkstationView} from '../composables/use-supervision.ts';
 import {openAppsLabel, statusLabel} from '../composables/use-station-labels.ts';
 import SidePanel from '../../../shared/components/side-panel.vue';
+import AppIcon from '../../../shared/components/app-icon.vue';
 import OsLogo from './os-logo.vue';
 import ProcessList from './process-list.vue';
 
@@ -38,9 +40,9 @@ const title = computed(() => props.view?.workstation.name ?? '');
 const sessionUser = computed(() => props.view?.workstation.sessionUser ?? (isOnline.value ? 'Aucune session ouverte' : '—'));
 const eyebrow = computed(() => (props.view?.workstation.simulated ? 'Poste simulé · démonstration' : 'Poste de la salle'));
 const installed = computed(() => props.view?.installed ?? null);
-/** Système remonté par l'agent (vrai poste ; un poste simulé affiche son système installé). */
-const realOs = computed(() => (installed.value ? null : props.view?.workstation.os ?? null));
-const realOsLabel = computed(() => (realOs.value ? workstationOsLabels[realOs.value] : ''));
+/** Système : logo d'après l'agent ; libellé complet pour un poste simulé (« Ubuntu 24.04 LTS »), sinon famille. */
+const os = computed(() => props.view?.workstation.os ?? null);
+const systemLabel = computed(() => installed.value?.system ?? (os.value ? workstationOsLabels[os.value] : ''));
 const serialNumber = computed(() => props.view?.workstation.serialNumber ?? null);
 const hostname = computed(() => props.view?.workstation.hostname ?? 'Inconnu (agent non connecté)');
 const macAddress = computed(() => props.view?.workstation.macAddress ?? '—');
@@ -63,17 +65,17 @@ const reimageDisabled = computed(() => props.busy || !isOnline.value);
       @close="emit('close')"
   >
     <template v-if="view">
-      <dl class="detail-grid">
-        <div class="full-width"><dt>Stagiaire (session ouverte)</dt><dd>{{ sessionUser }}</dd></div>
-        <div><dt>État</dt><dd>{{ status }}</dd></div>
-        <div><dt>Adresse MAC</dt><dd class="code">{{ macAddress }}</dd></div>
+      <p class="panel-user" title="Stagiaire (session ouverte)">
+        <AppIcon name="user" />
+        <strong>{{ sessionUser }}</strong>
+        <span class="panel-status" :class="view.workstation.status">{{ status }}</span>
+      </p>
+      <dl class="panel-facts">
         <div><dt>Nom d'hôte</dt><dd class="code">{{ hostname }}</dd></div>
+        <div v-if="systemLabel"><dt>Système</dt><dd class="os-line"><OsLogo v-if="os" :os="os" />{{ systemLabel }}</dd></div>
+        <div><dt>Adresse MAC</dt><dd class="code">{{ macAddress }}</dd></div>
         <div v-if="serialNumber"><dt>N° de série</dt><dd class="code">{{ serialNumber }}</dd></div>
-        <div v-if="realOs"><dt>Système</dt><dd class="os-line"><OsLogo :os="realOs" />{{ realOsLabel }}</dd></div>
-        <template v-if="installed">
-          <div><dt>Système</dt><dd>{{ installed.system }}</dd></div>
-          <div><dt>Image</dt><dd>{{ installed.image }}</dd></div>
-        </template>
+        <div v-if="installed"><dt>Image</dt><dd>{{ installed.image }}</dd></div>
       </dl>
       <section v-if="installed" class="panel-section">
         <h3 class="eyebrow">Applications installées · <span class="panel-count">{{ installed.apps.length }}</span></h3>
