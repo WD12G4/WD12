@@ -90,6 +90,9 @@ public class SupervisionServiceImpl implements SupervisionService {
             String username = conn.map(AgentWebSocketHandler.AgentConnection::username)
                     .filter(u -> !u.isBlank())
                     .orElse(null);
+            String os = conn.map(AgentWebSocketHandler.AgentConnection::os)
+                    .filter(o -> !o.isBlank())
+                    .orElse(null);
 
             String name = (hostname != null && !hostname.isBlank())
                     ? hostname + " (" + uc.getSerialNumber() + ")"
@@ -106,7 +109,8 @@ public class SupervisionServiceImpl implements SupervisionService {
                     macAddress,
                     online,
                     hostname,
-                    username
+                    username,
+                    os
             ));
             index++;
         }
@@ -128,7 +132,8 @@ public class SupervisionServiceImpl implements SupervisionService {
                                 agent.macAddress(),
                                 true,
                                 agent.hostname(),
-                                username
+                                username,
+                                agent.os()
                         ));
                     }
                 }

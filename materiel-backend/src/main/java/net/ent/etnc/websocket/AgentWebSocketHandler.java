@@ -36,20 +36,28 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
     private final Map<String, CompletableFuture<List<AgentProcessInfo>>> pendingProcessRequests = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<AgentKillResult>> pendingKillRequests = new ConcurrentHashMap<>();
 
+    /**
+     * Agent connecté. os : système remonté par l'agent (« windows », « linux », « osx »), ou null.
+     */
     public record AgentConnection(
             String serialNumber,
             String hostname,
             String macAddress,
             String username,
+            String os,
             WebSocketSession session,
             Instant connectedAt
     ) {
         public AgentConnection(String serialNumber, String hostname, String macAddress, WebSocketSession session, Instant connectedAt) {
-            this(serialNumber, hostname, macAddress, null, session, connectedAt);
+            this(serialNumber, hostname, macAddress, null, null, session, connectedAt);
+        }
+
+        public AgentConnection(String serialNumber, String hostname, String macAddress, String username, WebSocketSession session, Instant connectedAt) {
+            this(serialNumber, hostname, macAddress, username, null, session, connectedAt);
         }
 
         public AgentConnection withUsername(String newUsername) {
-            return new AgentConnection(serialNumber, hostname, macAddress, newUsername, session, connectedAt);
+            return new AgentConnection(serialNumber, hostname, macAddress, newUsername, os, session, connectedAt);
         }
     }
 
@@ -101,13 +109,16 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
         String username = root.containsKey("username") && !root.isNull("username")
                 ? root.getString("username", null)
                 : null;
+        String os = root.containsKey("os") && !root.isNull("os")
+                ? root.getString("os", null)
+                : null;
 
         if (serialNumber.isBlank()) {
             log.warn("Tentative d'enregistrement agent sans serialNumber [sessionId={}]", session.getId());
             return;
         }
 
-        AgentConnection connection = new AgentConnection(serialNumber, hostname, macAddress, username, session, Instant.now());
+        AgentConnection connection = new AgentConnection(serialNumber, hostname, macAddress, username, os, session, Instant.now());
         connectedAgents.put(serialNumber, connection);
         sessionToSerialNumber.put(session.getId(), serialNumber);
 
