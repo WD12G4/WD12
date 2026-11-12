@@ -5,7 +5,7 @@
  * - replaceWith / returnTo : après un formulaire, il ne reste pas dans l'historique ;
  * - backLinkTarget / followBackLink : le lien « ← Retour » ramène à la page d'où l'on vient
  *   (Vue Router range le chemin de la page précédente dans history.state.back) ;
- * - navigateAfterLogin : après la connexion (et le choix de la salle), retour à la page demandée.
+ * - navigateAfterLogin : après la connexion (MinDef Connect simulé) et le choix de la salle, retour à la page demandée.
  * Utilisé par : les vues, shared/components/back-link.vue
  */
 import type {RouteLocationResolved} from 'vue-router';
@@ -99,7 +99,7 @@ export function replaceQuery(query: Record<string, string>) {
 }
 
 /** Pages où l'on ne revient pas après la connexion ou le choix de la salle. */
-const afterLoginExcluded: readonly RouteNames[] = ['login', 'room-choice', 'not-found'];
+const afterLoginExcluded: readonly RouteNames[] = ['login', 'mindef-connect', 'room-choice', 'not-found'];
 
 /**
  * Après la connexion ou le choix de la salle (formateur) : la page demandée avant (?redirect=),

@@ -291,6 +291,12 @@ p { color: var(--muted); line-height: 1.6; }
 .login-brand { text-align: center; margin-bottom: 1.75rem; }
 .login-brand .brand-logo { width: 3.25rem; height: 3.25rem; font-size: 1.1rem; margin-bottom: 1rem; }
 .login-brand p { margin: 0; }
+/* Connexion par MinDef Connect (login-view.vue) : un seul bouton, pleine largeur. */
+.sso-button { width: 100%; margin-top: 0.5rem; }
+/* Écran MinDef Connect simulé (mindef-connect-view.vue) : marque en texte, badge « Simulation » dessous. */
+.sso-brand h1 { margin-bottom: 0.4rem; }
+.sso-brand .sim-badge { margin-bottom: 0.6rem; }
+.sso-cancel { margin: 1.25rem 0 0; text-align: center; font-size: 0.88rem; }
 /* Connexion en un clic (mode démonstration : demo-login.vue). */
 .demo-login { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
 .demo-login-title { margin: 0 0 0.75rem; font-size: 0.82rem; font-weight: 600; text-align: center; }

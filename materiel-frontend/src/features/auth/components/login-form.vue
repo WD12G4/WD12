@@ -2,7 +2,7 @@
 /**
  * Formulaire de connexion (identifiant + mot de passe).
  * Composant de présentation : il émet les identifiants, la vue appelle le service.
- * Utilisé par : features/auth/views/login-view.vue
+ * Utilisé par : features/auth/views/mindef-connect-view.vue (écran MinDef Connect simulé)
  */
 import {computed, ref} from 'vue';
 import FormError from '../../../shared/components/form-error.vue';

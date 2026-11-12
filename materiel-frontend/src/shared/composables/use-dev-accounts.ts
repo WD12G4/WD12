@@ -1,7 +1,7 @@
 /**
  * OUTIL DE DÉMONSTRATION : comptes de démonstration créés par docker/initdb/02-data.sql (base locale
  * et VM), changement de compte sans se déconnecter, connexion en un clic.
- * Chargé seulement en mode démonstration (user-card.vue, login-view.vue) : sinon le build le retire.
+ * Chargé seulement en mode démonstration (user-card.vue, mindef-connect-view.vue) : sinon le build le retire.
  * Utilisé par : dev-user-switch.vue, demo-login.vue
  */
 import {roleLabels, type Role} from '../../models/user.model.ts';
