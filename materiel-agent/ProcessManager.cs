@@ -43,6 +43,8 @@ public static class ProcessManager
         "startmenuexperiencehost.exe",
         "searchhost",
         "searchhost.exe",
+        "minisearchhost",
+        "minisearchhost.exe",
         "searchindexer",
         "searchindexer.exe",
         "shellexperiencehost",
