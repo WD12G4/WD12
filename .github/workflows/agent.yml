@@ -2,7 +2,12 @@ name: Agent Build & Release
 
 on:
   push:
-    branches: [ "main", "feature/supervision-agent" ]
+    branches: [ "main", "feature/supervision-agent", "feature/supervision-agent-csharp" ]
+    paths:
+      - 'materiel-agent/**'
+      - '.github/workflows/agent.yml'
+  pull_request:
+    branches: [ "main", "feature/supervision-agent", "feature/supervision-agent-csharp" ]
     paths:
       - 'materiel-agent/**'
       - '.github/workflows/agent.yml'
