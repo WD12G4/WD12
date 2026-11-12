@@ -18,6 +18,7 @@ const iconPaths = {
   users: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8',
   logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
   menu: 'M4 6h16M4 12h16M4 18h16',
+  palette: 'M12 21a9 9 0 1 1 9-9c0 2.5-2 4-4.5 4H15a2 2 0 0 0-1.5 3.3A1.7 1.7 0 0 1 12 21zM7.5 11h.01M10.5 7.5h.01M15 7.5h.01M17.5 11h.01',
   // Applications (supervision) et masterisation
   globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18',
   code: 'M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16',

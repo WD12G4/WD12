@@ -3,7 +3,8 @@
  * Menu principal : marque, liens autorisés, utilisateur connecté et déconnexion.
  * Grand écran : barre flottante en haut, pastille glissante sous la rubrique courante et
  * « Signaler un problème » en bouton d'action à droite, suivi, pour le formateur, du bouton de sa
- * salle de cours (teaching-room-switch.vue). Mobile : tiroir en verre ouvert par le bouton
+ * salle de cours (teaching-room-switch.vue), et du choix du thème (theme-switch.vue).
+ * Mobile : tiroir en verre ouvert par le bouton
  * menu de app-topbar.vue. La mise en page vient de style.css (MENU PRINCIPAL).
  * Composant de présentation : les liens arrivent déjà filtrés selon le rôle (use-nav-links.ts).
  * Utilisé par : App.vue
@@ -18,6 +19,7 @@ import {useTeachingRoom} from '../composables/use-teaching-room.ts';
 import AppIcon from './app-icon.vue';
 import Link from './Link.vue';
 import TeachingRoomSwitch from './teaching-room-switch.vue';
+import ThemeSwitch from './theme-switch.vue';
 import UserCard from './user-card.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -87,6 +89,9 @@ function linkClass(link: NavLink): Record<string, boolean> {
 
     <!-- Salle de cours du formateur -->
     <TeachingRoomSwitch v-if="isTrainer" />
+
+    <!-- Choix du thème -->
+    <ThemeSwitch />
 
     <!-- Utilisateur connecté (et, en mode démonstration, changement de compte) -->
     <UserCard :user="user" @logout="emit('logout')" />
