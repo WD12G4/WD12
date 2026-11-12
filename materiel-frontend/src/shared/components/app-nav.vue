@@ -6,7 +6,8 @@
  * salle de cours (teaching-room-switch.vue), et du choix du thème (theme-switch.vue).
  * Mobile : tiroir en verre ouvert par le bouton
  * menu de app-topbar.vue. La mise en page vient de style.css (MENU PRINCIPAL).
- * Composant de présentation : les liens arrivent déjà filtrés selon le rôle (use-nav-links.ts).
+ * Composant de présentation : les liens arrivent déjà filtrés selon le rôle, avec leur compteur
+ * (pastille rouge, ex. remontées à traiter du gestionnaire) (use-nav-links.ts).
  * Utilisé par : App.vue
  */
 import {useTemplateRef} from 'vue';
@@ -84,6 +85,9 @@ function linkClass(link: NavLink): Record<string, boolean> {
       >
         <AppIcon :name="link.icon" />
         <span>{{ link.label }}</span>
+        <span v-if="link.count" class="nav-count">
+          {{ link.count }}<span class="visually-hidden"> à traiter</span>
+        </span>
       </Link>
     </nav>
 

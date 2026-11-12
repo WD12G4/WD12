@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
  * OUTIL DE DÉMONSTRATION : connexion en un clic avec un compte de démonstration (un bouton par rôle),
- * pour une présentation. Affiché seulement en mode démonstration (login-view.vue).
- * Composant de présentation : émet les identifiants, la page de connexion se connecte.
- * Utilisé par : login-view.vue
+ * pour une présentation. Affiché seulement en mode démonstration (mindef-connect-view.vue).
+ * Composant de présentation : émet les identifiants, l'écran MinDef Connect simulé se connecte.
+ * Utilisé par : mindef-connect-view.vue
  */
 import {roleLabels} from '../../../models/user.model.ts';
 import {demoAccounts} from '../../../shared/composables/use-dev-accounts.ts';
