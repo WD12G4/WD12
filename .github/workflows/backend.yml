@@ -9,6 +9,7 @@ on:
       - 'docker-compose.yml'
       - 'docker-compose.prod.yml'
       - 'docker-compose.supervision.yml'
+
   pull_request:
     branches: [ "main", "proto-backend-frontend", "frontBase_ESL", "feature/supervision-agent" ]
     paths:
