@@ -27,14 +27,14 @@ jobs:
             os_name: linux-x64
             binary_name: MaterielAgent
             archive_ext: tar.gz
-          - rid: linux-arm64
-            os_name: linux-arm64
-            binary_name: MaterielAgent
-            archive_ext: tar.gz
-          - rid: osx-x64
-            os_name: macos-intel
-            binary_name: MaterielAgent
-            archive_ext: tar.gz
+#          - rid: linux-arm64
+#            os_name: linux-arm64
+#            binary_name: MaterielAgent
+#            archive_ext: tar.gz
+#          - rid: osx-x64
+#            os_name: macos-intel
+#            binary_name: MaterielAgent
+#            archive_ext: tar.gz
           - rid: osx-arm64
             os_name: macos-apple-silicon
             binary_name: MaterielAgent
