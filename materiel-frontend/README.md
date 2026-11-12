@@ -6,7 +6,8 @@ Vue 3 + TypeScript + Vite, généré selon le document `CADRE_FRONT_IA.md` (conv
 ## Lancer en développement
 
 Prérequis : Node 22, le backend `materiel-backend` démarré sur le port 8080 (avec sa base PostgreSQL),
-et Keycloak démarré sur le port 8180 (`docker compose up -d keycloak` à la racine du dépôt).
+et Keycloak démarré (`docker compose up -d keycloak` à la racine du dépôt) avec, dans `.env`,
+`APP_URL=http://localhost:5173` et `KEYCLOAK_URL=http://localhost:5173/auth`.
 
 ```bash
 npm install
@@ -27,9 +28,12 @@ la page demandée. Le jeton reste en mémoire (`keycloak-js`) et part dans l'en-
 Le backend vérifie sa signature, retrouve le compte par son identifiant et lui applique son rôle :
 Keycloak prouve l'identité, les rôles restent dans la base (page « Comptes »).
 
-- Adresse de Keycloak : même machine que le front, port 8180. Pour une autre adresse, construire avec
-  `VITE_KEYCLOAK_URL=http://…` (elle doit être égale à `KEYCLOAK_URL` du fichier `.env`).
-- Console d'administration : http://localhost:8180 (compte `admin` / `admin`, voir `.env`).
+- Adresse de Keycloak : celle de l'application suivie de `/auth`. Le Nginx du front (ou le proxy de Vite)
+  relaie `/auth/` vers Keycloak : même origine et même port 80 que l'application, donc rien à ouvrir de
+  plus et le proxy de l'école laisse passer.
+- Sur une autre machine (VM) : dans `.env`, `APP_URL=http://<adresse>` et `KEYCLOAK_URL=http://<adresse>/auth`,
+  puis `docker compose rm -sf keycloak && docker compose up -d keycloak backend`.
+- Console d'administration : `<adresse de l'application>/auth/admin` (compte `admin` / `admin`, voir `.env`).
 - Configuration versionnée : `docker/keycloak/gestion-parc-realm.json`, rechargée à chaque démarrage.
 
 Comptes de démonstration (même identifiant dans Keycloak et dans `docker/initdb/02-data.sql`) :

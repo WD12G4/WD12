@@ -2,15 +2,15 @@
  * Client Keycloak : le fournisseur d'identité qui joue MinDef Connect (docker-compose.yml, service keycloak).
  * Connexion par redirection vers la page de Keycloak (code d'autorisation + PKCE), jeton d'accès gardé
  * en mémoire par keycloak-js et renouvelé avant son expiration.
- * Adresse de Keycloak : VITE_KEYCLOAK_URL si elle est fournie au build, sinon la même machine que
- * l'application sur le port 8180 (fonctionne en local et sur la VM sans reconstruire l'image).
+ * Adresse de Keycloak : VITE_KEYCLOAK_URL si elle est fournie au build, sinon l'adresse de l'application
+ * suivie de /auth : Keycloak est servi par le Nginx du front (nginx.conf) ou le proxy de Vite. Même
+ * origine et même port que l'application : rien à ouvrir de plus, et le proxy de l'école laisse passer.
  * Utilisé par : shared/composables/use-auth.ts
  */
 import Keycloak from 'keycloak-js';
 
 /** Adresse de Keycloak vue par le navigateur (doit être égale à KEYCLOAK_URL du fichier .env). */
-const KEYCLOAK_URL: string = import.meta.env.VITE_KEYCLOAK_URL
-    ?? `${window.location.protocol}//${window.location.hostname}:8180`;
+const KEYCLOAK_URL: string = import.meta.env.VITE_KEYCLOAK_URL ?? `${window.location.origin}/auth`;
 
 /** Realm et client déclarés dans docker/keycloak/gestion-parc-realm.json. */
 export const keycloak = new Keycloak({

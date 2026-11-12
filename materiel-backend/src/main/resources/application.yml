@@ -45,10 +45,10 @@ spring:
 # -------------------------------------------------------------
 # SÉCURITÉ : JETONS KEYCLOAK (MinDef Connect)
 # issuer-uri : adresse de Keycloak vue par le navigateur, comparée au champ « iss » des jetons.
-# jwk-set-uri : où le backend lit les clés publiques (réseau Docker : http://keycloak:8080, voir .env).
+# jwk-set-uri : où le backend lit les clés publiques (réseau Docker : http://keycloak:8080/auth, voir .env).
 # -------------------------------------------------------------
 keycloak:
-  url: ${KEYCLOAK_URL:http://localhost:8180}
+  url: ${KEYCLOAK_URL:http://localhost/auth}
   realm: gestion-parc
 
 logging:
