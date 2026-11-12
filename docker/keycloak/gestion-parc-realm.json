@@ -1,0 +1,72 @@
+{
+  "realm": "gestion-parc",
+  "displayName": "MinDef Connect (simulation)",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "rememberMe": false,
+  "loginWithEmailAllowed": false,
+  "duplicateEmailsAllowed": false,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["fr"],
+  "defaultLocale": "fr",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 7200,
+  "ssoSessionMaxLifespan": 36000,
+  "clients": [
+    {
+      "clientId": "materiel-frontend",
+      "name": "Gestion du parc",
+      "description": "Frontend Vue de Gestion du parc (client public, code d'autorisation + PKCE).",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "redirectUris": [
+        "http://localhost/*",
+        "http://localhost:5173/*",
+        "http://127.0.0.1/*",
+        "http://127.0.0.1:5173/*"
+      ],
+      "webOrigins": ["+"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@gestion-parc.local",
+      "emailVerified": true,
+      "firstName": "Compte",
+      "lastName": "Administrateur",
+      "credentials": [{"type": "password", "value": "admin123", "temporary": false}]
+    },
+    {
+      "username": "manager",
+      "enabled": true,
+      "email": "manager@gestion-parc.local",
+      "emailVerified": true,
+      "firstName": "Compte",
+      "lastName": "Gestionnaire",
+      "credentials": [{"type": "password", "value": "manager123", "temporary": false}]
+    },
+    {
+      "username": "user",
+      "enabled": true,
+      "email": "user@gestion-parc.local",
+      "emailVerified": true,
+      "firstName": "Compte",
+      "lastName": "Formateur",
+      "credentials": [{"type": "password", "value": "user123", "temporary": false}]
+    }
+  ]
+}

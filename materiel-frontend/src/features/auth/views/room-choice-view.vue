@@ -14,7 +14,7 @@ import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {useLocations} from '../../../shared/composables/use-locations.ts';
 import {byBuildingThenNumber} from '../../../shared/composables/use-room-label.ts';
 import {TEACHING_ROOM_QUERY, useTeachingRoom} from '../../../shared/composables/use-teaching-room.ts';
-import {navigateAfterLogin, navigateTo} from '../../../router/navigation.ts';
+import {hrefOf, navigateAfterLogin} from '../../../router/navigation.ts';
 import LoadState from '../../../shared/components/load-state.vue';
 
 /** Salles d'un même bâtiment. */
@@ -61,10 +61,9 @@ async function choose(room: Room): Promise<void> {
   await navigateAfterLogin({[TEACHING_ROOM_QUERY]: String(room.id)});
 }
 
-/** Retour à la connexion, pour se connecter avec un autre compte. */
+/** Retour à la connexion (déconnexion de Keycloak), pour se connecter avec un autre compte. */
 async function signOut(): Promise<void> {
-  await logout();
-  await navigateTo({name: 'login'});
+  await logout(hrefOf({name: 'login'}));
 }
 
 //------------------ LIFECYCLE -------------------------------

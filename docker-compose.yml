@@ -74,6 +74,30 @@ services:
     networks:
       - materiel_network
 
+  # -------------------------------------------------------------
+  # 5. Keycloak : fournisseur d'identité (joue MinDef Connect)
+  # Le realm gestion-parc (client + comptes de démonstration) est
+  # rechargé depuis docker/keycloak/ à chaque démarrage.
+  # -------------------------------------------------------------
+  keycloak:
+    image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION:-26.4}
+    container_name: materiel_keycloak
+    restart: unless-stopped
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      # Adresse vue par le navigateur : c'est aussi l'émetteur (iss) des jetons, vérifié par le backend.
+      KC_HOSTNAME: ${KEYCLOAK_URL:-http://localhost:8180}
+      # Le backend peut joindre Keycloak par le réseau Docker (http://keycloak:8080).
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+    ports:
+      - "${KEYCLOAK_PORT:-8180}:8080"
+    volumes:
+      - ./docker/keycloak:/opt/keycloak/data/import:ro
+    networks:
+      - materiel_network
+
 volumes:
   postgres_data:
     driver: local

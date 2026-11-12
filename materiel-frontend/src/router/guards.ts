@@ -31,7 +31,7 @@ async function checkAccess(to: RouteLocationNormalized, from: RouteLocationNorma
         return isAuthenticated.value ? {name: 'home'} : true;
     }
     if (!isAuthenticated.value) {
-        // La page demandée est gardée : après la connexion, on y revient (navigation.ts, navigateAfterLogin).
+        // La page demandée est gardée : après la connexion, Keycloak y ramène (navigation.ts, afterLoginHref).
         return to.fullPath === '/' ? {name: 'login'} : {name: 'login', query: {redirect: to.fullPath}};
     }
     if (!to.meta.roles.some(hasRole)) {

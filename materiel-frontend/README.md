@@ -5,7 +5,8 @@ Vue 3 + TypeScript + Vite, généré selon le document `CADRE_FRONT_IA.md` (conv
 
 ## Lancer en développement
 
-Prérequis : Node 22, et le backend `materiel-backend` démarré sur le port 8080 (avec sa base PostgreSQL).
+Prérequis : Node 22, le backend `materiel-backend` démarré sur le port 8080 (avec sa base PostgreSQL),
+et Keycloak démarré sur le port 8180 (`docker compose up -d keycloak` à la racine du dépôt).
 
 ```bash
 npm install
@@ -16,16 +17,31 @@ npm run dev
 ```
 
 L'application est servie sur http://localhost:5173. Le proxy Vite relaie `/api` vers `http://localhost:8080`
-**sans réécrire le chemin** : le front et l'API restent sur la même origine, condition pour que le cookie de
-rafraîchissement de session (`SameSite=Strict`) soit envoyé.
+**sans réécrire le chemin** : le front et l'API restent sur la même origine.
 
-Comptes de démonstration (créés par `docker/initdb/02-data.sql`) :
+### Connexion : Keycloak (joue MinDef Connect)
+
+Le front ne demande jamais le mot de passe : « S'identifier avec MinDefConnect » ouvre la page de Keycloak
+(realm `gestion-parc`, client public `materiel-frontend`, code d'autorisation + PKCE), qui ramène ensuite sur
+la page demandée. Le jeton reste en mémoire (`keycloak-js`) et part dans l'en-tête `Authorization`.
+Le backend vérifie sa signature, retrouve le compte par son identifiant et lui applique son rôle :
+Keycloak prouve l'identité, les rôles restent dans la base (page « Comptes »).
+
+- Adresse de Keycloak : même machine que le front, port 8180. Pour une autre adresse, construire avec
+  `VITE_KEYCLOAK_URL=http://…` (elle doit être égale à `KEYCLOAK_URL` du fichier `.env`).
+- Console d'administration : http://localhost:8180 (compte `admin` / `admin`, voir `.env`).
+- Configuration versionnée : `docker/keycloak/gestion-parc-realm.json`, rechargée à chaque démarrage.
+
+Comptes de démonstration (même identifiant dans Keycloak et dans `docker/initdb/02-data.sql`) :
 
 | Identifiant | Mot de passe | Rôle |
 |---|---|---|
 | `admin` | `admin123` | Administrateur |
 | `manager` | `manager123` | Gestionnaire |
 | `user` | `user123` | Formateur |
+
+Un compte créé depuis la page « Comptes » doit aussi être créé dans Keycloak avec le même identifiant :
+sans lui, Keycloak refuse la connexion ; sans compte dans la base, c'est l'application qui la refuse.
 
 ## Vérifier avant de pousser
 
@@ -54,7 +70,7 @@ pour respecter la limite de 120 lignes par fichier.
 
 | Lot | Écran | API | Rôle |
 |---|---|---|---|
-| 1 | Connexion (MinDef Connect simulé), menu selon le rôle, session restaurée au rechargement | oui | tous |
+| 1 | Connexion par Keycloak (joue MinDef Connect), menu selon le rôle, session restaurée au rechargement | oui | tous |
 | 2 | Recherche et filtres du matériel, fiche, création, modification, affectation, archivage | oui | tous / ADMIN / MANAGER |
 | 3 | Bâtiments, salles (avec le matériel de la salle), comptes | oui | tous / ADMIN |
 | 4 | Tableau de bord : compteurs (liens vers la liste déjà filtrée), alerte groupée des fins de disponibilité, toutes les salles en tuiles par bâtiment (un clic ouvre la salle), tuile « En stock » | oui | tous |

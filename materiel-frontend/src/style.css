@@ -41,17 +41,11 @@
   --danger-soft: #ff3b301a;
   --danger-border: #ff3b3040;
   --on-danger: #ffffff;
-  /* MinDef Connect simulé (bouton de login-view.vue, écran mindef-connect-view.vue) : un autre « site »,
-     mêmes couleurs dans tous les thèmes (les thèmes ne les redéfinissent pas). */
+  /* Bouton MinDef Connect (login-view.vue) : couleurs du fournisseur d'identité, mêmes dans tous les
+     thèmes (les thèmes ne les redéfinissent pas). */
   --sso-blue: #000091;
-  --sso-on-blue: #ffffff;
   --sso-button: #a6a6fc;
   --sso-button-hover: #9494f5;
-  --sso-surface: #f5f5f5;
-  --sso-input: #eeeeee;
-  --sso-line: #3a3a3a;
-  --sso-text: #161616;
-  --sso-placeholder: #666666;
   --neutral-soft: #7676801f;
   --backdrop: #1d1d1f33;
   /* Verre : fond translucide, plus opaque pour les panneaux à lire (aperçu, listes déroulantes). */
@@ -304,62 +298,16 @@ p { color: var(--muted); line-height: 1.6; }
 .login-brand p { margin: 0; }
 /* Bouton « S'identifier avec MinDefConnect » (login-view.vue) : logo (assets/mindef-connect-logo.png), libellé sur deux lignes. */
 .sso-button {
-  display: flex; align-items: center; gap: 1rem; width: 100%; margin-top: 0.5rem; padding: 0.7rem 1rem;
-  border-radius: 0.25rem; background: var(--sso-button); color: var(--sso-blue); text-decoration: none;
-  transition: background var(--speed) var(--ease);
+  display: flex; align-items: center; justify-content: flex-start; gap: 1rem; width: 100%; margin-top: 0.5rem; padding: 0.7rem 1rem;
+  border: 0; border-radius: 0.25rem; background: var(--sso-button); color: var(--sso-blue); box-shadow: none;
+  font-weight: 400; text-align: left; transition: background var(--speed) var(--ease);
 }
-.sso-button:hover { background: var(--sso-button-hover); color: var(--sso-blue); }
+.sso-button:hover { background: var(--sso-button-hover); color: var(--sso-blue); box-shadow: none; filter: none; transform: none; }
 .sso-button-logo { flex-shrink: 0; width: 3.75rem; height: auto; }
 .sso-button-text { display: flex; flex-direction: column; font-size: 1.15rem; line-height: 1.3; }
 .sso-button-text strong { font-weight: 800; }
 
-/* ------------------ MINDEF CONNECT SIMULÉ (mindef-connect-view.vue, login-form.vue) --
-   Écran du fournisseur d'identité : panneau gris à angles droits, champs soulignés, bouton bleu plein. */
-.guest-shell .content:has(.sso-panel) { width: min(600px, 100%); }
-.sso-panel {
-  padding: 2.5rem clamp(1rem, 4vw, 1.25rem) 2rem; background: var(--sso-surface); color: var(--sso-text);
-  font-family: Arial, Helvetica, sans-serif; text-align: center;
-}
-.sso-panel h1 { margin: 0 0 0.4rem; color: var(--sso-text); font-size: 2.25rem; }
-.sso-panel h2 { margin: 1rem 0; color: var(--sso-text); font-size: 1.65rem; }
-.sso-panel .sim-badge { color: var(--sso-placeholder); border-color: var(--sso-placeholder); }
-.sso-intro { margin: 0 0 1.5rem; color: var(--sso-text); }
-.sso-intro strong { color: var(--sso-text); }
-.sso-panel > :is(form, .sso-outline-button, .demo-login) { max-width: 26rem; margin-inline: auto; text-align: left; }
-.sso-form { display: flex; flex-direction: column; gap: 1rem; }
-.sso-form label { color: var(--sso-text); font-size: 1rem; font-weight: 400; }
-.sso-form input:not([type='checkbox']) {
-  border: 0; border-bottom: 2px solid var(--sso-line); border-radius: 0.25rem 0.25rem 0 0;
-  background: var(--sso-input); color: var(--sso-text); box-shadow: none;
-}
-.sso-form input:not([type='checkbox']):hover { border-color: var(--sso-line); }
-.sso-form input:not([type='checkbox']):focus { border-color: var(--sso-line); outline: 2px solid var(--sso-blue); outline-offset: 2px; box-shadow: none; }
-.sso-form input::placeholder { color: var(--sso-placeholder); font-style: italic; opacity: 1; }
-.sso-check { display: flex; align-items: center; gap: 0.6rem; margin-top: -0.25rem; cursor: pointer; }
-.sso-check input[type='checkbox'] { accent-color: var(--sso-blue); }
-/* Boutons de l'écran : ni pilule, ni ombre, ni rebond (style du fournisseur d'identité). */
-.sso-panel button { border-radius: 0; box-shadow: none; transform: none; font-family: inherit; font-weight: 400; }
-.sso-panel button:hover, .sso-panel button:active { box-shadow: none; transform: none; }
-.sso-form button[type='submit'] { width: 100%; margin-top: 0.75rem; background: var(--sso-blue); color: var(--sso-on-blue); font-size: 1rem; }
-.sso-form button[type='submit']:hover { color: var(--sso-on-blue); }
-.sso-link {
-  align-self: flex-start; padding: 0; background: none; color: var(--sso-blue);
-  border-bottom: 1px solid var(--sso-blue); font-size: 1rem;
-}
-.sso-link:hover { color: var(--sso-blue); filter: none; }
-.sso-divider { display: flex; align-items: center; gap: 1.85rem; margin: 1.5rem -0.5rem 0; color: var(--sso-blue); }
-.sso-divider::before, .sso-divider::after { content: ''; flex: 1; border-top: 1px solid var(--sso-blue); }
-.sso-panel > .sso-outline-button {
-  display: block; width: auto; margin-inline: auto; padding: 0.7rem 1rem;
-  border: 1px solid var(--sso-blue); background: transparent; color: var(--sso-blue); font-size: 1rem;
-}
-.sso-panel > .sso-outline-button:hover { background: var(--sso-input); color: var(--sso-blue); filter: none; }
-.sso-panel .demo-login { border-color: var(--sso-input); }
-.sso-panel .demo-login-title { color: var(--sso-placeholder); }
-.sso-panel .demo-login-buttons button { background: var(--sso-input); color: var(--sso-blue); font-weight: 600; }
-.sso-cancel { margin: 1.5rem 0 0; font-size: 0.9rem; }
-.sso-cancel a { color: var(--sso-blue); }
-/* Connexion en un clic (mode démonstration : demo-login.vue). */
+/* Connexion par rôle (mode démonstration : demo-login.vue). */
 .demo-login { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
 .demo-login-title { margin: 0 0 0.75rem; font-size: 0.82rem; font-weight: 600; text-align: center; }
 .demo-login-buttons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }

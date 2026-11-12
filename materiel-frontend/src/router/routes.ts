@@ -9,7 +9,7 @@ import HomeView from '../features/home/views/home-view.vue';
 import LoginView from '../features/auth/views/login-view.vue';
 
 export const routes = [
-    //------------------ ACCUEIL, CONNEXION (MINDEF CONNECT SIMULÉ), SALLE DU FORMATEUR (guards.ts)
+    //------------------ ACCUEIL, CONNEXION (KEYCLOAK), SALLE DU FORMATEUR (guards.ts)
     {
         path: '/',
         name: 'home',
@@ -20,13 +20,6 @@ export const routes = [
         path: '/connexion',
         name: 'login',
         component: LoginView,
-        meta: {roles: [], public: true},
-    },
-    {
-        // SIMULATION : écran d'identification de MinDef Connect, public comme la connexion.
-        path: '/mindef-connect',
-        name: 'mindef-connect',
-        component: () => import('../features/auth/views/mindef-connect-view.vue'),
         meta: {roles: [], public: true},
     },
     {

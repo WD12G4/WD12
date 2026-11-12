@@ -1,6 +1,6 @@
 /**
  * Client HTTP de l'application : SEUL fichier qui appelle fetch().
- * Ajoute le jeton, rafraîchit la session une fois sur une 401, et convertit les erreurs en ApiError.
+ * Ajoute le jeton Keycloak, le renouvelle une fois sur une 401, et convertit les erreurs en ApiError.
  * Utilisé par : tous les fichiers *.services.ts
  *
  * Pour éviter un import circulaire (use-auth → auth.services → http-client → use-auth),
@@ -54,7 +54,7 @@ function buildHeaders(options: RequestInit): Headers {
 
 /**
  * Envoie la requête. Une panne réseau devient une ApiError lisible.
- * credentials 'same-origin' : le cookie de rafraîchissement doit partir avec les appels /auth.
+ * credentials 'same-origin' : aucun cookie n'est envoyé à un autre site (le jeton part dans l'en-tête).
  */
 async function send(path: string, options: RequestInit): Promise<Response> {
     try {
@@ -90,7 +90,7 @@ async function retryAfterRefresh(path: string, options: RequestInit): Promise<Re
  */
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
     let response = await send(path, options);
-    // Le jeton dure 15 minutes : sur une 401, on tente un seul rafraîchissement (section 9.2 du cadre).
+    // Le jeton Keycloak dure 5 minutes : sur une 401, on tente un seul renouvellement (section 9.2 du cadre).
     if (response.status === 401 && hooks.getToken() !== null) {
         response = await retryAfterRefresh(path, options);
     }
@@ -98,21 +98,4 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
         throw await toApiError(response);
     }
     return parseBody<T>(response);
-}
-
-/**
- * Appelle une route d'authentification et renvoie le jeton reçu dans l'en-tête Authorization.
- * Pas de rafraîchissement automatique ici : ces routes servent justement à l'obtenir.
- * @param path chemin après /api/v1 (ex. '/auth/login/')
- * @param options options de fetch
- * @returns le jeton sans le préfixe « Bearer », ou null si l'en-tête est absent
- * @throws ApiError si l'API répond en erreur
- */
-export async function apiTokenRequest(path: string, options: RequestInit = {}): Promise<string | null> {
-    const response = await send(path, options);
-    if (!response.ok) {
-        throw await toApiError(response);
-    }
-    const header = response.headers.get('Authorization');
-    return header ? header.replace(/^Bearer\s+/i, '') : null;
 }

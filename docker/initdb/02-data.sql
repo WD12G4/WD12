@@ -3,7 +3,10 @@
 -- ==============================================================================
 
 -- 1. Utilisateurs de test
--- Mots de passe valides chiffrés en BCrypt :
+-- La connexion passe par Keycloak (docker/keycloak/gestion-parc-realm.json) : les comptes y
+-- portent les mêmes identifiants et mots de passe. Ici, l'identifiant relie le compte Keycloak
+-- au rôle de l'application ; le mot de passe stocké n'est plus vérifié à la connexion.
+-- Mots de passe chiffrés en BCrypt :
 -- 'admin'   -> mot de passe : 'admin123'
 -- 'manager' -> mot de passe : 'manager123'
 -- 'user'    -> mot de passe : 'user123'

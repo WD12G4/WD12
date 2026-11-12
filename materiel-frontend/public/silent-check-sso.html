@@ -1,0 +1,12 @@
+<!doctype html>
+<!--
+  Vérification silencieuse de la session Keycloak (services/keycloak.ts, restoreSession de use-auth.ts) :
+  keycloak-js charge cette page dans une iframe cachée ; elle renvoie sa réponse à l'application.
+-->
+<html lang="fr">
+<body>
+<script>
+    parent.postMessage(location.href, location.origin);
+</script>
+</body>
+</html>

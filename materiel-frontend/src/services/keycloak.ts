@@ -1,0 +1,29 @@
+/**
+ * Client Keycloak : le fournisseur d'identité qui joue MinDef Connect (docker-compose.yml, service keycloak).
+ * Connexion par redirection vers la page de Keycloak (code d'autorisation + PKCE), jeton d'accès gardé
+ * en mémoire par keycloak-js et renouvelé avant son expiration.
+ * Adresse de Keycloak : VITE_KEYCLOAK_URL si elle est fournie au build, sinon la même machine que
+ * l'application sur le port 8180 (fonctionne en local et sur la VM sans reconstruire l'image).
+ * Utilisé par : shared/composables/use-auth.ts
+ */
+import Keycloak from 'keycloak-js';
+
+/** Adresse de Keycloak vue par le navigateur (doit être égale à KEYCLOAK_URL du fichier .env). */
+const KEYCLOAK_URL: string = import.meta.env.VITE_KEYCLOAK_URL
+    ?? `${window.location.protocol}//${window.location.hostname}:8180`;
+
+/** Realm et client déclarés dans docker/keycloak/gestion-parc-realm.json. */
+export const keycloak = new Keycloak({
+    url: KEYCLOAK_URL,
+    realm: 'gestion-parc',
+    clientId: 'materiel-frontend',
+});
+
+/**
+ * Adresse complète de l'application pour une page donnée : Keycloak y renvoie après la connexion
+ * ou la déconnexion (adresses autorisées dans le realm : redirectUris).
+ * @param path chemin de la page (ex. '/materiel')
+ */
+export function appUrl(path: string): string {
+    return `${window.location.origin}${path}`;
+}
