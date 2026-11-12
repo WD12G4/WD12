@@ -2,9 +2,14 @@
 /**
  * Page de connexion. Seule page accessible sans être connecté (meta.public).
  * Après une session expirée (?session=expiree, voir router/guards.ts), un message l'explique.
+ * En mode démonstration, un bouton par rôle connecte en un clic (demo-login.vue).
+ * Mode démonstration : actif en développement et, par défaut, dans la version construite (présentation
+ * sur la VM). Pour une vraie mise en production, construire avec VITE_DEMO_ACCOUNTS=false : les comptes
+ * de démonstration et leurs mots de passe sont alors retirés du build (condition écrite telle quelle
+ * pour que Vite la remplace par une constante).
  * RG : RG-14 (rôles liés à des comptes), RG-19 (un compte désactivé est refusé par le backend)
  */
-import {computed} from 'vue';
+import {computed, defineAsyncComponent} from 'vue';
 import {useRoute} from 'vue-router';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
@@ -17,6 +22,9 @@ import LoginForm from '../components/login-form.vue';
 const {login} = useAuth();
 const {loading, errorMessage, run} = useAsyncState();
 const route = useRoute();
+/** Connexion en un clic : null hors mode démonstration (import retiré du build). */
+const DemoLogin = import.meta.env.DEV || import.meta.env.VITE_DEMO_ACCOUNTS !== 'false'
+    ? defineAsyncComponent(() => import('../components/demo-login.vue')) : null;
 
 //------------------ COMPUTED --------------------------------
 const sessionExpired = computed(() => route.query.session === 'expiree');
@@ -65,6 +73,12 @@ async function signIn(username: string, password: string): Promise<void> {
       <LoginForm
           :submitting="loading"
           :error-message="errorMessage"
+          @submit="signIn"
+      />
+      <component
+          :is="DemoLogin"
+          v-if="DemoLogin"
+          :submitting="loading"
           @submit="signIn"
       />
     </template>

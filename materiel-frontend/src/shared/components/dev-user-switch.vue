@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * OUTIL DE TEST (mode développement uniquement) : le bloc de l'utilisateur (pastille, nom, rôle)
- * devient une liste pour changer de compte de démonstration (Administrateur, Gestionnaire,
- * Formateur) sans se déconnecter. Absent de la version de production (voir user-card.vue).
+ * OUTIL DE DÉMONSTRATION : le bloc de l'utilisateur (pastille, nom, rôle) devient une liste pour
+ * changer de compte de démonstration (Administrateur, Gestionnaire, Formateur) sans se déconnecter.
+ * Absent hors mode démonstration (voir user-card.vue).
  * Utilisé par : user-card.vue
  */
 import {computed, ref, watch} from 'vue';

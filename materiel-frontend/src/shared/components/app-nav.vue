@@ -2,7 +2,8 @@
 /**
  * Menu principal : marque, liens autorisés, utilisateur connecté et déconnexion.
  * Grand écran : barre flottante en haut, pastille glissante sous la rubrique courante et
- * « Signaler un problème » en bouton d'action à droite. Mobile : tiroir en verre ouvert par le bouton
+ * « Signaler un problème » en bouton d'action à droite, suivi, pour le formateur, du bouton de sa
+ * salle de cours (teaching-room-switch.vue). Mobile : tiroir en verre ouvert par le bouton
  * menu de app-topbar.vue. La mise en page vient de style.css (MENU PRINCIPAL).
  * Composant de présentation : les liens arrivent déjà filtrés selon le rôle (use-nav-links.ts).
  * Utilisé par : App.vue
@@ -13,8 +14,10 @@ import type {RouteNames} from '../../router/route-types.ts';
 import type {User} from '../../models/user.model.ts';
 import type {NavLink} from '../composables/use-nav-links.ts';
 import {useNavIndicator} from '../composables/use-nav-indicator.ts';
+import {useTeachingRoom} from '../composables/use-teaching-room.ts';
 import AppIcon from './app-icon.vue';
 import Link from './Link.vue';
+import TeachingRoomSwitch from './teaching-room-switch.vue';
 import UserCard from './user-card.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -38,6 +41,7 @@ const emit = defineEmits<{
 const route = useRoute();
 const nav = useTemplateRef<HTMLElement>('nav');
 useNavIndicator(nav);
+const {isTrainer} = useTeachingRoom();
 
 //------------------ FUNCTIONS -------------------------------
 /** Vrai si la page courante appartient à la rubrique du lien (ex. fiche d'une salle → « Salles »). */
@@ -81,7 +85,10 @@ function linkClass(link: NavLink): Record<string, boolean> {
       </Link>
     </nav>
 
-    <!-- Utilisateur connecté (et, en mode développement, changement de compte) -->
+    <!-- Salle de cours du formateur -->
+    <TeachingRoomSwitch v-if="isTrainer" />
+
+    <!-- Utilisateur connecté (et, en mode démonstration, changement de compte) -->
     <UserCard :user="user" @logout="emit('logout')" />
   </div>
 

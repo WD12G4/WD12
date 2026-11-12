@@ -3,7 +3,7 @@
  * Coquille de l'application : menu (si connecté ; barre flottante en haut, tiroir sur mobile),
  * barre du haut sur mobile, message temporaire, page courante avec transition, et alerte des
  * remontées non lues pour le gestionnaire (RG-23). Sans utilisateur connecté, la page est centrée (connexion).
- * Formateur sans salle de cours : le menu n'a pas de liens tant qu'il ne l'a pas choisie (room-choice-view.vue).
+ * Formateur sans salle de cours : pas de menu, page centrée comme la connexion (room-choice-view.vue).
  * Transition entre les pages : le navigateur s'en charge s'il connaît l'API View Transitions
  * (router/view-transition.ts) ; sinon, fondu de Vue (<Transition name="page">).
  */
@@ -32,10 +32,10 @@ const {unreadCount, visible: showReportAlert, dismiss: dismissReportAlert} = use
 const menuOpen = ref(false);
 
 //------------------ COMPUTED --------------------------------
-/** Mise en page : avec menu si connecté, centrée sinon. */
-const shellClass = computed(() => (currentUser.value ? 'app-shell' : 'guest-shell'));
-/** Formateur qui n'a pas encore choisi sa salle : pas de liens, seulement la déconnexion. */
-const menuLinks = computed(() => (needsRoomChoice.value ? [] : visibleLinks.value));
+/** Menu affiché : utilisateur connecté qui n'est pas en train de choisir sa première salle. */
+const showMenu = computed(() => currentUser.value !== null && !needsRoomChoice.value);
+/** Mise en page : avec menu, ou centrée (connexion, premier choix de la salle). */
+const shellClass = computed(() => (showMenu.value ? 'app-shell' : 'guest-shell'));
 
 //------------------ FUNCTIONS -------------------------------
 /** Déconnecte l'utilisateur puis affiche la page de connexion (sans message de l'utilisateur précédent). */
@@ -62,9 +62,9 @@ watch(() => route.fullPath, () => {
 <template>
   <div :class="shellClass">
     <!-- Menu, seulement pour un utilisateur connecté -->
-    <template v-if="currentUser">
+    <template v-if="showMenu && currentUser">
       <AppNav
-          :links="menuLinks"
+          :links="visibleLinks"
           :open="menuOpen"
           :user="currentUser"
           @close="menuOpen = false"

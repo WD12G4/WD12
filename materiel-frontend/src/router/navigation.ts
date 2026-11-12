@@ -92,6 +92,12 @@ export function followBackLink(back: BackLinkTarget) {
     return router.push(back.to);
 }
 
+/** Remplace des paramètres d'adresse de la page courante (ex. { salle: '12' }), sans ajout à l'historique. */
+export function replaceQuery(query: Record<string, string>) {
+    const current = router.currentRoute.value;
+    return router.replace({path: current.path, query: {...current.query, ...query}, hash: current.hash});
+}
+
 /** Pages où l'on ne revient pas après la connexion ou le choix de la salle. */
 const afterLoginExcluded: readonly RouteNames[] = ['login', 'room-choice', 'not-found'];
 

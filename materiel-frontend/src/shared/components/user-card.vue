@@ -1,8 +1,12 @@
 <script setup lang="ts">
 /**
  * Bloc de l'utilisateur connecté dans le menu : pastille, nom et rôle, bouton de déconnexion.
- * En mode développement, la pastille, le nom et le rôle deviennent la liste de changement de compte
- * (dev-user-switch.vue), chargée seulement dans ce mode : le build de production ne la contient pas.
+ * En mode démonstration, la pastille, le nom et le rôle deviennent la liste de changement de compte
+ * (dev-user-switch.vue), chargée seulement dans ce mode.
+ * Mode démonstration : actif en développement et, par défaut, dans la version construite (présentation
+ * sur la VM). Pour une vraie mise en production, construire avec VITE_DEMO_ACCOUNTS=false : les comptes
+ * de démonstration et leurs mots de passe sont alors retirés du build (condition écrite telle quelle
+ * pour que Vite la remplace par une constante).
  * Composant de présentation.
  * Utilisé par : app-nav.vue
  */
@@ -22,8 +26,9 @@ const emit = defineEmits<{
 }>();
 
 //------------------ DATAS -----------------------------------
-/** Outil de test : null hors mode développement (import retiré du build de production). */
-const DevUserSwitch = import.meta.env.DEV ? defineAsyncComponent(() => import('./dev-user-switch.vue')) : null;
+/** Changement de compte : null hors mode démonstration (import retiré du build). */
+const DevUserSwitch = import.meta.env.DEV || import.meta.env.VITE_DEMO_ACCOUNTS !== 'false'
+    ? defineAsyncComponent(() => import('./dev-user-switch.vue')) : null;
 
 //------------------ COMPUTED --------------------------------
 /** Rôle affiché par son libellé, jamais par son code. */

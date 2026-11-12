@@ -190,6 +190,27 @@ p { color: var(--muted); line-height: 1.6; }
 .login-brand { text-align: center; margin-bottom: 1.75rem; }
 .login-brand .brand-logo { width: 3.25rem; height: 3.25rem; font-size: 1.1rem; margin-bottom: 1rem; }
 .login-brand p { margin: 0; }
+/* Connexion en un clic (mode démonstration : demo-login.vue). */
+.demo-login { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
+.demo-login-title { margin: 0 0 0.75rem; font-size: 0.82rem; font-weight: 600; text-align: center; }
+.demo-login-buttons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+.demo-login-buttons button { padding-inline: 0.5rem; font-size: 0.85rem; }
+/* Premier choix de la salle (room-choice-view.vue) : centré comme la connexion, salles en tuiles. */
+.room-choice { width: min(440px, 100%); margin: 0 auto; }
+.room-picker { display: grid; gap: 1.25rem; }
+.room-group-title { margin: 0 0 0.6rem; color: var(--muted); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.room-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); gap: 0.6rem; margin: 0; padding: 0; list-style: none; }
+.room-tile {
+  width: 100%; flex-direction: column; gap: 0.1rem; padding: 0.85rem 0.5rem;
+  border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--surface-soft); color: var(--title); box-shadow: var(--glass-shine);
+}
+.room-tile:hover { background: var(--surface-hover); color: var(--title); box-shadow: var(--glass-shine), 0 10px 20px -14px var(--shadow-strong); filter: none; }
+.room-tile.current { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft-hover); }
+.room-tile-label { color: var(--muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.room-tile-number { font-size: 1.6rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.room-choice-footer { margin: 0.5rem 0 0; text-align: center; }
+.text-button { padding: 0.45rem 0.8rem; background: none; color: var(--muted); box-shadow: none; font-size: 0.88rem; }
+.text-button:hover { background: var(--surface-hover); color: var(--title); box-shadow: none; filter: none; transform: none; }
 
 /* Transition entre les pages */
 .page-enter-active, .page-leave-active { transition: opacity var(--speed) var(--ease), transform var(--speed) var(--ease); }
@@ -225,7 +246,7 @@ p { color: var(--muted); line-height: 1.6; }
 .user-meta { display: flex; flex-direction: column; min-width: 0; }
 .user-meta strong { color: var(--title); font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .user-meta span { color: var(--muted); font-size: 0.78rem; }
-/* Changement de compte (OUTIL DE TEST, mode développement : dev-user-switch.vue) : la pastille, le
+/* Changement de compte (OUTIL DE DÉMONSTRATION : dev-user-switch.vue) : la pastille, le
    nom et le rôle forment le bouton de la liste, avec un petit chevron ; même largeur qu'en temps normal. */
 .user-switch .select-trigger {
   width: auto; min-height: 0; gap: 0.55rem; padding: 0 1.6rem 0 0;
@@ -234,6 +255,15 @@ p { color: var(--muted); line-height: 1.6; }
 }
 .user-switch .select-trigger:hover, .user-switch .select-trigger.open { border-color: transparent; background-color: var(--surface-hover); box-shadow: none; }
 .user-switch .select-trigger:focus-visible { border-color: transparent; box-shadow: 0 0 0 3px var(--accent-soft-hover); }
+/* Salle de cours du formateur (teaching-room-switch.vue) : pilule « Salle 10 » à droite de « Signaler un problème ». */
+.room-switch { flex-shrink: 0; }
+.room-switch .select-trigger {
+  width: auto; min-height: 0; gap: 0.4rem; padding: 0.55rem 1.8rem 0.55rem 0.85rem;
+  border-color: var(--glass-rim); border-radius: 999px; background-color: var(--surface-soft); background-position: right 0.6rem center;
+  color: var(--title); font-size: 0.88rem; font-weight: 600; line-height: normal; white-space: nowrap;
+}
+.room-switch .select-trigger .icon { width: 1rem; height: 1rem; color: var(--accent); }
+.room-switch .select-trigger:hover, .room-switch .select-trigger.open { border-color: var(--glass-rim); background-color: var(--surface-hover); box-shadow: none; }
 .main-menu-backdrop { display: none; }
 .topbar { display: none; }
 .back-link { display: inline-flex; align-items: center; gap: 0.3rem; margin-bottom: 1.25rem; font-weight: 600; font-size: 0.9rem; }
@@ -280,7 +310,7 @@ p { color: var(--muted); line-height: 1.6; }
   .nav a.primary { padding-inline: 0.6rem; }
   .nav a.primary span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
-/* Avec le changement de compte (mode développement), la place manque plus tôt : le nom et le rôle
+/* Avec le changement de compte (mode démonstration), la place manque plus tôt : le nom et le rôle
    ne s'affichent qu'à partir de 1500px, « Signaler un problème » garde son icône seule sous 1200px. */
 @media (min-width: 901px) and (max-width: 1499px) { .user-switch .user-meta { display: none; } }
 @media (min-width: 901px) and (max-width: 1199px) {
@@ -669,6 +699,7 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
   .user-card { padding: 0.75rem; border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--surface-soft); }
   .user-meta, .user-switch { flex: 1; min-width: 0; }
   .user-switch .select-trigger { width: 100%; }
+  .room-switch .select-trigger { width: 100%; padding-block: 0.75rem; border-radius: var(--radius); }
   .main-menu-backdrop { display: block; position: fixed; inset: 0; z-index: 25; background: var(--backdrop); backdrop-filter: blur(2px); }
   .stats { grid-template-columns: repeat(2, 1fr); }
   /* Aperçu : plein écran arrondi, monte du bas. */
@@ -697,9 +728,8 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 .supervision-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem; margin: 1.25rem 0; }
 .supervision-toolbar .field:last-child { margin-left: auto; }
 .supervision-toolbar .segmented { min-height: 0; }
-/* Formateur : sa salle de cours, sans choix, et le lien pour en changer. */
-.locked-room { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.9rem; min-height: 2.5rem; margin: 0; color: var(--title); }
-.locked-room a { font-size: 0.88rem; font-weight: 600; }
+/* Formateur : sa salle de cours, sans choix (bouton de la barre du haut pour en changer). */
+.locked-room { display: flex; align-items: center; min-height: 2.5rem; margin: 0; color: var(--title); }
 
 /* Résumé de la salle : trois chiffres, et les applications ouvertes sur plusieurs postes. */
 .room-summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 0.9rem; margin-bottom: 1.25rem; }
