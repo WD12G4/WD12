@@ -2,7 +2,7 @@
 /**
  * Icône vectorielle au trait, dessinée en SVG (aucune librairie d'icônes).
  * Décorative : masquée aux lecteurs d'écran, le texte ou l'aria-label du parent porte le sens.
- * Utilisé par : app-nav.vue, app-topbar.vue, use-nav-links.ts (type IconName), features/supervision
+ * Utilisé par : app-nav.vue, app-topbar.vue, use-nav-links.ts (type IconName), features/supervision, login-view.vue
  */
 
 //----------------- VALEURS ------------------------------
@@ -27,6 +27,8 @@ const iconPaths = {
   document: 'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6',
   table: 'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14',
   refresh: 'M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7',
+  // Connexion (MinDef Connect simulé)
+  key: 'M8 20a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM10.8 13.2 20 4M16.5 7.5l2.5 2.5M14 10l2 2',
 } as const;
 
 //----------------- TYPES --------------------------------

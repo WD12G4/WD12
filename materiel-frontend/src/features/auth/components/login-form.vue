@@ -1,7 +1,9 @@
 <script setup lang="ts">
 /**
- * Formulaire de connexion (identifiant + mot de passe).
+ * Formulaire d'identification de l'écran MinDef Connect simulé (identifiant + mot de passe),
+ * avec « Afficher » pour lire le mot de passe saisi et le lien « Mot de passe oublié ? ».
  * Composant de présentation : il émet les identifiants, la vue appelle le service.
+ * La mise en page vient de style.css (MINDEF CONNECT SIMULÉ).
  * Utilisé par : features/auth/views/mindef-connect-view.vue (écran MinDef Connect simulé)
  */
 import {computed, ref} from 'vue';
@@ -18,11 +20,15 @@ const props = defineProps<{
 const emit = defineEmits<{
   /** Identifiants saisis. */
   submit: [username: string, password: string];
+  /** L'utilisateur a cliqué sur « Mot de passe oublié ? ». */
+  forgotPassword: [];
 }>();
 
 //------------------ DATAS -----------------------------------
 const username = ref('');
 const password = ref('');
+/** Vrai si le mot de passe est affiché en clair (case « Afficher »). */
+const showPassword = ref(false);
 
 //------------------ COMPUTED --------------------------------
 const isValid = computed(() => username.value.trim().length > 0 && password.value.length > 0);
@@ -38,13 +44,14 @@ function submit(): void {
 </script>
 
 <template>
-  <form class="form-grid" @submit.prevent="submit">
+  <form class="sso-form" @submit.prevent="submit">
     <div class="field">
       <label for="login-username">Identifiant</label>
       <input
           id="login-username"
           v-model="username"
           autocomplete="username"
+          placeholder="Veuillez entrer votre identifiant."
           required
       >
     </div>
@@ -53,14 +60,24 @@ function submit(): void {
       <input
           id="login-password"
           v-model="password"
-          type="password"
+          :type="showPassword ? 'text' : 'password'"
           autocomplete="current-password"
+          placeholder="Veuillez indiquer votre mot de passe."
           required
       >
     </div>
-    <div class="full-width">
-      <FormError :message="errorMessage" />
-      <button type="submit" :disabled="!canSubmit">Se connecter</button>
-    </div>
+    <label class="sso-check">
+      <input v-model="showPassword" type="checkbox">
+      Afficher
+    </label>
+    <button
+        type="button"
+        class="sso-link"
+        @click="emit('forgotPassword')"
+    >
+      Mot de passe oublié ?
+    </button>
+    <FormError :message="errorMessage" />
+    <button type="submit" :disabled="!canSubmit">Se connecter</button>
   </form>
 </template>
