@@ -13,6 +13,7 @@ import java.util.List;
 @RequestMapping("/api/v1/material-types/")
 public class MaterialTypesController {
 
+
     /**
      * Liste des types de matériels (accessible aux administrateurs et gestionnaires).
      */
