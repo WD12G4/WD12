@@ -12,9 +12,9 @@ import type {InstalledConfig, ReimageConfig} from '../models/reimage.model.ts';
 import {configFor, configSummary, describeConfig, processName} from './simulation-catalog.mock.ts';
 
 /** Système et image de départ de chaque poste simulé d'une salle. */
-const INITIAL_CONFIGS: [osId: string, profileId: string][] = [
-    ['windows-11', 'dev'], ['windows-11', 'dev'], ['ubuntu-24', 'dev'], ['windows-11', 'office'],
-];
+const INITIAL_CONFIGS: [osId: string, profileId: string][] = [['windows-11', 'dev'], ['windows-11', 'dev'], ['ubuntu-24', 'dev'], ['windows-11', 'office']];
+/** Stagiaires fictifs des postes simulés (identifiants de session), dans l'ordre des postes. */
+const TRAINEES = ['j.martin', 'l.bernard', 'a.petit', 'm.durand'];
 /** Durée de chaque étape (applications : par application), et décalage entre deux postes. */
 const STEP_MS = {prepare: 3000, download: 9000, system: 9000, perApp: 1500, reboot: 3000};
 const STAGGER_MS = 1800;
@@ -50,7 +50,7 @@ function createStations(roomId: number): SimStation[] {
     return INITIAL_CONFIGS.map(([osId, profileId], index) => {
         const n = String(index + 1).padStart(2, '0');
         const workstation: Workstation = {
-            id: -(roomId * 100 + index + 1), roomId, name: `PC-S${n}`, hostname: `pc-s${n}`,
+            id: -(roomId * 100 + index + 1), roomId, name: `PC-S${n}`, hostname: `pc-s${n}`, sessionUser: TRAINEES[index] ?? null,
             macAddress: `02:00:00:${hex}:00:${n}`, status: 'online', simulated: true, reimage: null,
         };
         const station: SimStation = {workstation, config: configFor(osId, profileId), processes: [], job: null};
@@ -107,10 +107,10 @@ function addEvent(station: SimStation, event: Pick<SupervisionEvent, 'kind' | 'p
 }
 
 export const simulationServices = {
-    /** Postes simulés d'une salle, avec leur masterisation en cours. */
+    /** Postes simulés d'une salle, avec leur masterisation en cours (pendant laquelle aucune session n'est ouverte). */
     findWorkstations: (roomId: number): Workstation[] => stationsOf(roomId).map(station => {
         const reimage = settle(station);
-        return {...station.workstation, status: reimage ? 'reimaging' : 'online', reimage};
+        return {...station.workstation, status: reimage ? 'reimaging' : 'online', reimage, sessionUser: reimage ? null : station.workstation.sessionUser};
     }),
 
     /** Processus des postes simulés d'une salle (aucun pendant une masterisation). */

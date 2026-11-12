@@ -33,6 +33,8 @@ const emit = defineEmits<{
 //------------------ COMPUTED --------------------------------
 const panelKey = computed(() => props.view?.workstation.id ?? null);
 const title = computed(() => props.view?.workstation.name ?? '');
+/** Stagiaire connecté (session ouverte sur le poste, RG-30). */
+const sessionUser = computed(() => props.view?.workstation.sessionUser ?? (isOnline.value ? 'Aucune session ouverte' : '—'));
 const eyebrow = computed(() => (props.view?.workstation.simulated ? 'Poste simulé · démonstration' : 'Poste de la salle'));
 const installed = computed(() => props.view?.installed ?? null);
 const hostname = computed(() => props.view?.workstation.hostname ?? 'Inconnu (agent non connecté)');
@@ -57,6 +59,7 @@ const reimageDisabled = computed(() => props.busy || !isOnline.value);
   >
     <template v-if="view">
       <dl class="detail-grid">
+        <div class="full-width"><dt>Stagiaire (session ouverte)</dt><dd>{{ sessionUser }}</dd></div>
         <div><dt>État</dt><dd>{{ status }}</dd></div>
         <div><dt>Adresse MAC</dt><dd class="code">{{ macAddress }}</dd></div>
         <div class="full-width"><dt>Nom d'hôte</dt><dd class="code">{{ hostname }}</dd></div>

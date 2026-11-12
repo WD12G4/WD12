@@ -19,6 +19,8 @@ export interface WorkstationDto {
     macAddress: string;
     online: boolean;
     hostname: string | null;
+    /** Utilisateur de la session ouverte sur le poste (agent C#), ou null. */
+    username: string | null;
 }
 
 /** Réponse de l'API pour un processus. */
@@ -53,6 +55,7 @@ export function workstationFromDto(dto: WorkstationDto): Workstation {
         roomId: dto.roomId,
         name: dto.name,
         hostname: dto.hostname || null,
+        sessionUser: dto.username?.trim() || null,
         macAddress: dto.macAddress && dto.macAddress !== UNKNOWN_MAC ? dto.macAddress : null,
         status: dto.online ? 'online' : 'offline',
         simulated: false,

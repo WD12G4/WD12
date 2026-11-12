@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * Tuile d'un poste : nom, état et applications ouvertes en icônes façon Dock (les 8 premières, puis
+ * Tuile d'un poste : nom, état, stagiaire connecté (session ouverte, RG-30) et applications ouvertes
+ * en icônes façon Dock (les 8 premières, puis
  * « +N » : le détail complet est dans le panneau).
  * Un clic sur la tuile ouvre le détail (panneau à droite), où l'on ferme une application (RG-26) :
  * les icônes de la tuile ne ferment rien, pour éviter une fermeture par un clic malheureux.
@@ -14,6 +15,7 @@ import {computed} from 'vue';
 import type {WorkstationView} from '../composables/use-supervision.ts';
 import {openAppsLabel, statusLabel} from '../composables/use-station-labels.ts';
 import {resetTilt, tiltTowardsPointer} from '../../../shared/composables/use-motion.ts';
+import AppIcon from '../../../shared/components/app-icon.vue';
 import AppGlyph from './app-glyph.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -45,8 +47,11 @@ const moreLabel = computed(() => {
 });
 const status = computed(() => statusLabel(props.view.workstation));
 const countLabel = computed(() => openAppsLabel(props.view.workstation, props.view.processes.length));
-const openLabel = computed(() => `${name.value}, ${status.value} : voir le détail`);
+const openLabel = computed(() => `${name.value}${sessionUser.value ? `, ${sessionUser.value}` : ''}, ${status.value} : voir le détail`);
 const progress = computed(() => props.view.workstation.reimage);
+/** Stagiaire connecté ; « Aucune session ouverte » pour un poste en ligne sans session, rien s'il est éteint. */
+const sessionUser = computed(() => props.view.workstation.sessionUser);
+const showNoSession = computed(() => !sessionUser.value && props.view.workstation.status === 'online');
 </script>
 
 <template>
@@ -69,6 +74,11 @@ const progress = computed(() => props.view.workstation.reimage);
       </h3>
       <span class="station-status">{{ status }}</span>
     </div>
+    <p v-if="sessionUser" class="station-user">
+      <AppIcon name="user" />
+      <span>{{ sessionUser }}</span>
+    </p>
+    <p v-else-if="showNoSession" class="station-user empty">Aucune session ouverte</p>
     <span
         v-if="view.workstation.simulated"
         class="sim-badge"

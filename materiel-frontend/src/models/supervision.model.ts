@@ -26,7 +26,8 @@ interface ReimageProgress {
 
 /**
  * Poste de travail d'une salle.
- * TODO(question): l'agent n'identifie pas le stagiaire installé au poste (RG-30). À proposer au client.
+ * Le stagiaire installé au poste est l'utilisateur de la session ouverte, remonté par l'agent (RG-30) :
+ * pas de compte stagiaire à créer ni à attribuer, chacun est reconnu sur la machine où il se connecte.
  */
 interface Workstation {
     /** Identifiant de l'UC (matériel), comme dans KillEvent. */
@@ -36,6 +37,8 @@ interface Workstation {
     name: string;
     /** Nom d'hôte remonté par l'agent, ou null s'il n'est pas connecté. */
     hostname: string | null;
+    /** Identifiant de la session ouverte sur le poste (le stagiaire), ou null : aucune session ou agent déconnecté. */
+    sessionUser: string | null;
     /** Adresse MAC remontée par l'agent (RG-29), ou null si elle est inconnue. */
     macAddress: string | null;
     status: WorkstationStatus;
