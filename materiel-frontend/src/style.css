@@ -1147,9 +1147,16 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 @media (min-width: 901px) {
   /* En-tête : pleine largeur en haut de page, filet bas et ombre légère. */
   [data-theme='dsfr']:not([data-layout='sidebar']) .main-menu {
-    inset: 0 0 auto; width: 100%; padding: 0.6rem max(1rem, calc((100% - 1440px) / 2)); border-radius: 0;
+    inset: 0 0 auto; width: 100%; padding: 0.6rem 2rem; border-radius: 0;
     border: none; border-bottom: 1px solid var(--border);
   }
+  /* Le contenu prend tout l'écran, aligné sur l'en-tête (mêmes marges de 2rem) ; sous l'en-tête
+     (environ 7rem avec le bloc-marque), ou à droite de la barre latérale. */
+  [data-theme='dsfr'] .app-shell .content { width: auto; max-width: none; margin: 0; padding: 9rem 2rem 4rem; }
+  [data-theme='dsfr'][data-layout='sidebar'] .app-shell .content { width: auto; margin: 0 0 0 16.5rem; padding: 2rem; }
+  [data-theme='dsfr']:not([data-layout='sidebar']) .drawer { top: 8rem; }
+  /* Aperçu ouvert : la page s'arrête 1rem avant le panneau (420px, à 1rem du bord ; marge de page 2rem). */
+  [data-theme='dsfr']:not([data-frame='x']) body:has(.drawer) :is(.supervision-card, .reports-card, .materials-card) { margin-right: 436px; }
   [data-theme='dsfr'][data-layout='sidebar'] .main-menu { inset: 0 auto 0 0; border-radius: 0; border: none; border-right: 1px solid var(--border); }
   [data-theme='dsfr'] .nav a { border-radius: 0; color: var(--text); }
   [data-theme='dsfr'] .nav-pill { display: none; }
