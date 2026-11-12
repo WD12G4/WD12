@@ -47,6 +47,18 @@ public class Config
         }
 
         // 1. Lecture du fichier config.json si présent
+        // Si le chemin n'est pas absolu et n'existe pas dans le répertoire de travail actuel
+        // (cas classique d'une tâche planifiée ou d'un service où CWD = C:\Windows\System32),
+        // on cherche également à côté du binaire exécutable.
+        if (!File.Exists(configPath) && !Path.IsPathRooted(configPath))
+        {
+            string appDirConfig = Path.Combine(AppContext.BaseDirectory, configPath);
+            if (File.Exists(appDirConfig))
+            {
+                configPath = appDirConfig;
+            }
+        }
+
         if (File.Exists(configPath))
         {
             try
@@ -178,7 +190,7 @@ public class Config
     /// Si l'agent s'exécute en tant que service système (root sous Linux, SYSTEM sous Windows),
     /// cette méthode recherche l'utilisateur connecté à la console / session graphique.
     /// </summary>
-    public static string GetActiveSessionUsername()
+    public static string? GetActiveSessionUsername()
     {
         try
         {
@@ -223,11 +235,21 @@ public class Config
                 }
             }
 
-            return !string.IsNullOrWhiteSpace(currentUser) ? currentUser : "inconnu";
+            // Si c'est un compte système (root, SYSTEM) et qu'aucun utilisateur n'est connecté à la console
+            if (!string.IsNullOrWhiteSpace(currentUser) &&
+                (currentUser.Equals("root", StringComparison.OrdinalIgnoreCase) ||
+                 currentUser.Equals("SYSTEM", StringComparison.OrdinalIgnoreCase) ||
+                 currentUser.Equals("LOCAL SERVICE", StringComparison.OrdinalIgnoreCase) ||
+                 currentUser.Equals("NETWORK SERVICE", StringComparison.OrdinalIgnoreCase)))
+            {
+                return null;
+            }
+
+            return !string.IsNullOrWhiteSpace(currentUser) ? currentUser : null;
         }
         catch
         {
-            return Environment.UserName ?? "inconnu";
+            return null;
         }
     }
 
@@ -367,8 +389,56 @@ public class Config
         return null;
     }
 
+    // Windows API (WTS) pour interroger la session de console interactive depuis un service SYSTEM (Session 0)
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern uint WTSGetActiveConsoleSessionId();
+
+    [DllImport("wtsapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern bool WTSQuerySessionInformationW(
+        IntPtr hServer,
+        uint sessionId,
+        int wtsInfoClass,
+        out IntPtr ppBuffer,
+        out uint pBytesReturned);
+
+    [DllImport("wtsapi32.dll")]
+    private static extern void WTSFreeMemory(IntPtr pMemory);
+
+    private const int WTSUserName = 5;
+
     private static string? DetectWindowsConsoleUser()
     {
+        // Méthode 1 : API native Win32 WTS (extrêmement rapide et fiable depuis Session 0 / SYSTEM)
+        try
+        {
+            uint sessionId = WTSGetActiveConsoleSessionId();
+            if (sessionId != 0xFFFFFFFF)
+            {
+                IntPtr buffer = IntPtr.Zero;
+                uint bytesReturned = 0;
+                if (WTSQuerySessionInformationW(IntPtr.Zero, sessionId, WTSUserName, out buffer, out bytesReturned) && buffer != IntPtr.Zero)
+                {
+                    try
+                    {
+                        string? user = Marshal.PtrToStringUni(buffer);
+                        if (!string.IsNullOrWhiteSpace(user) &&
+                            !user.Equals("SYSTEM", StringComparison.OrdinalIgnoreCase) &&
+                            !user.Equals("LOCAL SERVICE", StringComparison.OrdinalIgnoreCase) &&
+                            !user.Equals("NETWORK SERVICE", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return user;
+                        }
+                    }
+                    finally
+                    {
+                        WTSFreeMemory(buffer);
+                    }
+                }
+            }
+        }
+        catch { }
+
+        // Méthode 2 : Fallback via query user
         try
         {
             using var proc = new Process
@@ -393,7 +463,13 @@ public class Config
                     {
                         string cleaned = line.TrimStart('>', ' ');
                         var parts = cleaned.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                        if (parts.Length > 0) return parts[0];
+                        if (parts.Length > 0 &&
+                            !parts[0].Equals("SYSTEM", StringComparison.OrdinalIgnoreCase) &&
+                            !parts[0].Equals("LOCAL SERVICE", StringComparison.OrdinalIgnoreCase) &&
+                            !parts[0].Equals("NETWORK SERVICE", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return parts[0];
+                        }
                     }
                 }
             }
