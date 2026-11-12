@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
  * Résumé de la salle, dans l'esprit de « Temps d'écran » : postes, postes en ligne, applications
- * ouvertes, et applications ouvertes sur plusieurs postes avec « Fermer partout ».
+ * ouvertes, applications ouvertes sur plusieurs postes avec « Fermer partout », et, pour
+ * l'administrateur, la masterisation de plusieurs postes simulés à la fois.
  * Composant de présentation : émet des événements.
  * Utilisé par : supervision-view.vue
- * RG : RG-26 (« Fermer partout » : extension à faire valider par le client)
+ * RG : RG-26 (« Fermer partout » : extension à faire valider par le client), RG-28
  */
 import {computed} from 'vue';
 import type {WorkstationView} from '../composables/use-supervision.ts';
@@ -18,17 +19,22 @@ const props = defineProps<{
   views: WorkstationView[];
   /** Vrai pendant une action. */
   busy: boolean;
+  /** Vrai si l'utilisateur peut masteriser (ADMIN, RG-28). */
+  canReimage: boolean;
 }>();
 
 const emit = defineEmits<{
   /** Fermer cette application sur tous les postes de la salle. */
   killEverywhere: [name: string];
+  /** Ouvrir l'assistant de masterisation des postes simulés. */
+  reimage: [];
 }>();
 
 //------------------ COMPUTED --------------------------------
 const figures = computed(() => roomFigures(props.views));
 const shared = computed(() => sharedApps(props.views));
 const hasShared = computed(() => shared.value.length > 0);
+const showReimage = computed(() => props.canReimage && props.views.some(view => view.workstation.simulated));
 </script>
 
 <template>
@@ -38,6 +44,16 @@ const hasShared = computed(() => shared.value.length > 0);
       <div><dt>En ligne</dt><dd><AnimatedNumber :value="figures.online" /></dd></div>
       <div><dt>Applications ouvertes</dt><dd><AnimatedNumber :value="figures.openApps" /></dd></div>
     </dl>
+    <p v-if="showReimage" class="summary-actions">
+      <button
+          type="button"
+          class="secondary-button"
+          :disabled="busy"
+          @click="emit('reimage')"
+      >
+        Masteriser des postes simulés…
+      </button>
+    </p>
     <div v-if="hasShared" class="shared-apps">
       <h3 class="eyebrow">Ouvertes sur plusieurs postes</h3>
       <ul>

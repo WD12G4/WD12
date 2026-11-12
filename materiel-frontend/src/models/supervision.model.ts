@@ -16,6 +16,14 @@ const workstationStatusLabels = {
 /** État d'un poste : agent connecté, agent déconnecté (poste éteint), masterisation en cours (simulée). */
 type WorkstationStatus = keyof typeof workstationStatusLabels;
 
+/** Avancement d'une masterisation simulée : étape en cours et pourcentage global. */
+interface ReimageProgress {
+    /** Étape en clair (« Installation des applications (3/8) »). */
+    phase: string;
+    /** De 0 à 100. */
+    percent: number;
+}
+
 /**
  * Poste de travail d'une salle.
  * TODO(question): l'agent n'identifie pas le stagiaire installé au poste (RG-30). À proposer au client.
@@ -31,6 +39,10 @@ interface Workstation {
     /** Adresse MAC remontée par l'agent (RG-29), ou null si elle est inconnue. */
     macAddress: string | null;
     status: WorkstationStatus;
+    /** Vrai pour un poste simulé (démonstration, simulation.services.mock.ts), faux pour un vrai poste. */
+    simulated: boolean;
+    /** Masterisation simulée en cours, ou null. */
+    reimage: ReimageProgress | null;
 }
 
 /** Processus lancé par l'utilisateur du poste ; l'agent écarte les processus système (RG-25). */
@@ -56,7 +68,11 @@ interface SupervisionEvent {
     /** Faux si l'agent n'a pas pu arrêter l'application (processus protégé, déjà fermé…). */
     succeeded: boolean;
     at: Date;
+    /** Vrai pour une action sur un poste simulé. */
+    simulated: boolean;
+    /** Précision affichée (masterisation : « Ubuntu 24.04 LTS · Développement · 7 applications »), ou null. */
+    detail: string | null;
 }
 
 export {workstationStatusLabels};
-export type {Workstation, WorkstationStatus, ProcessInfo, SupervisionEvent};
+export type {Workstation, WorkstationStatus, ReimageProgress, ProcessInfo, SupervisionEvent};

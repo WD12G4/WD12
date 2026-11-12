@@ -32,5 +32,7 @@ export function killEventFromDto(dto: KillEventDto): SupervisionEvent {
         processName: dto.processName,
         succeeded: dto.result ?? true,
         at: parseApiDateTime(dto.killDateTime),
+        simulated: false,
+        detail: null,
     };
 }

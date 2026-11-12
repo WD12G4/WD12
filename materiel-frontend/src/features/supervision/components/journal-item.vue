@@ -18,8 +18,11 @@ const props = defineProps<{
 //------------------ COMPUTED --------------------------------
 /** Application arrêtée, ou « Masterisation » (icône dédiée dans use-app-style.ts). */
 const title = computed(() => props.event.processName ?? 'Masterisation');
-/** Action et poste : « Application arrêtée sur … », « Arrêt refusé sur … », « Lancée sur … ». */
-const detail = computed(() => `${actionLabel(props.event)} sur ${props.event.workstationName}`);
+/** Action et poste : « Application arrêtée sur … », « Arrêt refusé sur … », « Lancée sur … · Ubuntu… ». */
+const detail = computed(() => {
+  const action = `${actionLabel(props.event)} sur ${props.event.workstationName}`;
+  return props.event.detail ? `${action} · ${props.event.detail}` : action;
+});
 const time = computed(() => formatTime(props.event.at));
 const isoTime = computed(() => props.event.at.toISOString());
 
@@ -37,6 +40,7 @@ function actionLabel(event: SupervisionEvent): string {
     <strong>{{ title }}</strong>
     <span class="muted">{{ detail }}</span>
   </span>
+  <span v-if="event.simulated" class="sim-badge">Simulé</span>
   <span v-if="!event.succeeded" class="badge expiring">Échec</span>
   <time class="journal-time" :datetime="isoTime">{{ time }}</time>
 </template>

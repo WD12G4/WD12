@@ -4,7 +4,8 @@
  * « +N » : le détail complet est dans le panneau).
  * Un clic sur la tuile ouvre le détail (panneau à droite), où l'on ferme une application (RG-26) :
  * les icônes de la tuile ne ferment rien, pour éviter une fermeture par un clic malheureux.
- * Une application fermée rétrécit puis disparaît de la tuile.
+ * Une application fermée rétrécit puis disparaît de la tuile. Un poste simulé porte la marque
+ * « Simulé » ; pendant sa masterisation, la tuile montre l'étape et une barre d'avancement.
  * Composant de présentation : émet des événements. La tuile s'incline vers la souris (use-motion.ts).
  * Utilisé par : station-grid.vue
  * RG : RG-25
@@ -45,6 +46,7 @@ const moreLabel = computed(() => {
 const status = computed(() => statusLabel(props.view.workstation));
 const countLabel = computed(() => openAppsLabel(props.view.workstation, props.view.processes.length));
 const openLabel = computed(() => `${name.value}, ${status.value} : voir le détail`);
+const progress = computed(() => props.view.workstation.reimage);
 </script>
 
 <template>
@@ -67,7 +69,19 @@ const openLabel = computed(() => `${name.value}, ${status.value} : voir le déta
       </h3>
       <span class="station-status">{{ status }}</span>
     </div>
+    <span
+        v-if="view.workstation.simulated"
+        class="sim-badge"
+        title="Poste simulé (démonstration) : ses applications sont fictives"
+    >
+      Simulé
+    </span>
+    <div v-if="progress" class="reimage-progress">
+      <span>{{ progress.phase }}</span>
+      <progress :value="progress.percent" max="100" />
+    </div>
     <TransitionGroup
+        v-else
         tag="ul"
         name="app-pop"
         class="app-dock"

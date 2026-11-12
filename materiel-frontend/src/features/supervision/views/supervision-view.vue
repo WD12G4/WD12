@@ -2,21 +2,23 @@
 /**
  * Supervision d'une salle : les postes en tuiles (état, applications ouvertes), le détail d'un poste
  * dans le panneau latéral (où l'on ferme une application en un clic), un résumé de la salle et le
- * journal des actions. L'administrateur peut aussi masteriser un poste.
+ * journal des actions. Des postes simulés (marqués « Simulé ») s'ajoutent aux vrais postes ;
+ * l'administrateur les masterise avec un assistant (système, image, applications).
  * Le formateur voit sa salle de cours, choisie à la connexion ; les autres rôles choisissent la salle.
- * Données de l'agent de supervision (API /supervision), relues toutes les 10 s ; masterisation simulée.
+ * Vrais postes : agent de supervision (API /supervision), relus toutes les 10 s. Postes simulés : maquette.
  * RG : RG-25, RG-26, RG-28 ; journal (entretien 4). RG-27 (liste noire) : bonus, pas encore d'écran.
  */
 import {computed, onMounted, ref, watch} from 'vue';
-import type {ProcessInfo} from '../../../models/supervision.model.ts';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
-import {type SupervisionTab, type WorkstationView, useSupervision} from '../composables/use-supervision.ts';
+import {type SupervisionTab, useSupervision} from '../composables/use-supervision.ts';
+import {useSupervisionActions} from '../composables/use-supervision-actions.ts';
 import {useSupervisionRooms} from '../composables/use-supervision-rooms.ts';
 import Card from '../../../shared/components/card.vue';
 import DemoBanner from '../../../shared/components/demo-banner.vue';
 import FormError from '../../../shared/components/form-error.vue';
 import LoadState from '../../../shared/components/load-state.vue';
+import ReimageWizard from '../components/reimage-wizard.vue';
 import RoomSummary from '../components/room-summary.vue';
 import StationGrid from '../components/station-grid.vue';
 import SupervisionJournal from '../components/supervision-journal.vue';
@@ -25,11 +27,12 @@ import WorkstationPanel from '../components/workstation-panel.vue';
 
 //------------------ DATAS -----------------------------------
 const {hasRole} = useAuth();
-/** Chargements (salles, postes) : indicateur visible. Actions : boutons désactivés, sans indicateur. */
+/** Chargements (salles, postes) : indicateur visible. Actions : boutons désactivés (use-supervision-actions.ts). */
 const {loading, errorMessage, run} = useAsyncState();
-const {loading: busy, errorMessage: actionError, run: act} = useAsyncState();
 const {rooms, selectedRoomId, lockedRoom, loadRooms} = useSupervisionRooms();
-const {workstationViews, events, loadRoom, killProcess, killEverywhere, reimage} = useSupervision();
+const supervision = useSupervision();
+const {workstationViews, events, loadRoom} = supervision;
+const {busy, actionError, wizardPreselect, simulatedViews, kill, closeEverywhere, openWizard, launchReimage} = useSupervisionActions(supervision);
 const tab = ref<SupervisionTab>('stations');
 const openedId = ref<number | null>(null);
 
@@ -47,23 +50,6 @@ async function load(): Promise<void> {
   await run(loadRooms);
 }
 
-/** Ferme une application en un clic, sans confirmation (RG-26 : « en un clic »). */
-async function kill(process: ProcessInfo): Promise<void> {
-  await act(() => killProcess(process));
-}
-
-/** Ferme une application sur tous les postes de la salle, après confirmation. */
-async function closeEverywhere(name: string): Promise<void> {
-  if (!window.confirm(`Fermer « ${name} » sur tous les postes de la salle ?`)) return;
-  await act(() => killEverywhere(name));
-}
-
-/** Masterise un poste, après confirmation (opération lourde pour le stagiaire). */
-async function reimageWorkstation(view: WorkstationView): Promise<void> {
-  if (!window.confirm(`Masteriser ${view.workstation.name} ? Le travail non enregistré sera perdu.`)) return;
-  await act(() => reimage(view.workstation));
-}
-
 //------------------ LIFECYCLE -------------------------------
 onMounted(load);
 watch(selectedRoomId, roomId => {
@@ -75,7 +61,7 @@ watch(selectedRoomId, roomId => {
 <template>
   <Card class="supervision-card" title="Supervision des postes">
     <template #header>
-      <DemoBanner>Postes, applications et arrêts réels (agent de supervision) ; seule la masterisation est simulée.</DemoBanner>
+      <DemoBanner>Postes réels (agent de supervision) et postes simulés, marqués « Simulé » : la masterisation n'est possible que sur ces derniers.</DemoBanner>
       <p>Cliquez sur un poste pour voir ses applications et en fermer une.</p>
     </template>
     <template #body>
@@ -95,7 +81,9 @@ watch(selectedRoomId, roomId => {
         <RoomSummary
             :views="workstationViews"
             :busy="busy"
+            :can-reimage="canReimage"
             @kill-everywhere="closeEverywhere"
+            @reimage="openWizard()"
         />
         <StationGrid
             :views="workstationViews"
@@ -112,6 +100,13 @@ watch(selectedRoomId, roomId => {
       :busy="busy"
       @close="openedId = null"
       @kill="kill"
-      @reimage="reimageWorkstation"
+      @reimage="openWizard"
+  />
+  <ReimageWizard
+      v-if="wizardPreselect"
+      :stations="simulatedViews"
+      :preselected="wizardPreselect"
+      @close="wizardPreselect = null"
+      @launch="launchReimage"
   />
 </template>

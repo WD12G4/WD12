@@ -55,6 +55,8 @@ export function workstationFromDto(dto: WorkstationDto): Workstation {
         hostname: dto.hostname || null,
         macAddress: dto.macAddress && dto.macAddress !== UNKNOWN_MAC ? dto.macAddress : null,
         status: dto.online ? 'online' : 'offline',
+        simulated: false,
+        reimage: null,
     };
 }
 

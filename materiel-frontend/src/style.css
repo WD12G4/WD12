@@ -830,6 +830,59 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 .journal-day + .journal-day { margin-top: 1.25rem; }
 .journal-day h3 { margin: 0 0 0.6rem; }
 .journal-item { animation: rise-in 420ms var(--ease) backwards; }
+
+/* ------------------ POSTES SIMULÉS ET MASTERISATION -------- */
+/* Marque d'un poste ou d'une action simulés (simulation.services.mock.ts) : discrète, en pointillés. */
+.sim-badge {
+  display: inline-flex; align-items: center; align-self: flex-start; flex-shrink: 0; padding: 0.1rem 0.5rem;
+  border: 1px dashed var(--border-input); border-radius: 999px; color: var(--muted);
+  font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+}
+/* Masterisation en cours dans une tuile : étape, puis barre d'avancement. */
+.reimage-progress { display: grid; gap: 0.45rem; min-height: 2.5rem; align-content: center; color: var(--accent); font-size: 0.8rem; font-weight: 600; }
+.reimage-progress progress { width: 100%; height: 0.4rem; border: none; border-radius: 999px; background: var(--track); overflow: hidden; appearance: none; }
+.reimage-progress progress::-webkit-progress-bar { background: var(--track); }
+.reimage-progress progress::-webkit-progress-value { background: var(--accent); border-radius: 999px; transition: width 900ms linear; }
+.reimage-progress progress::-moz-progress-bar { background: var(--accent); border-radius: 999px; }
+.installed-apps { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+.installed-apps li { padding: 0.3rem 0.65rem; border-radius: 999px; background: var(--surface-soft); border: 1px solid var(--glass-rim); color: var(--title); font-size: 0.82rem; font-weight: 550; }
+.summary-actions { margin: 0.75rem 0 0; }
+
+/* Assistant de masterisation (reimage-wizard.vue) : fenêtre en verre au-dessus de la page. */
+.wizard-backdrop { position: fixed; inset: 0; z-index: 55; display: grid; place-items: center; padding: 1rem; background: var(--backdrop); backdrop-filter: blur(3px); }
+.wizard { width: min(720px, 100%); max-height: calc(100vh - 2rem); margin: 0; overflow-y: auto; animation: rise-in 280ms var(--ease); }
+.wizard:focus { outline: none; }
+.wizard-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.wizard-header h2 { margin: 0.2rem 0 0; }
+.wizard-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; margin: 1rem 0 1.25rem; padding: 0; list-style: none; counter-reset: step; }
+.wizard-steps li { padding-top: 0.5rem; border-top: 3px solid var(--track); color: var(--muted); font-size: 0.75rem; font-weight: 600; counter-increment: step; }
+.wizard-steps li::before { content: counter(step) '. '; }
+.wizard-steps li.done { border-color: var(--accent-soft-hover); color: var(--text); }
+.wizard-steps li.current { border-color: var(--accent); color: var(--title); }
+.wizard-actions { justify-content: flex-end; }
+.choice-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.75rem; }
+.choice-card {
+  flex-direction: column; align-items: flex-start; gap: 0.25rem; padding: 1rem 1.1rem; text-align: left;
+  border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--surface-soft); color: var(--title); box-shadow: var(--glass-shine);
+}
+.choice-card span { color: var(--muted); font-size: 0.82rem; font-weight: 500; }
+.choice-card:hover { background: var(--surface-hover); color: var(--title); box-shadow: var(--glass-shine); filter: none; }
+.choice-card[aria-checked='true'] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft-hover); }
+.app-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.app-option {
+  width: 100%; justify-content: flex-start; gap: 0.6rem; padding: 0.5rem 0.6rem; text-align: left;
+  border: 1px solid var(--glass-rim); border-radius: var(--radius-sm); background: var(--surface-soft); color: var(--text); box-shadow: none;
+  font-size: 0.85rem; font-weight: 550;
+}
+.app-option .app-glyph { width: 2rem; height: 2rem; border-radius: 0.55rem; font-size: 0.85rem; opacity: 0.45; filter: grayscale(1); }
+.app-option:hover { background: var(--surface-hover); color: var(--title); box-shadow: none; filter: none; }
+.app-option[aria-pressed='true'] { border-color: var(--accent); background: var(--accent-soft); color: var(--title); }
+.app-option[aria-pressed='true'] .app-glyph { opacity: 1; filter: none; }
+.target-list { display: grid; gap: 0.4rem; margin: 0 0 0.5rem; padding: 0; border: none; }
+.target-list legend { margin-bottom: 0.5rem; }
+.target-list label { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.75rem; border-radius: var(--radius-sm); background: var(--surface-soft); font-weight: 600; color: var(--title); }
+.target-list label .muted { margin-left: auto; font-weight: 500; }
+@media (max-width: 600px) { .wizard-steps li { font-size: 0; } .wizard-steps li::before { font-size: 0.75rem; } }
 .journal-time { color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
 
 /* ------------------ ACCESSIBILITÉ -------------------------- */
