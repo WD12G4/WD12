@@ -70,8 +70,14 @@ services:
     depends_on:
       - backend
       - keycloak
+    # Adresse de l'application : le certificat HTTPS auto-signé est créé pour cette adresse.
+    environment:
+      APP_URL: ${APP_URL:-https://localhost}
     ports:
       - "${FRONTEND_PORT:-80}:80"
+      - "${FRONTEND_HTTPS_PORT:-443}:443"
+    volumes:
+      - frontend_certs:/etc/nginx/certs
     networks:
       - materiel_network
 
@@ -88,16 +94,15 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
-      # Keycloak est servi sous /auth, derrière le Nginx du front (même adresse et même port 80 que
-      # l'application : rien à ouvrir de plus, et le proxy de l'école laisse passer).
+      # Keycloak est servi sous /auth, derrière le Nginx du front (même adresse que l'application, en HTTPS).
       KC_HTTP_RELATIVE_PATH: /auth
       KC_PROXY_HEADERS: xforwarded
       # Adresse vue par le navigateur : c'est aussi l'émetteur (iss) des jetons, vérifié par le backend.
-      KC_HOSTNAME: ${KEYCLOAK_URL:-http://localhost/auth}
+      KC_HOSTNAME: ${KEYCLOAK_URL:-https://localhost/auth}
       # Le backend peut joindre Keycloak par le réseau Docker (http://keycloak:8080/auth).
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       # Adresse de l'application, lue par le realm (redirectUris : ${APP_URL}/*).
-      APP_URL: ${APP_URL:-http://localhost}
+      APP_URL: ${APP_URL:-https://localhost}
     ports:
       # Accès direct, pour le serveur de développement Vite (proxy /auth) et le dépannage.
       - "${KEYCLOAK_PORT:-8180}:8080"
@@ -108,6 +113,9 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  # Certificat HTTPS de Nginx, gardé entre les reconstructions de l'image du front.
+  frontend_certs:
     driver: local
 
 networks:

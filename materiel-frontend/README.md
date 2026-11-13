@@ -31,8 +31,13 @@ Keycloak prouve l'identité, les rôles restent dans la base (page « Comptes »
 - Adresse de Keycloak : celle de l'application suivie de `/auth`. Le Nginx du front (ou le proxy de Vite)
   relaie `/auth/` vers Keycloak : même origine et même port 80 que l'application, donc rien à ouvrir de
   plus et le proxy de l'école laisse passer.
-- Sur une autre machine (VM) : dans `.env`, `APP_URL=http://<adresse>` et `KEYCLOAK_URL=http://<adresse>/auth`,
-  puis `docker compose rm -sf keycloak && docker compose up -d keycloak backend`.
+- HTTPS obligatoire hors `localhost` : keycloak-js utilise l'API Web Crypto, que les navigateurs ne fournissent
+  qu'en HTTPS. Nginx sert l'application en HTTPS (port 443, le port 80 redirige) avec un certificat auto-signé
+  créé au premier démarrage pour l'adresse de `APP_URL` (volume `frontend_certs`). Le navigateur demande une
+  fois de l'accepter (« Avancé » puis « Accepter le risque et poursuivre »). Pour un certificat signé par une
+  autorité, déposer `server.crt` et `server.key` dans le volume.
+- Sur une autre machine (VM) : dans `.env`, `APP_URL=https://<adresse>` et `KEYCLOAK_URL=https://<adresse>/auth`,
+  puis `docker compose rm -sf keycloak && docker compose up -d --build keycloak backend frontend`.
 - Console d'administration : `<adresse de l'application>/auth/admin` (compte `admin` / `admin`, voir `.env`).
 - Configuration versionnée : `docker/keycloak/gestion-parc-realm.json`, rechargée à chaque démarrage.
 

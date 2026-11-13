@@ -48,7 +48,7 @@ spring:
 # jwk-set-uri : où le backend lit les clés publiques (réseau Docker : http://keycloak:8080/auth, voir .env).
 # -------------------------------------------------------------
 keycloak:
-  url: ${KEYCLOAK_URL:http://localhost/auth}
+  url: ${KEYCLOAK_URL:https://localhost/auth}
   realm: gestion-parc
 
 logging:

@@ -5,9 +5,8 @@
  * Adresse de Keycloak : VITE_KEYCLOAK_URL si elle est fournie au build, sinon l'adresse de l'application
  * suivie de /auth : Keycloak est servi par le Nginx du front (nginx.conf) ou le proxy de Vite. Même
  * origine et même port que l'application : rien à ouvrir de plus, et le proxy de l'école laisse passer.
- * Version de keycloak-js fixée à 25.0.6 (package.json) : à partir de la 26, keycloak-js exige l'API Web Crypto
- * (crypto.subtle), que les navigateurs ne fournissent qu'en HTTPS ou sur localhost. La VM est servie en HTTP :
- * la 25 calcule le PKCE avec js-sha256 et fonctionne aussi en HTTP. Passer en 26 une fois l'application en HTTPS.
+ * keycloak-js exige l'API Web Crypto (crypto.subtle), que les navigateurs ne fournissent qu'en HTTPS ou sur
+ * localhost : l'application est donc servie en HTTPS par le Nginx du front (nginx.conf, port 80 redirigé).
  * Utilisé par : shared/composables/use-auth.ts
  */
 import Keycloak from 'keycloak-js';
