@@ -295,7 +295,7 @@ public static class ProcessManager
 
     public static List<ProcessInfo> GetUserProcesses()
     {
-        var appCandidates = new Dictionary<string, (int pid, long startedAt, bool hasWindow)>(StringComparer.OrdinalIgnoreCase);
+        var appCandidates = new Dictionary<string, (int pid, long startedAt, bool hasWindow, string? icon)>(StringComparer.OrdinalIgnoreCase);
         var processes = Process.GetProcesses();
 
         foreach (var p in processes)
@@ -326,11 +326,13 @@ public static class ProcessManager
                     startedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 }
 
+                string? icon = IconExtractor.GetIcon(name, p);
+
                 // Dédoublonnage des sous-processus d'une même application (ex: Edge, Chrome, Firefox, VS Code, Discord) :
                 // On privilégie le processus principal qui possède une fenêtre graphique, sinon le plus ancien / parent.
                 if (!appCandidates.TryGetValue(name, out var existing))
                 {
-                    appCandidates[name] = (p.Id, startedAt, hasWindow);
+                    appCandidates[name] = (p.Id, startedAt, hasWindow, icon);
                 }
                 else
                 {
@@ -339,7 +341,11 @@ public static class ProcessManager
 
                     if (shouldReplace)
                     {
-                        appCandidates[name] = (p.Id, startedAt, hasWindow);
+                        appCandidates[name] = (p.Id, startedAt, hasWindow, icon ?? existing.icon);
+                    }
+                    else if (existing.icon == null && icon != null)
+                    {
+                        appCandidates[name] = (existing.pid, existing.startedAt, existing.hasWindow, icon);
                     }
                 }
             }
@@ -356,7 +362,7 @@ public static class ProcessManager
         var result = new List<ProcessInfo>();
         foreach (var (name, candidate) in appCandidates)
         {
-            result.Add(new ProcessInfo(candidate.pid, name, candidate.startedAt));
+            result.Add(new ProcessInfo(candidate.pid, name, candidate.startedAt, candidate.icon));
         }
 
         return result;

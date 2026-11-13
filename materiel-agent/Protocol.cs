@@ -11,7 +11,8 @@ public record InboundCommand(
 public record ProcessInfo(
     [property: JsonPropertyName("pid")] int Pid,
     [property: JsonPropertyName("name")] string Name,
-    [property: JsonPropertyName("startedAt")] long StartedAt
+    [property: JsonPropertyName("startedAt")] long StartedAt,
+    [property: JsonPropertyName("icon")] [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Icon = null
 );
 
 public record KillResult(

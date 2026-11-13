@@ -73,6 +73,18 @@ CREATE TABLE IF NOT EXISTS killevents (
     CONSTRAINT fk__killevents__users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- 8. Table des applications (catalogue des processus et liste noire)
+CREATE TABLE IF NOT EXISTS applications (
+    id BIGSERIAL PRIMARY KEY,
+    version BIGINT NOT NULL DEFAULT 0,
+    name VARCHAR(150) NOT NULL,
+    display_name VARCHAR(150),
+    icon_base64 TEXT,
+    blacklisted BOOLEAN NOT NULL DEFAULT FALSE,
+    description VARCHAR(500),
+    CONSTRAINT uk__application__name UNIQUE (name)
+);
+
 -- Index pour optimiser les requêtes fréquentes
 CREATE INDEX IF NOT EXISTS idx__rooms__building_id ON rooms(building_id);
 CREATE INDEX IF NOT EXISTS idx__materials__room_id ON materials(room_id);
@@ -81,3 +93,5 @@ CREATE INDEX IF NOT EXISTS idx__reports__user_id ON reports(user_id);
 CREATE INDEX IF NOT EXISTS idx__reports__material_id ON reports(material_id);
 CREATE INDEX IF NOT EXISTS idx__killevents__user_id ON killevents(user_id);
 CREATE INDEX IF NOT EXISTS idx__killevents__uc_id ON killevents(uc_id);
+CREATE INDEX IF NOT EXISTS idx__applications__name ON applications(name);
+CREATE INDEX IF NOT EXISTS idx__applications__blacklisted ON applications(blacklisted);

@@ -5,10 +5,13 @@ import net.ent.etnc.dtos.supervision.KillProcessRequest;
 import net.ent.etnc.dtos.supervision.KillProcessResponse;
 import net.ent.etnc.dtos.supervision.ProcessInfoDto;
 import net.ent.etnc.dtos.supervision.WorkstationDto;
+import net.ent.etnc.models.Application;
 import net.ent.etnc.models.KillEvent;
 import net.ent.etnc.models.Material;
+import net.ent.etnc.models.User;
 import net.ent.etnc.models.enums.EMaterialType;
 import net.ent.etnc.repositories.MaterialRepository;
+import net.ent.etnc.services.ApplicationService;
 import net.ent.etnc.services.KillEventService;
 import net.ent.etnc.services.SupervisionService;
 import net.ent.etnc.services.UserService;
@@ -36,16 +39,19 @@ public class SupervisionServiceImpl implements SupervisionService {
     private final AgentWebSocketHandler agentWebSocketHandler;
     private final KillEventService killEventService;
     private final UserService userService;
+    private final ApplicationService applicationService;
 
     @Autowired
     public SupervisionServiceImpl(MaterialRepository materialRepository,
                                   AgentWebSocketHandler agentWebSocketHandler,
                                   KillEventService killEventService,
-                                  UserService userService) {
+                                  UserService userService,
+                                  ApplicationService applicationService) {
         this.materialRepository = materialRepository;
         this.agentWebSocketHandler = agentWebSocketHandler;
         this.killEventService = killEventService;
         this.userService = userService;
+        this.applicationService = applicationService;
     }
 
     @Override
@@ -148,6 +154,7 @@ public class SupervisionServiceImpl implements SupervisionService {
     }
 
     @Override
+    @Transactional
     public List<ProcessInfoDto> findProcessesForWorkstations(List<Long> workstationIds) {
         if (workstationIds == null || workstationIds.isEmpty()) {
             return List.of();
@@ -166,15 +173,43 @@ public class SupervisionServiceImpl implements SupervisionService {
                     agentWebSocketHandler.fetchProcesses(uc.getSerialNumber(), 3);
 
             for (AgentWebSocketHandler.AgentProcessInfo proc : agentProcs) {
+                // 1. Enregistrement / mise à jour de l'application dans le catalogue avec son icône
+                Application app = applicationService.registerDiscoveredApplication(proc.name(), proc.icon());
+
+                // 2. Vérification de la liste noire : auto-kill côté serveur
+                if (app != null && app.isBlacklisted()) {
+                    log.warn("Processus interdit détecté sur liste noire [PID={}, nom={}, UC={}] : exécution de l'auto-kill",
+                            proc.pid(), proc.name(), uc.getSerialNumber());
+                    try {
+                        AgentWebSocketHandler.AgentKillResult killRes =
+                                agentWebSocketHandler.executeKill(uc.getSerialNumber(), proc.pid(), 5);
+
+                        KillEvent autoKillEvent = new KillEvent();
+                        autoKillEvent.setProcessName(proc.name());
+                        autoKillEvent.setUc(uc);
+                        autoKillEvent.setUser(resolveCurrentUserOrFallback());
+                        autoKillEvent.setKillDateTime(LocalDateTime.now());
+                        autoKillEvent.setResult(killRes.success());
+                        killEventService.create(autoKillEvent);
+                    } catch (Exception e) {
+                        log.error("Erreur lors de l'auto-kill ou de l'enregistrement de l'événement : {}", e.getMessage());
+                    }
+
+                    // On ne renvoie pas le processus arrêté dans la liste active
+                    continue;
+                }
+
                 LocalDateTime startedAt = LocalDateTime.ofInstant(
                     Instant.ofEpochMilli(proc.startedAt()),
                     ZoneId.systemDefault()
                 );
+                String resolvedIcon = (app != null && app.getIconBase64() != null) ? app.getIconBase64() : proc.icon();
                 allProcesses.add(new ProcessInfoDto(
                         proc.pid(),
                         uc.getId(),
                         proc.name(),
-                        startedAt
+                        startedAt,
+                        resolvedIcon
                 ));
             }
         }
@@ -222,5 +257,14 @@ public class SupervisionServiceImpl implements SupervisionService {
         }
 
         return new KillProcessResponse(true, "Processus arrêté avec succès", saved.getId());
+    }
+
+    private User resolveCurrentUserOrFallback() {
+        try {
+            return userService.currentUser();
+        } catch (Exception e) {
+            log.debug("Aucun utilisateur dans le contexte de sécurité, utilisation d'un fallback : {}", e.getMessage());
+            return userService.findByUsername("admin").orElse(null);
+        }
     }
 }

@@ -9,6 +9,10 @@ public record ProcessInfoDto(
         int pid,
         Long workstationId,
         String name,
-        LocalDateTime startedAt
+        LocalDateTime startedAt,
+        String icon
 ) {
+    public ProcessInfoDto(int pid, Long workstationId, String name, LocalDateTime startedAt) {
+        this(pid, workstationId, name, startedAt, null);
+    }
 }

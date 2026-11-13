@@ -64,8 +64,13 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
     public record AgentProcessInfo(
             int pid,
             String name,
-            long startedAt
-    ) {}
+            long startedAt,
+            String icon
+    ) {
+        public AgentProcessInfo(int pid, String name, long startedAt) {
+            this(pid, name, startedAt, null);
+        }
+    }
 
     public record AgentKillResult(
             boolean success,
@@ -145,7 +150,8 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
                     int pid = item.getInt("pid", 0);
                     String name = item.getString("name", "");
                     long startedAt = item.containsKey("startedAt") ? item.getJsonNumber("startedAt").longValue() : System.currentTimeMillis();
-                    processes.add(new AgentProcessInfo(pid, name, startedAt));
+                    String icon = item.containsKey("icon") && !item.isNull("icon") ? item.getString("icon") : null;
+                    processes.add(new AgentProcessInfo(pid, name, startedAt, icon));
                 }
             }
         }

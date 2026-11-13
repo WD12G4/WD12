@@ -4,12 +4,14 @@ import net.ent.etnc.dtos.supervision.KillProcessRequest;
 import net.ent.etnc.dtos.supervision.KillProcessResponse;
 import net.ent.etnc.dtos.supervision.ProcessInfoDto;
 import net.ent.etnc.dtos.supervision.WorkstationDto;
+import net.ent.etnc.models.Application;
 import net.ent.etnc.models.KillEvent;
 import net.ent.etnc.models.Material;
 import net.ent.etnc.models.User;
 import net.ent.etnc.models.enums.EMaterialType;
 import net.ent.etnc.models.enums.ERole;
 import net.ent.etnc.repositories.MaterialRepository;
+import net.ent.etnc.services.ApplicationService;
 import net.ent.etnc.services.KillEventService;
 import net.ent.etnc.services.UserService;
 import net.ent.etnc.websocket.AgentWebSocketHandler;
@@ -47,6 +49,9 @@ class SupervisionServiceImplTest {
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private ApplicationService applicationService;
 
     @InjectMocks
     private SupervisionServiceImpl supervisionService;
@@ -88,16 +93,47 @@ class SupervisionServiceImplTest {
     @Test
     @DisplayName("findProcessesForWorkstations interroge l'agent et retourne les processus")
     void findProcessesForWorkstations_Success() {
+        Application app = new Application();
+        app.setName("code.exe");
+        app.setBlacklisted(false);
+        app.setIconBase64("data:image/png;base64,ABC");
+
         when(materialRepository.findById(10L)).thenReturn(Optional.of(sampleUc));
         when(agentWebSocketHandler.fetchProcesses(eq("UC-TEST-01"), anyLong())).thenReturn(List.of(
-                new AgentWebSocketHandler.AgentProcessInfo(4321, "code.exe", System.currentTimeMillis())
+                new AgentWebSocketHandler.AgentProcessInfo(4321, "code.exe", System.currentTimeMillis(), "data:image/png;base64,ABC")
         ));
+        when(applicationService.registerDiscoveredApplication(eq("code.exe"), any())).thenReturn(app);
 
         List<ProcessInfoDto> procs = supervisionService.findProcessesForWorkstations(List.of(10L));
 
         assertThat(procs).hasSize(1);
         assertThat(procs.get(0).pid()).isEqualTo(4321);
         assertThat(procs.get(0).name()).isEqualTo("code.exe");
+        assertThat(procs.get(0).icon()).isEqualTo("data:image/png;base64,ABC");
+    }
+
+    @Test
+    @DisplayName("findProcessesForWorkstations déclenche un auto-kill si un processus est sur liste noire")
+    void findProcessesForWorkstations_WhenProcessBlacklisted_ExecutesAutoKill() {
+        Application blacklistedApp = new Application();
+        blacklistedApp.setName("steam.exe");
+        blacklistedApp.setBlacklisted(true);
+
+        when(materialRepository.findById(10L)).thenReturn(Optional.of(sampleUc));
+        when(agentWebSocketHandler.fetchProcesses(eq("UC-TEST-01"), anyLong())).thenReturn(List.of(
+                new AgentWebSocketHandler.AgentProcessInfo(9999, "steam.exe", System.currentTimeMillis())
+        ));
+        when(applicationService.registerDiscoveredApplication("steam.exe", null)).thenReturn(blacklistedApp);
+        when(agentWebSocketHandler.executeKill("UC-TEST-01", 9999, 5))
+                .thenReturn(new AgentWebSocketHandler.AgentKillResult(true, 9999, "steam.exe", null));
+        when(userService.currentUser()).thenReturn(sampleUser);
+
+        List<ProcessInfoDto> procs = supervisionService.findProcessesForWorkstations(List.of(10L));
+
+        // Le processus doit avoir été arrêté et ne pas figurer dans la liste des processus actifs retournés
+        assertThat(procs).isEmpty();
+        verify(agentWebSocketHandler).executeKill("UC-TEST-01", 9999, 5);
+        verify(killEventService).create(any(KillEvent.class));
     }
 
     @Test
