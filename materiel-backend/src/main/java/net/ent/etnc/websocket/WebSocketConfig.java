@@ -17,14 +17,14 @@ public class WebSocketConfig implements WebSocketConfigurer {
     private final AgentHandshakeInterceptor agentHandshakeInterceptor;
 
     @Autowired
-    public WebSocketConfig(AgentWebSocketHandler agentWebSocketHandler,
-                           AgentHandshakeInterceptor agentHandshakeInterceptor) {
+    public WebSocketConfig(final AgentWebSocketHandler agentWebSocketHandler,
+                           final AgentHandshakeInterceptor agentHandshakeInterceptor) {
         this.agentWebSocketHandler = agentWebSocketHandler;
         this.agentHandshakeInterceptor = agentHandshakeInterceptor;
     }
 
     @Override
-    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+    public void registerWebSocketHandlers(final WebSocketHandlerRegistry registry) {
         registry.addHandler(agentWebSocketHandler, "/ws/agent")
                 .addInterceptors(agentHandshakeInterceptor)
                 .setAllowedOrigins("*");

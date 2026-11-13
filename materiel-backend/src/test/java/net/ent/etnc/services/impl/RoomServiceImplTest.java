@@ -48,6 +48,8 @@ class RoomServiceImplTest {
         sampleRoom.setId(10L);
         sampleRoom.setNumber(12);
         sampleRoom.setBuilding(sampleBuilding);
+
+        lenient().when(buildingService.findById(1L)).thenReturn(Optional.of(sampleBuilding));
     }
 
     @Nested
@@ -65,6 +67,7 @@ class RoomServiceImplTest {
             assertThat(created).isNotNull();
             assertThat(created.getNumber()).isEqualTo(12);
             assertThat(created.getBuilding()).isEqualTo(sampleBuilding);
+            verify(buildingService).findById(1L);
             verify(repository).saveAndFlush(sampleRoom);
         }
 
@@ -76,6 +79,34 @@ class RoomServiceImplTest {
             assertThatThrownBy(() -> roomService.create(sampleRoom))
                     .isInstanceOf(ServiceException.class)
                     .hasMessageContaining("Le bâtiment doit être renseigné");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @Test
+        @DisplayName("Doit lever ServiceException si l'identifiant du bâtiment est null")
+        void create_ThrowsException_WhenBuildingIdNull() {
+            Building noIdBuilding = new Building();
+            sampleRoom.setBuilding(noIdBuilding);
+
+            assertThatThrownBy(() -> roomService.create(sampleRoom))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("Le bâtiment doit être renseigné");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @Test
+        @DisplayName("Doit lever ResourceNotFoundException si le bâtiment n'existe pas en base")
+        void create_ThrowsException_WhenBuildingNotFound() {
+            when(buildingService.findById(999L)).thenReturn(Optional.empty());
+            Building nonExisting = new Building();
+            nonExisting.setId(999L);
+            sampleRoom.setBuilding(nonExisting);
+
+            assertThatThrownBy(() -> roomService.create(sampleRoom))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Bâtiment introuvable avec l'id : 999");
 
             verify(repository, never()).saveAndFlush(any());
         }
@@ -140,6 +171,7 @@ class RoomServiceImplTest {
             Room updated = roomService.update(sampleRoom);
 
             assertThat(updated).isNotNull();
+            verify(buildingService).findById(1L);
             verify(repository).saveAndFlush(sampleRoom);
         }
 

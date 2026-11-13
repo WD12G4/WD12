@@ -42,11 +42,11 @@ public class SupervisionServiceImpl implements SupervisionService {
     private final ApplicationService applicationService;
 
     @Autowired
-    public SupervisionServiceImpl(MaterialRepository materialRepository,
-                                  AgentWebSocketHandler agentWebSocketHandler,
-                                  KillEventService killEventService,
-                                  UserService userService,
-                                  ApplicationService applicationService) {
+    public SupervisionServiceImpl(final MaterialRepository materialRepository,
+                                  final AgentWebSocketHandler agentWebSocketHandler,
+                                  final KillEventService killEventService,
+                                  final UserService userService,
+                                  final ApplicationService applicationService) {
         this.materialRepository = materialRepository;
         this.agentWebSocketHandler = agentWebSocketHandler;
         this.killEventService = killEventService;
@@ -55,13 +55,13 @@ public class SupervisionServiceImpl implements SupervisionService {
     }
 
     @Override
-    public List<WorkstationDto> findWorkstationsByRoom(Long roomId) {
+    public List<WorkstationDto> findWorkstationsByRoom(final Long roomId) {
         return findWorkstations(roomId);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<WorkstationDto> findWorkstations(Long roomId) {
+    public List<WorkstationDto> findWorkstations(final Long roomId) {
         List<Material> ucs = (roomId != null)
                 ? materialRepository.findByRoomIdAndMaterialTypeAndArchivedFalse(roomId, EMaterialType.UC)
                 : materialRepository.findByMaterialTypeAndArchivedFalse(EMaterialType.UC);
@@ -142,7 +142,7 @@ public class SupervisionServiceImpl implements SupervisionService {
 
     @Override
     @Transactional
-    public List<ProcessInfoDto> findProcessesForWorkstations(List<Long> workstationIds) {
+    public List<ProcessInfoDto> findProcessesForWorkstations(final List<Long> workstationIds) {
         if (workstationIds == null || workstationIds.isEmpty()) {
             return List.of();
         }
@@ -204,7 +204,7 @@ public class SupervisionServiceImpl implements SupervisionService {
 
     @Override
     @Transactional
-    public KillProcessResponse killProcess(KillProcessRequest request) {
+    public KillProcessResponse killProcess(final KillProcessRequest request) {
         Material uc = materialRepository.findById(request.workstationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unité centrale non trouvée avec l'id : " + request.workstationId()));
 

@@ -7,6 +7,7 @@ import net.ent.etnc.repositories.RoomRepository;
 import net.ent.etnc.services.BuildingService;
 import net.ent.etnc.services.RoomService;
 import net.ent.etnc.services.commons.AbstractService;
+import net.ent.etnc.services.commons.ResourceNotFoundException;
 import net.ent.etnc.services.commons.ServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -56,10 +57,15 @@ public class RoomServiceImpl extends AbstractService<Room, RoomRepository> imple
     }
 
     private void validateRoom(final Room room) {
-        if (room.getBuilding() == null) {
+        if (room.getBuilding() == null || room.getBuilding().getId() == null) {
             log.warn("Validation rejetée : bâtiment non renseigné pour la salle.");
             throw new ServiceException("Le bâtiment doit être renseigné.");
         }
+
+        Building building = buildingService.findById(room.getBuilding().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Bâtiment introuvable avec l'id : " + room.getBuilding().getId()));
+        room.setBuilding(building);
+
         if (room.getNumber() == null || room.getNumber() < 0) {
             log.warn("Validation rejetée : numéro de salle invalide ({})", room.getNumber());
             throw new ServiceException("Le numéro de la salle doit être positif.");

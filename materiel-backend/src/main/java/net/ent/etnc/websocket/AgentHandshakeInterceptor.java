@@ -26,13 +26,13 @@ public class AgentHandshakeInterceptor implements HandshakeInterceptor {
 
     private final String expectedSecret;
 
-    public AgentHandshakeInterceptor(@Value("${app.agent.secret:wd12-supervision-secret-change-in-prod}") String expectedSecret) {
+    public AgentHandshakeInterceptor(@Value("${app.agent.secret:wd12-supervision-secret-change-in-prod}") final String expectedSecret) {
         this.expectedSecret = expectedSecret;
     }
 
     @Override
-    public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
-                                  WebSocketHandler wsHandler, Map<String, Object> attributes) {
+    public boolean beforeHandshake(final ServerHttpRequest request, final ServerHttpResponse response,
+                                  final WebSocketHandler wsHandler, final Map<String, Object> attributes) {
         String secret = request.getHeaders().getFirst(AGENT_SECRET_HEADER);
 
         // Repli facultatif via paramètre de requête si l'en-tête n'est pas fourni
@@ -57,8 +57,8 @@ public class AgentHandshakeInterceptor implements HandshakeInterceptor {
     }
 
     @Override
-    public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
-                              WebSocketHandler wsHandler, Exception exception) {
+    public void afterHandshake(final ServerHttpRequest request, final ServerHttpResponse response,
+                              final WebSocketHandler wsHandler, final Exception exception) {
         // Aucune action post-handshake requise
     }
 }

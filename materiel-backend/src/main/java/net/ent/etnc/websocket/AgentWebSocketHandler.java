@@ -43,7 +43,7 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
     private final Map<String, CompletableFuture<AgentKillResult>> pendingKillRequests = new ConcurrentHashMap<>();
 
     @Autowired
-    public AgentWebSocketHandler(MaterialRepository materialRepository) {
+    public AgentWebSocketHandler(final MaterialRepository materialRepository) {
         this.materialRepository = materialRepository;
     }
 
@@ -67,7 +67,7 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
             this(serialNumber, hostname, macAddress, username, null, session, connectedAt);
         }
 
-        public AgentConnection withUsername(String newUsername) {
+        public AgentConnection withUsername(final String newUsername) {
             return new AgentConnection(serialNumber, hostname, macAddress, newUsername, os, session, connectedAt);
         }
     }
@@ -91,12 +91,12 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
     ) {}
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) {
+    public void afterConnectionEstablished(final WebSocketSession session) {
         log.info("Nouvelle connexion WebSocket agent établie [sessionId={}]", session.getId());
     }
 
     @Override
-    protected void handleTextMessage(WebSocketSession session, TextMessage message) {
+    protected void handleTextMessage(final WebSocketSession session, final TextMessage message) {
         try (JsonReader reader = Json.createReader(new StringReader(message.getPayload()))) {
             JsonObject root = reader.readObject();
             String type = root.getString("type", "");
@@ -113,21 +113,17 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    private void handlePong(WebSocketSession session, JsonObject root) {
+    private void handlePong(final WebSocketSession session, final JsonObject root) {
         log.trace("Pong reçu de l'agent [sessionId={}]", session.getId());
         updateUsernameIfPresent(session, root);
     }
 
-    private void handleRegister(WebSocketSession session, JsonObject root) {
+    private void handleRegister(final WebSocketSession session, final JsonObject root) {
         String serialNumber = root.getString("serialNumber", "");
         String hostname = root.getString("hostname", "");
         String macAddress = root.getString("macAddress", "");
-        String username = root.containsKey("username") && !root.isNull("username")
-                ? root.getString("username", null)
-                : null;
-        String os = root.containsKey("os") && !root.isNull("os")
-                ? root.getString("os", null)
-                : null;
+        String username = root.containsKey("username") && !root.isNull("username") ? root.getString("username", null) : null;
+        String os = root.containsKey("os") && !root.isNull("os") ? root.getString("os", null) : null;
 
         if (serialNumber.isBlank()) {
             log.warn("Tentative d'enregistrement agent sans serialNumber [sessionId={}]", session.getId());
@@ -167,7 +163,7 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
                 serialNumber, hostname, macAddress, username);
     }
 
-    private void handleProcessList(WebSocketSession session, JsonObject root) {
+    private void handleProcessList(final WebSocketSession session, final JsonObject root) {
         updateUsernameIfPresent(session, root);
 
         String requestId = root.getString("requestId", "");
@@ -194,7 +190,7 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
         future.complete(processes);
     }
 
-    private void updateUsernameIfPresent(WebSocketSession session, JsonObject root) {
+    private void updateUsernameIfPresent(final WebSocketSession session, final JsonObject root) {
         if (root.containsKey("username") && !root.isNull("username")) {
             String updatedUser = root.getString("username", "");
             if (!updatedUser.isBlank()) {
@@ -206,7 +202,7 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    private void handleKillResult(JsonObject root) {
+    private void handleKillResult(final JsonObject root) {
         String requestId = root.getString("requestId", "");
         CompletableFuture<AgentKillResult> future = pendingKillRequests.remove(requestId);
         if (future == null) {
@@ -227,7 +223,7 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+    public void afterConnectionClosed(final WebSocketSession session, final CloseStatus status) {
         String serialNumber = sessionToSerialNumber.remove(session.getId());
         if (serialNumber != null) {
             // Nettoyage ciblé par session : évite de supprimer une reconnexion survenue entre-temps (Point I4)
@@ -238,12 +234,12 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    public boolean isConnected(String serialNumber) {
+    public boolean isConnected(final String serialNumber) {
         AgentConnection conn = connectedAgents.get(serialNumber);
         return conn != null && conn.session().isOpen();
     }
 
-    public Optional<AgentConnection> getConnection(String serialNumber) {
+    public Optional<AgentConnection> getConnection(final String serialNumber) {
         return Optional.ofNullable(connectedAgents.get(serialNumber));
     }
 
@@ -251,7 +247,7 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
         return Collections.unmodifiableCollection(connectedAgents.values());
     }
 
-    public List<AgentProcessInfo> fetchProcesses(String serialNumber, long timeoutSeconds) {
+    public List<AgentProcessInfo> fetchProcesses(final String serialNumber, final long timeoutSeconds) {
         AgentConnection conn = connectedAgents.get(serialNumber);
         if (conn == null || !conn.session().isOpen()) {
             log.debug("Impossible de récupérer les processus : agent non connecté pour UC={}", serialNumber);
@@ -280,7 +276,7 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    public AgentKillResult executeKill(String serialNumber, int pid, long timeoutSeconds) {
+    public AgentKillResult executeKill(final String serialNumber, final int pid, final long timeoutSeconds) {
         AgentConnection conn = connectedAgents.get(serialNumber);
         if (conn == null || !conn.session().isOpen()) {
             return new AgentKillResult(false, pid, "", "Agent non connecté sur cette UC");
@@ -307,7 +303,7 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    private void closeSessionQuietly(WebSocketSession session, CloseStatus status) {
+    private void closeSessionQuietly(final WebSocketSession session, final CloseStatus status) {
         try {
             if (session != null && session.isOpen()) {
                 session.close(status);
