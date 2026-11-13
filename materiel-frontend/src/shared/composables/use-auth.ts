@@ -10,7 +10,7 @@
  * identifiant et lui applique son rôle. Un compte inconnu de l'application ou désactivé est refusé.
  * Le jeton reste EN MÉMOIRE (keycloak-js) : jamais dans localStorage, sessionStorage ou un cookie lisible.
  * Après un rechargement de page, la session est retrouvée auprès de Keycloak sans nouvelle saisie
- * (restoreSession, vérification silencieuse dans public/silent-check-sso.html).
+ * (restoreSession : aller-retour rapide vers Keycloak, sans cadre caché, qui fonctionne aussi en HTTP).
  */
 import {computed, ref} from 'vue';
 import {type Role, roleRanks, type User} from '../../models/user.model.ts';
@@ -77,18 +77,17 @@ async function loadProfile(): Promise<void> {
 }
 
 /**
- * Restaure la session au démarrage : Keycloak dit, sans afficher de page, si l'utilisateur est déjà
- * identifié (ou revient de la page de connexion), puis le profil est chargé. Appelée une seule fois par
+ * Restaure la session au démarrage : un aller-retour vers Keycloak (sans saisie) dit si l'utilisateur est
+ * déjà identifié (ou revient de la page de connexion), puis le profil est chargé. Appelée une seule fois par
  * la garde de route. Un échec n'est pas une erreur : l'utilisateur est simplement non connecté.
+ * Pas de vérification silencieuse dans un cadre caché (silentCheckSsoRedirectUri) : elle exige HTTPS
+ * (document.requestStorageAccess) et reste bloquée sur la VM, servie en HTTP.
  */
 function restoreSession(): Promise<void> {
     restoring ??= (async () => {
         const authenticated = await keycloak.init({
             onLoad: 'check-sso',
-            silentCheckSsoRedirectUri: appUrl('/silent-check-sso.html'),
             checkLoginIframe: false,
-            // Keycloak injoignable : on abandonne au bout de 5 s (10 s par défaut) et la page le signale.
-            messageReceiveTimeout: 5000,
         }).catch(() => {
             ssoUnavailable.value = true;
             return false;
