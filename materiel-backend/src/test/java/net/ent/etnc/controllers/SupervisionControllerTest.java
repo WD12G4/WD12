@@ -50,7 +50,7 @@ class SupervisionControllerTest {
     @DisplayName("getWorkstationsByRoom doit retourner la liste des postes")
     void getWorkstationsByRoom_ReturnsList() throws Exception {
         WorkstationDto ws = new WorkstationDto(1L, 10L, "Poste 1", "Stagiaire 1", "00:11:22:33:44:55", true);
-        when(supervisionService.findWorkstationsByRoom(10L)).thenReturn(List.of(ws));
+        when(supervisionService.findWorkstations(10L)).thenReturn(List.of(ws));
 
         mockMvc.perform(get("/api/v1/supervision/rooms/10/workstations"))
                 .andExpect(status().isOk())

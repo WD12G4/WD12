@@ -29,9 +29,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -73,8 +71,8 @@ class SupervisionServiceImplTest {
     }
 
     @Test
-    @DisplayName("findWorkstationsByRoom retourne les postes avec statut online/offline")
-    void findWorkstationsByRoom_ReturnsList() {
+    @DisplayName("findWorkstations retourne les postes avec statut online/offline")
+    void findWorkstations_ReturnsList() {
         when(materialRepository.findByRoomIdAndMaterialTypeAndArchivedFalse(1L, EMaterialType.UC))
                 .thenReturn(List.of(sampleUc));
         when(agentWebSocketHandler.isConnected("UC-TEST-01")).thenReturn(true);
@@ -82,7 +80,7 @@ class SupervisionServiceImplTest {
                 new AgentWebSocketHandler.AgentConnection("UC-TEST-01", "host-01", "00:11:22:33:44:55", null, Instant.now())
         ));
 
-        List<WorkstationDto> result = supervisionService.findWorkstationsByRoom(1L);
+        List<WorkstationDto> result = supervisionService.findWorkstations(1L);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).id()).isEqualTo(10L);

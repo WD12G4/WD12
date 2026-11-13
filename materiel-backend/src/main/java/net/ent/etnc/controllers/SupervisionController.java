@@ -21,7 +21,7 @@ public class SupervisionController {
     private final SupervisionService supervisionService;
 
     @Autowired
-    public SupervisionController(SupervisionService supervisionService) {
+    public SupervisionController(final SupervisionService supervisionService) {
         this.supervisionService = supervisionService;
     }
 
@@ -29,15 +29,15 @@ public class SupervisionController {
      * Récupère la liste des postes de travail (UC) pour une salle donnée.
      */
     @GetMapping("/rooms/{roomId}/workstations")
-    public List<WorkstationDto> getWorkstationsByRoom(@PathVariable Long roomId) {
-        return supervisionService.findWorkstationsByRoom(roomId);
+    public List<WorkstationDto> getWorkstationsByRoom(@PathVariable final Long roomId) {
+        return supervisionService.findWorkstations(roomId);
     }
 
     /**
      * Récupère la liste des postes de travail (tous les postes ou filtrés par salle).
      */
     @GetMapping("/workstations")
-    public List<WorkstationDto> getWorkstations(@RequestParam(name = "roomId", required = false) Long roomId) {
+    public List<WorkstationDto> getWorkstations(@RequestParam(name = "roomId", required = false) final Long roomId) {
         return supervisionService.findWorkstations(roomId);
     }
 
@@ -45,7 +45,7 @@ public class SupervisionController {
      * Récupère la liste des processus applicatifs actifs sur une liste de postes.
      */
     @GetMapping("/processes")
-    public List<ProcessInfoDto> getProcesses(@RequestParam(name = "workstationIds", required = false) List<Long> workstationIds) {
+    public List<ProcessInfoDto> getProcesses(@RequestParam(name = "workstationIds", required = false) final List<Long> workstationIds) {
         return supervisionService.findProcessesForWorkstations(workstationIds);
     }
 
@@ -53,7 +53,7 @@ public class SupervisionController {
      * Demande l'arrêt d'un processus utilisateur sur un poste supervisé.
      */
     @PostMapping("/kill")
-    public KillProcessResponse killProcess(@Valid @RequestBody KillProcessRequest request) {
+    public KillProcessResponse killProcess(@Valid @RequestBody final KillProcessRequest request) {
         return supervisionService.killProcess(request);
     }
 }

@@ -1,5 +1,19 @@
 package net.ent.etnc.services.impl;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import lombok.extern.slf4j.Slf4j;
 import net.ent.etnc.dtos.supervision.KillProcessRequest;
 import net.ent.etnc.dtos.supervision.KillProcessResponse;
@@ -18,15 +32,6 @@ import net.ent.etnc.services.UserService;
 import net.ent.etnc.services.commons.ResourceNotFoundException;
 import net.ent.etnc.services.commons.ServiceException;
 import net.ent.etnc.websocket.AgentWebSocketHandler;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.*;
 
 /**
  * Implémentation du service de supervision.
@@ -42,11 +47,8 @@ public class SupervisionServiceImpl implements SupervisionService {
     private final ApplicationService applicationService;
 
     @Autowired
-    public SupervisionServiceImpl(final MaterialRepository materialRepository,
-                                  final AgentWebSocketHandler agentWebSocketHandler,
-                                  final KillEventService killEventService,
-                                  final UserService userService,
-                                  final ApplicationService applicationService) {
+    public SupervisionServiceImpl(final MaterialRepository materialRepository, final AgentWebSocketHandler agentWebSocketHandler, final KillEventService killEventService,
+            final UserService userService, final ApplicationService applicationService) {
         this.materialRepository = materialRepository;
         this.agentWebSocketHandler = agentWebSocketHandler;
         this.killEventService = killEventService;
@@ -55,16 +57,11 @@ public class SupervisionServiceImpl implements SupervisionService {
     }
 
     @Override
-    public List<WorkstationDto> findWorkstationsByRoom(final Long roomId) {
-        return findWorkstations(roomId);
-    }
-
-    @Override
     @Transactional(readOnly = true)
     public List<WorkstationDto> findWorkstations(final Long roomId) {
-        List<Material> ucs = (roomId != null)
-                ? materialRepository.findByRoomIdAndMaterialTypeAndArchivedFalse(roomId, EMaterialType.UC)
-                : materialRepository.findByMaterialTypeAndArchivedFalse(EMaterialType.UC);
+        List<Material> ucs = (roomId != null) ?
+                materialRepository.findByRoomIdAndMaterialTypeAndArchivedFalse(roomId, EMaterialType.UC) :
+                materialRepository.findByMaterialTypeAndArchivedFalse(EMaterialType.UC);
 
         List<WorkstationDto> workstations = new ArrayList<>();
         Set<String> seenSerials = new HashSet<>();
@@ -74,37 +71,15 @@ public class SupervisionServiceImpl implements SupervisionService {
             seenSerials.add(uc.getSerialNumber());
             boolean online = agentWebSocketHandler.isConnected(uc.getSerialNumber());
             Optional<AgentWebSocketHandler.AgentConnection> conn = agentWebSocketHandler.getConnection(uc.getSerialNumber());
-            String macAddress = conn.map(AgentWebSocketHandler.AgentConnection::macAddress)
-                    .filter(mac -> !mac.isBlank())
-                    .orElse("N/A");
-            String hostname = conn.map(AgentWebSocketHandler.AgentConnection::hostname)
-                    .filter(h -> !h.isBlank())
-                    .orElse(null);
-            String username = conn.map(AgentWebSocketHandler.AgentConnection::username)
-                    .filter(u -> !u.isBlank())
-                    .orElse(null);
-            String os = conn.map(AgentWebSocketHandler.AgentConnection::os)
-                    .filter(o -> !o.isBlank())
-                    .orElse(null);
+            String macAddress = conn.map(AgentWebSocketHandler.AgentConnection::macAddress).filter(mac -> !mac.isBlank()).orElse("N/A");
+            String hostname = conn.map(AgentWebSocketHandler.AgentConnection::hostname).filter(h -> !h.isBlank()).orElse(null);
+            String username = conn.map(AgentWebSocketHandler.AgentConnection::username).filter(u -> !u.isBlank()).orElse(null);
+            String os = conn.map(AgentWebSocketHandler.AgentConnection::os).filter(o -> !o.isBlank()).orElse(null);
 
-            String name = (hostname != null && !hostname.isBlank())
-                    ? hostname + " (" + uc.getSerialNumber() + ")"
-                    : "Poste " + index + " (" + uc.getSerialNumber() + ")";
-            String traineeLabel = (username != null && !username.isBlank())
-                    ? username
-                    : (online ? "Poste connecté" : "Poste éteint / Agent déconnecté");
+            String name = (hostname != null && !hostname.isBlank()) ? hostname + " (" + uc.getSerialNumber() + ")" : "Poste " + index + " (" + uc.getSerialNumber() + ")";
+            String traineeLabel = (username != null && !username.isBlank()) ? username : (online ? "Poste connecté" : "Poste éteint / Agent déconnecté");
 
-            workstations.add(new WorkstationDto(
-                    uc.getId(),
-                    uc.getRoom() != null ? uc.getRoom().getId() : null,
-                    name,
-                    traineeLabel,
-                    macAddress,
-                    online,
-                    hostname,
-                    username,
-                    os
-            ));
+            workstations.add(new WorkstationDto(uc.getId(), uc.getRoom() != null ? uc.getRoom().getId() : null, name, traineeLabel, macAddress, online, hostname, username, os));
             index++;
         }
 
@@ -117,25 +92,16 @@ public class SupervisionServiceImpl implements SupervisionService {
                         seenSerials.add(agent.serialNumber());
                         String username = (agent.username() != null && !agent.username().isBlank()) ? agent.username() : null;
                         String traineeLabel = (username != null && !username.isBlank()) ? username : "Poste connecté";
-                        workstations.add(new WorkstationDto(
-                                uc.getId(),
-                                null,
-                                (agent.hostname() != null && !agent.hostname().isBlank() ? agent.hostname() : "Poste") + " (" + agent.serialNumber() + ")",
-                                traineeLabel,
-                                agent.macAddress(),
-                                true,
-                                agent.hostname(),
-                                username,
-                                agent.os()
-                        ));
+                        workstations.add(new WorkstationDto(uc.getId(), null,
+                                (agent.hostname() != null && !agent.hostname().isBlank() ? agent.hostname() : "Poste") + " (" + agent.serialNumber() + ")", traineeLabel,
+                                agent.macAddress(), true, agent.hostname(), username, agent.os()));
                     }
                 }
             }
         }
 
         // Trier avec les postes connectés en premier
-        workstations.sort(Comparator.comparing(WorkstationDto::online).reversed()
-                .thenComparing(WorkstationDto::name));
+        workstations.sort(Comparator.comparing(WorkstationDto::online).reversed().thenComparing(WorkstationDto::name));
 
         return workstations;
     }
@@ -156,8 +122,7 @@ public class SupervisionServiceImpl implements SupervisionService {
             }
             Material uc = ucOpt.get();
 
-            List<AgentWebSocketHandler.AgentProcessInfo> agentProcs =
-                    agentWebSocketHandler.fetchProcesses(uc.getSerialNumber(), 3);
+            List<AgentWebSocketHandler.AgentProcessInfo> agentProcs = agentWebSocketHandler.fetchProcesses(uc.getSerialNumber(), 3);
 
             for (AgentWebSocketHandler.AgentProcessInfo proc : agentProcs) {
                 // Enregistrement / découverte de l'application en base si nouvelle
@@ -165,11 +130,9 @@ public class SupervisionServiceImpl implements SupervisionService {
 
                 // Auto-kill si l'application est sur liste noire
                 if (app != null && app.isBlacklisted()) {
-                    log.warn("Processus interdit détecté : {} (PID={}) sur poste {}. Déclenchement arrêt automatique...",
-                            proc.name(), proc.pid(), uc.getSerialNumber());
+                    log.warn("Processus interdit détecté : {} (PID={}) sur poste {}. Déclenchement arrêt automatique...", proc.name(), proc.pid(), uc.getSerialNumber());
 
-                    AgentWebSocketHandler.AgentKillResult killRes =
-                            agentWebSocketHandler.executeKill(uc.getSerialNumber(), proc.pid(), 5);
+                    AgentWebSocketHandler.AgentKillResult killRes = agentWebSocketHandler.executeKill(uc.getSerialNumber(), proc.pid(), 5);
 
                     // Journalisation dans KillEvent
                     try {
@@ -189,13 +152,8 @@ public class SupervisionServiceImpl implements SupervisionService {
                     continue;
                 }
 
-                allProcesses.add(new ProcessInfoDto(
-                        proc.pid(),
-                        uc.getId(),
-                        proc.name(),
-                        Instant.ofEpochMilli(proc.startedAt()).atZone(ZoneId.systemDefault()).toLocalDateTime(),
-                        proc.icon()
-                ));
+                allProcesses.add(new ProcessInfoDto(proc.pid(), uc.getId(), proc.name(), Instant.ofEpochMilli(proc.startedAt()).atZone(ZoneId.systemDefault()).toLocalDateTime(),
+                        proc.icon()));
             }
         }
 
@@ -212,8 +170,7 @@ public class SupervisionServiceImpl implements SupervisionService {
             throw new ServiceException("Le matériel ciblé n'est pas une unité centrale (UC)");
         }
 
-        AgentWebSocketHandler.AgentKillResult killResult =
-                agentWebSocketHandler.executeKill(uc.getSerialNumber(), request.pid(), 5);
+        AgentWebSocketHandler.AgentKillResult killResult = agentWebSocketHandler.executeKill(uc.getSerialNumber(), request.pid(), 5);
 
         KillEvent killEvent = new KillEvent();
         killEvent.setUc(uc);
@@ -225,11 +182,7 @@ public class SupervisionServiceImpl implements SupervisionService {
         KillEvent savedEvent = killEventService.create(killEvent);
 
         if (!killResult.success()) {
-            return new KillProcessResponse(
-                    false,
-                    killResult.error() != null ? killResult.error() : "L'agent n'a pas pu arrêter le processus",
-                    savedEvent.getId()
-            );
+            return new KillProcessResponse(false, killResult.error() != null ? killResult.error() : "L'agent n'a pas pu arrêter le processus", savedEvent.getId());
         }
 
         return new KillProcessResponse(true, "Processus arrêté avec succès", savedEvent.getId());
