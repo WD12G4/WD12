@@ -62,7 +62,7 @@ public class RoomServiceImpl extends AbstractService<Room, RoomRepository> imple
             throw new ServiceException("Le bâtiment doit être renseigné.");
         }
 
-        Building building = buildingService.findById(room.getBuilding().getId())
+        Building building = this.buildingService.findById(room.getBuilding().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Bâtiment introuvable avec l'id : " + room.getBuilding().getId()));
         room.setBuilding(building);
 

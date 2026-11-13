@@ -66,7 +66,7 @@ public class MaterialServiceImpl extends AbstractService<Material, MaterialRepos
     @Transactional
     public Material assignRoom(final Long id, final Long roomId) {
         log.debug("Demande d'affectation du matériel [id={}] à la salle [roomId={}]", id, roomId);
-        Material material = repository.findById(id)
+        Material material = this.repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Matériel introuvable avec l'id : " + id));
 
         if (material.isArchived() && roomId != null) {
@@ -74,14 +74,14 @@ public class MaterialServiceImpl extends AbstractService<Material, MaterialRepos
         }
 
         if (roomId != null) {
-            Room room = roomRepository.findById(roomId)
+            Room room = this.roomRepository.findById(roomId)
                 .orElseThrow(() -> new ResourceNotFoundException("Salle introuvable avec l'id : " + roomId));
             material.setRoom(room);
         } else {
             material.setRoom(null);
         }
 
-        Material updated = repository.saveAndFlush(material);
+        Material updated = this.repository.saveAndFlush(material);
         log.info("Matériel [id={}] affecté avec succès à la salle [roomId={}]", id, roomId);
         return updated;
     }
@@ -90,12 +90,12 @@ public class MaterialServiceImpl extends AbstractService<Material, MaterialRepos
     @Transactional
     public void archiveById(final Long id) {
         log.debug("Demande d'archivage (soft delete) du matériel [id={}]", id);
-        Material material = repository.findById(id)
+        Material material = this.repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Matériel introuvable avec l'id : " + id));
 
         material.setArchived(true);
         material.setRoom(null); // Conformément à la règle métier : un matériel archivé ne peut pas être affecté à une salle
-        repository.saveAndFlush(material);
+        this.repository.saveAndFlush(material);
 
         log.info("Matériel archivé avec succès (soft delete) [id={}, serialNumber={}]", material.getId(), material.getSerialNumber());
     }

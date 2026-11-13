@@ -1,15 +1,5 @@
 package net.ent.etnc.services.impl;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import lombok.extern.slf4j.Slf4j;
 import net.ent.etnc.models.Application;
 import net.ent.etnc.repositories.ApplicationRepository;
@@ -17,12 +7,22 @@ import net.ent.etnc.services.ApplicationService;
 import net.ent.etnc.services.commons.AbstractService;
 import net.ent.etnc.services.commons.ResourceNotFoundException;
 import net.ent.etnc.services.commons.ServiceException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Implémentation du service {@link ApplicationService}.
  */
 @Slf4j
 @Service
+//TODO Pas de filtre sur les Rôles car cela na pas encore été déterminé avec le client
 public class ApplicationServiceImpl extends AbstractService<Application, ApplicationRepository> implements ApplicationService {
 
     /**
@@ -174,7 +174,7 @@ public class ApplicationServiceImpl extends AbstractService<Application, Applica
         if (name == null || name.isBlank()) {
             return Optional.empty();
         }
-        return repository.findByNameIgnoreCase(name.trim());
+        return this.repository.findByNameIgnoreCase(name.trim());
     }
 
     @Override
@@ -183,13 +183,13 @@ public class ApplicationServiceImpl extends AbstractService<Application, Applica
         if (processName == null || processName.isBlank()) {
             return false;
         }
-        return repository.findByNameIgnoreCase(processName.trim()).map(Application::isBlacklisted).orElse(false);
+        return this.repository.findByNameIgnoreCase(processName.trim()).map(Application::isBlacklisted).orElse(false);
     }
 
     @Override
     @Transactional
     public Application toggleBlacklist(final Long id, final boolean blacklisted) {
-        Application app = repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Application introuvable avec l'id : " + id));
+        Application app = this.repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Application introuvable avec l'id : " + id));
 
         if (blacklisted && isProtectedSystemProcess(app.getName())) {
             log.warn("Tentative d'interdiction rejetée pour le composant système protégé [{}]", app.getName());
@@ -198,7 +198,7 @@ public class ApplicationServiceImpl extends AbstractService<Application, Applica
 
         app.setBlacklisted(blacklisted);
         log.info("Statut de liste noire mis à jour pour l'application [{}] : blacklisted={}", app.getName(), blacklisted);
-        return repository.saveAndFlush(app);
+        return this.repository.saveAndFlush(app);
     }
 
     @Override
@@ -209,14 +209,14 @@ public class ApplicationServiceImpl extends AbstractService<Application, Applica
         }
 
         String normalizedName = processName.trim();
-        Optional<Application> existingOpt = repository.findByNameIgnoreCase(normalizedName);
+        Optional<Application> existingOpt = this.repository.findByNameIgnoreCase(normalizedName);
 
         if (existingOpt.isPresent()) {
             Application existing = existingOpt.get();
             // Mettre à jour l'icône si elle était absente et est désormais fournie
             if (iconBase64 != null && !iconBase64.isBlank() && (existing.getIconBase64() == null || existing.getIconBase64().isBlank())) {
                 existing.setIconBase64(iconBase64);
-                return repository.saveAndFlush(existing);
+                return this.repository.saveAndFlush(existing);
             }
             return existing;
         }
@@ -229,16 +229,16 @@ public class ApplicationServiceImpl extends AbstractService<Application, Applica
         app.setBlacklisted(false);
 
         log.info("Nouvelle application découverte et enregistrée dans le catalogue : [{}]", normalizedName);
-        return repository.saveAndFlush(app);
+        return this.repository.saveAndFlush(app);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<Application> findAll(final Pageable pageable, final Boolean blacklisted) {
         if (blacklisted != null) {
-            return repository.findByBlacklisted(blacklisted, pageable);
+            return this.repository.findByBlacklisted(blacklisted, pageable);
         }
-        return repository.findAll(pageable);
+        return this.repository.findAll(pageable);
     }
 
     @Override

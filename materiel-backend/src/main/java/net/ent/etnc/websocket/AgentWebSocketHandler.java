@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.StringReader;
@@ -148,7 +149,12 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        AgentConnection connection = new AgentConnection(serialNumber, hostname, macAddress, username, os, session, Instant.now());
+        // Envelopper la session dans ConcurrentWebSocketSessionDecorator pour sécuriser les écritures concurrentes (Point I5)
+        WebSocketSession threadSafeSession = session instanceof ConcurrentWebSocketSessionDecorator
+                ? session
+                : new ConcurrentWebSocketSessionDecorator(session, 10000, 512 * 1024);
+
+        AgentConnection connection = new AgentConnection(serialNumber, hostname, macAddress, username, os, threadSafeSession, Instant.now());
         AgentConnection previous = connectedAgents.put(serialNumber, connection);
         sessionToSerialNumber.put(session.getId(), serialNumber);
 
@@ -247,16 +253,21 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
         return Collections.unmodifiableCollection(connectedAgents.values());
     }
 
-    public List<AgentProcessInfo> fetchProcesses(final String serialNumber, final long timeoutSeconds) {
+    /**
+     * Interroge l'agent de façon asynchrone pour récupérer la liste de ses processus (Point I5).
+     */
+    public CompletableFuture<List<AgentProcessInfo>> fetchProcessesAsync(final String serialNumber, final long timeoutSeconds) {
         AgentConnection conn = connectedAgents.get(serialNumber);
         if (conn == null || !conn.session().isOpen()) {
             log.debug("Impossible de récupérer les processus : agent non connecté pour UC={}", serialNumber);
-            return Collections.emptyList();
+            return CompletableFuture.completedFuture(Collections.emptyList());
         }
 
         String requestId = UUID.randomUUID().toString();
         CompletableFuture<List<AgentProcessInfo>> future = new CompletableFuture<>();
         pendingProcessRequests.put(requestId, future);
+
+        future.whenComplete((res, ex) -> pendingProcessRequests.remove(requestId));
 
         try {
             JsonObject cmd = Json.createObjectBuilder()
@@ -264,14 +275,30 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
                     .add("requestId", requestId)
                     .build();
             conn.session().sendMessage(new TextMessage(cmd.toString()));
-            return future.get(timeoutSeconds, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            pendingProcessRequests.remove(requestId);
-            log.warn("Timeout lors de la récupération des processus pour UC={}", serialNumber);
-            return Collections.emptyList();
+            return future
+                    .orTimeout(timeoutSeconds, TimeUnit.SECONDS)
+                    .exceptionally(ex -> {
+                        if (ex instanceof TimeoutException || ex.getCause() instanceof TimeoutException) {
+                            log.warn("Timeout lors de la récupération des processus pour UC={}", serialNumber);
+                        } else {
+                            log.error("Erreur lors de la récupération des processus pour UC={} : {}", serialNumber, ex.getMessage());
+                        }
+                        return Collections.emptyList();
+                    });
         } catch (Exception e) {
             pendingProcessRequests.remove(requestId);
             log.error("Erreur lors de la demande de processus pour UC={} : {}", serialNumber, e.getMessage());
+            return CompletableFuture.completedFuture(Collections.emptyList());
+        }
+    }
+
+    /**
+     * Version synchrone d'interrogation de l'agent pour compatibilité.
+     */
+    public List<AgentProcessInfo> fetchProcesses(final String serialNumber, final long timeoutSeconds) {
+        try {
+            return fetchProcessesAsync(serialNumber, timeoutSeconds).join();
+        } catch (Exception e) {
             return Collections.emptyList();
         }
     }

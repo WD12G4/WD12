@@ -27,6 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -89,7 +90,7 @@ class SupervisionServiceImplTest {
     }
 
     @Test
-    @DisplayName("findProcessesForWorkstations interroge l'agent et retourne les processus")
+    @DisplayName("findProcessesForWorkstations interroge l'agent de façon asynchrone et retourne les processus")
     void findProcessesForWorkstations_Success() {
         Application app = new Application();
         app.setName("code.exe");
@@ -97,9 +98,9 @@ class SupervisionServiceImplTest {
         app.setIconBase64("data:image/png;base64,ABC");
 
         when(materialRepository.findById(10L)).thenReturn(Optional.of(sampleUc));
-        when(agentWebSocketHandler.fetchProcesses(eq("UC-TEST-01"), anyLong())).thenReturn(List.of(
+        when(agentWebSocketHandler.fetchProcessesAsync(eq("UC-TEST-01"), anyLong())).thenReturn(CompletableFuture.completedFuture(List.of(
                 new AgentWebSocketHandler.AgentProcessInfo(4321, "code.exe", System.currentTimeMillis(), "data:image/png;base64,ABC")
-        ));
+        )));
         when(applicationService.registerDiscoveredApplication(eq("code.exe"), any())).thenReturn(app);
 
         List<ProcessInfoDto> procs = supervisionService.findProcessesForWorkstations(List.of(10L));
@@ -111,6 +112,36 @@ class SupervisionServiceImplTest {
     }
 
     @Test
+    @DisplayName("findProcessesForWorkstations interroge plusieurs postes en parallèle")
+    void findProcessesForWorkstations_MultipleWorkstations_RunsInParallel() {
+        Material uc2 = new Material();
+        uc2.setId(20L);
+        uc2.setSerialNumber("UC-TEST-02");
+        uc2.setMaterialType(EMaterialType.UC);
+
+        Application app = new Application();
+        app.setName("calc.exe");
+        app.setBlacklisted(false);
+
+        when(materialRepository.findById(10L)).thenReturn(Optional.of(sampleUc));
+        when(materialRepository.findById(20L)).thenReturn(Optional.of(uc2));
+
+        when(agentWebSocketHandler.fetchProcessesAsync(eq("UC-TEST-01"), anyLong())).thenReturn(CompletableFuture.completedFuture(List.of(
+                new AgentWebSocketHandler.AgentProcessInfo(1001, "calc.exe", System.currentTimeMillis())
+        )));
+        when(agentWebSocketHandler.fetchProcessesAsync(eq("UC-TEST-02"), anyLong())).thenReturn(CompletableFuture.completedFuture(List.of(
+                new AgentWebSocketHandler.AgentProcessInfo(2001, "calc.exe", System.currentTimeMillis())
+        )));
+        when(applicationService.registerDiscoveredApplication(eq("calc.exe"), any())).thenReturn(app);
+
+        List<ProcessInfoDto> procs = supervisionService.findProcessesForWorkstations(List.of(10L, 20L));
+
+        assertThat(procs).hasSize(2);
+        verify(agentWebSocketHandler).fetchProcessesAsync(eq("UC-TEST-01"), anyLong());
+        verify(agentWebSocketHandler).fetchProcessesAsync(eq("UC-TEST-02"), anyLong());
+    }
+
+    @Test
     @DisplayName("findProcessesForWorkstations déclenche un auto-kill si un processus est sur liste noire")
     void findProcessesForWorkstations_WhenProcessBlacklisted_ExecutesAutoKill() {
         Application blacklistedApp = new Application();
@@ -118,9 +149,9 @@ class SupervisionServiceImplTest {
         blacklistedApp.setBlacklisted(true);
 
         when(materialRepository.findById(10L)).thenReturn(Optional.of(sampleUc));
-        when(agentWebSocketHandler.fetchProcesses(eq("UC-TEST-01"), anyLong())).thenReturn(List.of(
+        when(agentWebSocketHandler.fetchProcessesAsync(eq("UC-TEST-01"), anyLong())).thenReturn(CompletableFuture.completedFuture(List.of(
                 new AgentWebSocketHandler.AgentProcessInfo(9999, "steam.exe", System.currentTimeMillis())
-        ));
+        )));
         when(applicationService.registerDiscoveredApplication("steam.exe", null)).thenReturn(blacklistedApp);
         when(agentWebSocketHandler.executeKill("UC-TEST-01", 9999, 5))
                 .thenReturn(new AgentWebSocketHandler.AgentKillResult(true, 9999, "steam.exe", null));

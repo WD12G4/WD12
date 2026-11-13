@@ -15,7 +15,9 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -133,5 +135,15 @@ class AgentWebSocketHandlerTest {
 
         handler.afterConnectionClosed(session, CloseStatus.NORMAL);
         assertThat(handler.isConnected("UC-VALID-01")).isFalse();
+    }
+
+    @Test
+    @DisplayName("fetchProcessesAsync renvoie une liste vide immédiate si l'agent n'est pas connecté")
+    void fetchProcessesAsync_WhenNotConnected_ReturnsEmptyList() {
+        CompletableFuture<List<AgentWebSocketHandler.AgentProcessInfo>> future =
+                handler.fetchProcessesAsync("DISCONNECTED-UC", 3);
+
+        assertThat(future.isDone()).isTrue();
+        assertThat(future.join()).isEmpty();
     }
 }

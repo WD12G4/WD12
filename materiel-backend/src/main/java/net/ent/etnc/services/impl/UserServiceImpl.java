@@ -1,7 +1,13 @@
 package net.ent.etnc.services.impl;
 
-import java.util.Optional;
-
+import lombok.extern.slf4j.Slf4j;
+import net.ent.etnc.models.User;
+import net.ent.etnc.models.enums.ERole;
+import net.ent.etnc.repositories.UserRepository;
+import net.ent.etnc.services.UserService;
+import net.ent.etnc.services.commons.AbstractService;
+import net.ent.etnc.services.commons.ResourceNotFoundException;
+import net.ent.etnc.services.commons.ServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -12,14 +18,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import lombok.extern.slf4j.Slf4j;
-import net.ent.etnc.models.User;
-import net.ent.etnc.models.enums.ERole;
-import net.ent.etnc.repositories.UserRepository;
-import net.ent.etnc.services.UserService;
-import net.ent.etnc.services.commons.AbstractService;
-import net.ent.etnc.services.commons.ResourceNotFoundException;
-import net.ent.etnc.services.commons.ServiceException;
+import java.util.Optional;
 
 /**
  * Transactional service for account business rules and actor lookup.
@@ -50,7 +49,7 @@ public class UserServiceImpl extends AbstractService<User, UserRepository> imple
 
         validateUsername(entity.getUsername());
 
-        if (repository.existsByUsername(entity.getUsername().trim())) {
+        if (this.repository.existsByUsername(entity.getUsername().trim())) {
             log.warn("Échec création utilisateur : le nom d'utilisateur '{}' est déjà utilisé.", entity.getUsername());
             throw new ServiceException("Le nom d'utilisateur est déjà utilisé.");
         }
@@ -71,17 +70,17 @@ public class UserServiceImpl extends AbstractService<User, UserRepository> imple
             throw new ServiceException("L'utilisateur ne peut pas être null.");
         }
         log.debug("Demande de mise à jour de l'utilisateur [id={}, username={}]", entity.getId(), entity.getUsername());
-        if (entity.getId() == null || !repository.existsById(entity.getId())) {
+        if (entity.getId() == null || !this.repository.existsById(entity.getId())) {
             log.warn("Échec mise à jour utilisateur : id introuvable ({})", entity.getId());
             throw new ResourceNotFoundException("Utilisateur introuvable avec l'id : " + entity.getId());
         }
 
-        User existing = repository.findById(entity.getId()).orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable avec l'id : " + entity.getId()));
+        User existing = this.repository.findById(entity.getId()).orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable avec l'id : " + entity.getId()));
 
         validateUsername(entity.getUsername());
 
-        repository.findByUsername(entity.getUsername().trim()).ifPresent(other -> {
-            if (!other.getId().equals(entity.getId())) {
+        this.repository.findByUsername(entity.getUsername().trim()).ifPresent(other -> {
+            if (other.getId() != null && !other.getId().equals(entity.getId())) {
                 log.warn("Échec mise à jour utilisateur : le nom d'utilisateur '{}' est déjà utilisé par l'id {}.", entity.getUsername(), other.getId());
                 throw new ServiceException("Le nom d'utilisateur est déjà utilisé.");
             }
@@ -91,7 +90,7 @@ public class UserServiceImpl extends AbstractService<User, UserRepository> imple
         boolean wasActiveAdmin = existing.getRole() == ERole.ADMIN && existing.isEnabled();
         boolean remainsActiveAdmin = entity.getRole() == ERole.ADMIN && entity.isEnabled();
         if (wasActiveAdmin && !remainsActiveAdmin) {
-            long activeAdminCount = repository.countByRoleAndEnabledTrue(ERole.ADMIN);
+            long activeAdminCount = this.repository.countByRoleAndEnabledTrue(ERole.ADMIN);
             if (activeAdminCount <= 1) {
                 log.warn("Tentative de désactivation ou rétrogradation du dernier administrateur actif [id={}, username={}]", entity.getId(), entity.getUsername());
                 throw new ServiceException("Impossible de désactiver ou rétrograder le dernier administrateur actif.");

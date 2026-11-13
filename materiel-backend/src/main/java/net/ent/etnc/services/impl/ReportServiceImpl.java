@@ -84,7 +84,7 @@ public class ReportServiceImpl extends AbstractService<Report, ReportRepository>
                 .orElseThrow(() -> new ResourceNotFoundException("Signalement introuvable avec l'id : " + report.getId()));
 
         User currentUser = this.userService.currentUser();
-        if (!existing.getUser().getId().equals(currentUser.getId())) {
+        if (existing.getUser().getId() != null && !existing.getUser().getId().equals(currentUser.getId())) {
             log.warn("Tentative de modification non autorisée du signalement {} par l'utilisateur {}",
                     report.getId(), currentUser.getUsername());
             throw new AccessDeniedException("Seul l'utilisateur ayant créé le signalement peut le modifier.");
