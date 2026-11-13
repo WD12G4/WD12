@@ -14,8 +14,7 @@ import {simulationServices} from '../../../services/simulation.services.mock.ts'
 import type {InstalledConfig, ReimageConfig} from '../../../models/reimage.model.ts';
 
 /** Intervalle de relecture de la salle, et de mise à jour d'une masterisation simulée. */
-const REFRESH_MS = 10_000;
-const TICK_MS = 1000;
+const REFRESH_MS = 10_000, TICK_MS = 1000;
 
 /** Poste avec ses processus, prêt à afficher. */
 interface WorkstationView {
@@ -44,10 +43,12 @@ async function loadRoom(state: SupervisionState, roomId: number | null): Promise
     state.roomId = roomId;
     state.tick.value++; // postes simulés de la nouvelle salle, même si la lecture des vrais postes échoue
     const workstations = roomId === null ? [] : await supervisionServices.findWorkstations(roomId);
+    if (state.roomId !== roomId) return;
     const [processes, events] = await Promise.all([
         supervisionServices.findProcesses(workstations.filter(item => item.status === 'online').map(item => item.id)),
         roomId === null ? [] : killEventsServices.findByRoom(roomId),
     ]);
+    if (state.roomId !== roomId) return;
     state.workstations.value = workstations;
     state.processes.value = processes;
     state.events.value = events;
@@ -93,8 +94,14 @@ async function killAll(state: SupervisionState, processes: ProcessInfo[]): Promi
 export function useSupervision() {
     const state: SupervisionState = {roomId: null, workstations: ref([]), processes: ref([]), events: ref([]), tick: ref(0)};
     const views = computed(() => toViews(state));
-    // Relecture silencieuse : une erreur passagère est ignorée, la suivante réessaiera.
-    const refresh = () => (document.hidden ? undefined : loadRoom(state, state.roomId).catch(() => undefined));
+    // Relecture sans empiler : une requête en cours bloque le déclenchement suivant (Point I5).
+    let refreshing = false;
+    const refresh = async () => {
+        if (document.hidden || refreshing) return;
+        refreshing = true;
+        await loadRoom(state, state.roomId).catch(() => undefined);
+        refreshing = false;
+    };
     const timers = [window.setInterval(refresh, REFRESH_MS),
         window.setInterval(() => simulationServices.hasActiveReimage() && state.tick.value++, TICK_MS)];
     onScopeDispose(() => timers.forEach(timer => window.clearInterval(timer)));
@@ -105,10 +112,7 @@ export function useSupervision() {
         reload: () => loadRoom(state, state.roomId),
         killProcess: (process: ProcessInfo) => killAll(state, [process]),
         killEverywhere: (name: string) => killAll(state, views.value.flatMap(view => view.processes).filter(process => process.name === name)),
-        reimage: async (workstationIds: number[], config: ReimageConfig) => {
-            await simulationServices.reimage(workstationIds, config);
-            state.tick.value++;
-        },
+        reimage: async (ids: number[], cfg: ReimageConfig) => (await simulationServices.reimage(ids, cfg), void (state.tick.value++)),
     };
 }
 

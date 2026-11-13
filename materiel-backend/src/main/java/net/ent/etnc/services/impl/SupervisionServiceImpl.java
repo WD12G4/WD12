@@ -4,11 +4,15 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -106,23 +110,63 @@ public class SupervisionServiceImpl implements SupervisionService {
         return workstations;
     }
 
+    /**
+     * Récupère les processus pour la liste des postes spécifiés.
+     * Les appels réseau vers les agents sont exécutés en parallèle hors transaction SQL avec un délai global (Point I5).
+     */
     @Override
-    @Transactional
     public List<ProcessInfoDto> findProcessesForWorkstations(final List<Long> workstationIds) {
         if (workstationIds == null || workstationIds.isEmpty()) {
             return List.of();
         }
 
-        List<ProcessInfoDto> allProcesses = new ArrayList<>();
+        Set<Long> uniqueIds = new LinkedHashSet<>(workstationIds);
+        List<Material> ucs = new ArrayList<>();
+        for (Long ucId : uniqueIds) {
+            materialRepository.findById(ucId).ifPresent(ucs::add);
+        }
 
-        for (Long ucId : workstationIds) {
-            Optional<Material> ucOpt = materialRepository.findById(ucId);
-            if (ucOpt.isEmpty()) {
+        record WorkstationQuery(Material uc, CompletableFuture<List<AgentWebSocketHandler.AgentProcessInfo>> future) {}
+
+        List<WorkstationQuery> queries = new ArrayList<>();
+        for (Material uc : ucs) {
+            if (!EMaterialType.UC.equals(uc.getMaterialType())) {
                 continue;
             }
-            Material uc = ucOpt.get();
+            CompletableFuture<List<AgentWebSocketHandler.AgentProcessInfo>> future =
+                    agentWebSocketHandler.fetchProcessesAsync(uc.getSerialNumber(), 3);
+            queries.add(new WorkstationQuery(uc, future));
+        }
 
-            List<AgentWebSocketHandler.AgentProcessInfo> agentProcs = agentWebSocketHandler.fetchProcesses(uc.getSerialNumber(), 3);
+        if (queries.isEmpty()) {
+            return List.of();
+        }
+
+        try {
+            CompletableFuture.allOf(queries.stream().map(WorkstationQuery::future).toArray(CompletableFuture[]::new))
+                    .orTimeout(4, TimeUnit.SECONDS)
+                    .join();
+        } catch (Exception e) {
+            log.warn("Délai global d'interrogation des agents de supervision dépassé : {}", e.getMessage());
+        }
+
+        User currentUser = null;
+        try {
+            currentUser = userService.currentUser();
+        } catch (Exception e) {
+            log.debug("Impossible de récupérer l'utilisateur courant pour l'auto-kill : {}", e.getMessage());
+        }
+
+        List<ProcessInfoDto> allProcesses = new ArrayList<>();
+
+        for (WorkstationQuery query : queries) {
+            Material uc = query.uc();
+            List<AgentWebSocketHandler.AgentProcessInfo> agentProcs;
+            try {
+                agentProcs = query.future().getNow(Collections.emptyList());
+            } catch (Exception e) {
+                agentProcs = Collections.emptyList();
+            }
 
             for (AgentWebSocketHandler.AgentProcessInfo proc : agentProcs) {
                 // Enregistrement / découverte de l'application en base si nouvelle
@@ -136,12 +180,11 @@ public class SupervisionServiceImpl implements SupervisionService {
 
                     // Journalisation dans KillEvent
                     try {
-                        User user = userService.currentUser();
                         KillEvent killEvent = new KillEvent();
                         killEvent.setUc(uc);
                         killEvent.setProcessName(proc.name());
                         killEvent.setKillDateTime(LocalDateTime.now());
-                        killEvent.setUser(user);
+                        killEvent.setUser(currentUser);
                         killEvent.setResult(killRes.success());
                         killEventService.create(killEvent);
                     } catch (Exception e) {
@@ -152,7 +195,8 @@ public class SupervisionServiceImpl implements SupervisionService {
                     continue;
                 }
 
-                allProcesses.add(new ProcessInfoDto(proc.pid(), uc.getId(), proc.name(), Instant.ofEpochMilli(proc.startedAt()).atZone(ZoneId.systemDefault()).toLocalDateTime(),
+                allProcesses.add(new ProcessInfoDto(proc.pid(), uc.getId(), proc.name(),
+                        Instant.ofEpochMilli(proc.startedAt()).atZone(ZoneId.systemDefault()).toLocalDateTime(),
                         proc.icon()));
             }
         }
