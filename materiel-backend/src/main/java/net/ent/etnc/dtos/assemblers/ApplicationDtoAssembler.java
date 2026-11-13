@@ -23,8 +23,7 @@ public class ApplicationDtoAssembler implements DtoAssembler<Application, Applic
                 entity.getName(),
                 entity.getDisplayName(),
                 entity.getIconBase64(),
-                entity.isBlacklisted(),
-                entity.getDescription()
+                entity.isBlacklisted()
         );
     }
 
@@ -38,7 +37,6 @@ public class ApplicationDtoAssembler implements DtoAssembler<Application, Applic
         app.setDisplayName(request.displayName());
         app.setIconBase64(request.iconBase64());
         app.setBlacklisted(request.blacklisted() != null && request.blacklisted());
-        app.setDescription(request.description());
         return app;
     }
 
@@ -56,9 +54,6 @@ public class ApplicationDtoAssembler implements DtoAssembler<Application, Applic
             }
             if (request.blacklisted() != null) {
                 entity.setBlacklisted(request.blacklisted());
-            }
-            if (request.description() != null) {
-                entity.setDescription(request.description());
             }
         }
     }

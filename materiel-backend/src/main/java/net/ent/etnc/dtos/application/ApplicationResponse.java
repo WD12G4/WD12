@@ -6,7 +6,6 @@ public record ApplicationResponse(
         String name,
         String displayName,
         String iconBase64,
-        boolean blacklisted,
-        String description
+        boolean blacklisted
 ) {
 }

@@ -52,7 +52,6 @@ classDiagram
         -String displayName
         -String iconBase64
         -boolean blacklisted
-        -String description
         +getName() String
         +setName(String name) void
         +getDisplayName() String
@@ -61,8 +60,6 @@ classDiagram
         +setIconBase64(String iconBase64) void
         +isBlacklisted() boolean
         +setBlacklisted(boolean blacklisted) void
-        +getDescription() String
-        +setDescription(String description) void
     }
 
     class Report {
