@@ -21,13 +21,19 @@ interface SessionHooks {
     refresh: () => Promise<boolean>;
     /** Appelé quand la session est définitivement expirée. */
     onSessionExpired: () => void;
+    /** OUTIL DE DÉMONSTRATION : compte de démonstration avec lequel l'administrateur teste, ou null. */
+    getDemoAccount: () => string | null;
 }
+
+/** En-tête lu par le backend pour le compte de démonstration (KeycloakJwtConverter). */
+const DEMO_ACCOUNT_HEADER = 'X-Demo-Account';
 
 //------------------ DATAS -----------------------------------
 let hooks: SessionHooks = {
     getToken: () => null,
     refresh: async () => false,
     onSessionExpired: () => undefined,
+    getDemoAccount: () => null,
 };
 
 //------------------ FUNCTIONS -------------------------------
@@ -39,7 +45,10 @@ export function configureHttpClient(sessionHooks: SessionHooks): void {
     hooks = sessionHooks;
 }
 
-/** Construit les en-têtes : JSON si un corps est envoyé, jeton si l'utilisateur est connecté. */
+/**
+ * Construit les en-têtes : JSON si un corps est envoyé, jeton si l'utilisateur est connecté,
+ * compte de démonstration si l'administrateur teste avec un autre rôle.
+ */
 function buildHeaders(options: RequestInit): Headers {
     const headers = new Headers(options.headers);
     if (options.body !== undefined) {
@@ -48,6 +57,10 @@ function buildHeaders(options: RequestInit): Headers {
     const token = hooks.getToken();
     if (token) {
         headers.set('Authorization', `Bearer ${token}`);
+    }
+    const demoAccount = hooks.getDemoAccount();
+    if (token && demoAccount) {
+        headers.set(DEMO_ACCOUNT_HEADER, demoAccount);
     }
     return headers;
 }

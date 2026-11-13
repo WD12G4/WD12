@@ -11,6 +11,11 @@
  * Le jeton reste EN MÉMOIRE (keycloak-js) : jamais dans localStorage, sessionStorage ou un cookie lisible.
  * Après un rechargement de page, la session est retrouvée auprès de Keycloak sans nouvelle saisie
  * (restoreSession : aller-retour rapide vers Keycloak, sans cadre caché, qui fonctionne aussi en HTTP).
+ *
+ * OUTIL DE DÉMONSTRATION : un administrateur peut tester avec le rôle d'un compte de démonstration sans se
+ * déconnecter de Keycloak (actAs). Le compte choisi part dans l'en-tête X-Demo-Account ; le backend ne
+ * l'accepte que pour un administrateur. Il est gardé dans sessionStorage (onglet en cours) pour survivre
+ * à un rechargement : ce n'est qu'un identifiant, pas un secret.
  */
 import {computed, ref} from 'vue';
 import {type Role, roleRanks, type User} from '../../models/user.model.ts';
@@ -26,6 +31,10 @@ const currentUser = ref<User | null>(null);
 const ssoUnavailable = ref(false);
 /** Vrai si Keycloak a identifié quelqu'un que l'application refuse (compte inconnu ou désactivé). */
 const accountRefused = ref(false);
+/** Clé sessionStorage du compte de démonstration choisi. */
+const DEMO_ACCOUNT_KEY = 'gestion-parc.demo-account';
+/** Compte de démonstration avec lequel l'administrateur teste, ou null (son propre compte). */
+const demoAccount = ref<string | null>(readDemoAccount());
 /** Promesse de restauration en cours : évite d'initialiser Keycloak plusieurs fois au démarrage. */
 let restoring: Promise<void> | null = null;
 /** Fonction appelée quand la session expire ; fournie par le router pour éviter un import circulaire. */
@@ -35,6 +44,26 @@ let sessionExpiredHandler: () => void = () => undefined;
 const isAuthenticated = computed(() => accessToken.value !== null && currentUser.value !== null);
 
 //------------------ FUNCTIONS -------------------------------
+/** Compte de démonstration gardé pour l'onglet (sessionStorage peut être indisponible : null). */
+function readDemoAccount(): string | null {
+    try {
+        return sessionStorage.getItem(DEMO_ACCOUNT_KEY);
+    } catch {
+        return null;
+    }
+}
+
+/** Retient le compte de démonstration pour l'onglet, ou l'oublie (null). */
+function saveDemoAccount(username: string | null): void {
+    demoAccount.value = username;
+    try {
+        if (username) sessionStorage.setItem(DEMO_ACCOUNT_KEY, username);
+        else sessionStorage.removeItem(DEMO_ACCOUNT_KEY);
+    } catch {
+        // Stockage indisponible : le choix vaut jusqu'au prochain rechargement.
+    }
+}
+
 /** Vide la session locale (la session Keycloak, elle, est fermée par logout()). */
 function clearSession(): void {
     accessToken.value = null;
@@ -69,6 +98,8 @@ async function loadProfile(): Promise<void> {
     try {
         currentUser.value = await authServices.me();
         accountRefused.value = false;
+        // Compte de démonstration refusé (le compte Keycloak n'est pas administrateur) : on l'oublie.
+        if (demoAccount.value && currentUser.value.username !== demoAccount.value) saveDemoAccount(null);
     } catch (error) {
         accountRefused.value = error instanceof ApiError && error.status === 401;
         keycloak.clearToken();
@@ -105,6 +136,32 @@ function restoreSession(): Promise<void> {
 }
 
 /**
+ * OUTIL DE DÉMONSTRATION : teste avec le rôle d'un compte de démonstration, sans se déconnecter de Keycloak.
+ * Seul un administrateur peut le faire : pour un autre compte, le backend ignore la demande et le profil
+ * reste le sien (le choix est alors annulé).
+ * @param username compte de démonstration ; celui de la connexion Keycloak revient au compte réel
+ * @returns vrai si le profil chargé est bien celui demandé
+ * @throws ApiError si le profil ne peut pas être chargé (réseau…)
+ */
+async function actAs(username: string): Promise<boolean> {
+    const previous = demoAccount.value;
+    const signedInAs = keycloak.tokenParsed?.preferred_username as string | undefined;
+    saveDemoAccount(username === signedInAs ? null : username);
+    try {
+        const profile = await authServices.me();
+        if (profile.username !== username) {
+            saveDemoAccount(previous);
+            return false;
+        }
+        currentUser.value = profile;
+        return true;
+    } catch (error) {
+        saveDemoAccount(previous);
+        throw error;
+    }
+}
+
+/**
  * Ouvre la page de connexion de Keycloak (la page de l'application est quittée).
  * Après un compte refusé, Keycloak redemande l'identifiant au lieu de reprendre le même compte.
  * @param redirectPath page de l'application où revenir une fois connecté (ex. '/materiel')
@@ -112,6 +169,7 @@ function restoreSession(): Promise<void> {
  */
 async function login(redirectPath: string, username?: string): Promise<void> {
     await restoreSession();
+    saveDemoAccount(null);
     const forceLogin = username !== undefined || accountRefused.value;
     await keycloak.login({
         redirectUri: appUrl(redirectPath),
@@ -126,6 +184,7 @@ async function login(redirectPath: string, username?: string): Promise<void> {
  */
 async function logout(redirectPath: string): Promise<void> {
     clearSession();
+    saveDemoAccount(null);
     await keycloak.logout({redirectUri: appUrl(redirectPath)});
 }
 
@@ -161,6 +220,7 @@ configureHttpClient({
         clearSession();
         sessionExpiredHandler();
     },
+    getDemoAccount: () => demoAccount.value,
 });
 
 /**
@@ -170,6 +230,6 @@ configureHttpClient({
 export function useAuth() {
     return {
         currentUser, isAuthenticated, ssoUnavailable, accountRefused,
-        login, logout, restoreSession, hasRole, onSessionExpired,
+        login, logout, restoreSession, hasRole, onSessionExpired, actAs,
     };
 }

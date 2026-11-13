@@ -47,6 +47,16 @@ spring:
 # issuer-uri : adresse de Keycloak vue par le navigateur, comparée au champ « iss » des jetons.
 # jwk-set-uri : où le backend lit les clés publiques (réseau Docker : http://keycloak:8080/auth, voir .env).
 # -------------------------------------------------------------
+# -------------------------------------------------------------
+# OUTIL DE DÉMONSTRATION : un administrateur peut tester avec le rôle d'un compte de démonstration
+# (en-tête X-Demo-Account, voir KeycloakJwtConverter) sans se déconnecter de Keycloak.
+# Pour une vraie mise en production : DEMO_ACCOUNTS=false (comme VITE_DEMO_ACCOUNTS côté front).
+# -------------------------------------------------------------
+app:
+  demo:
+    enabled: ${DEMO_ACCOUNTS:true}
+    accounts: admin,manager,user
+
 keycloak:
   url: ${KEYCLOAK_URL:https://localhost/auth}
   realm: gestion-parc
