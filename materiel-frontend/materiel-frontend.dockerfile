@@ -15,8 +15,8 @@ ENV http_proxy=${HTTP_PROXY} \
     no_proxy=${NO_PROXY} \
     NO_PROXY=${NO_PROXY}
 
-# Copy dependency definition files
-COPY package*.json ./
+# Copy dependency definition files and DSFR license configuration (required by @gouvfr/dsfr preinstall)
+COPY package*.json .dsfr.yml* ./
 
 # Configure npm proxy dynamically if provided and install dependencies
 RUN if [ -n "$HTTP_PROXY" ]; then \
