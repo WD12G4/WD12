@@ -30,6 +30,7 @@ public class Program
         Console.WriteLine($"Session active  : {sessionUser}");
         Console.WriteLine($"UC Serial Number: {cfg.SerialNumber}");
         Console.WriteLine($"Serveur cible   : {cfg.ServerUrl}");
+        Console.WriteLine($"SSL auto-signé  : {(cfg.AllowSelfSignedCert ? "Autorisé" : "Strict")}");
         Console.WriteLine("==========================================================");
 
         using var cts = new CancellationTokenSource();
@@ -45,6 +46,11 @@ public class Program
             Console.WriteLine($"Tentative de connexion à {cfg.ServerUrl}...");
 
             using var ws = new ClientWebSocket();
+            if (cfg.AllowSelfSignedCert)
+            {
+                ws.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+            }
+
             try
             {
                 await ws.ConnectAsync(new Uri(cfg.ServerUrl), cts.Token);

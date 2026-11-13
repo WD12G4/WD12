@@ -17,6 +17,9 @@ public class Config
     [JsonPropertyName("reconnect_delay_sec")]
     public int ReconnectDelaySec { get; set; } = 5;
 
+    [JsonPropertyName("allow_self_signed_cert")]
+    public bool AllowSelfSignedCert { get; set; } = true;
+
     public TimeSpan ReconnectDelay => TimeSpan.FromSeconds(ReconnectDelaySec > 0 ? ReconnectDelaySec : 5);
 
     public static Config Load(string[] args)
@@ -44,6 +47,14 @@ public class Config
             {
                 if (int.TryParse(args[++i], out int sec)) config.ReconnectDelaySec = sec;
             }
+            else if (arg == "--insecure" || arg == "--allow-self-signed")
+            {
+                config.AllowSelfSignedCert = true;
+            }
+            else if (arg == "--strict-ssl")
+            {
+                config.AllowSelfSignedCert = false;
+            }
         }
 
         // 1. Lecture du fichier config.json si présent
@@ -70,6 +81,7 @@ public class Config
                     if (!string.IsNullOrWhiteSpace(loaded.ServerUrl)) config.ServerUrl = loaded.ServerUrl;
                     if (!string.IsNullOrWhiteSpace(loaded.SerialNumber)) config.SerialNumber = loaded.SerialNumber;
                     if (loaded.ReconnectDelaySec > 0) config.ReconnectDelaySec = loaded.ReconnectDelaySec;
+                    config.AllowSelfSignedCert = loaded.AllowSelfSignedCert;
                 }
             }
             catch (Exception ex)
@@ -91,6 +103,12 @@ public class Config
             config.SerialNumber = envSerial;
         }
 
+        string? envInsecure = Environment.GetEnvironmentVariable("WD12_ALLOW_SELF_SIGNED_CERT");
+        if (!string.IsNullOrWhiteSpace(envInsecure) && bool.TryParse(envInsecure, out bool allowCert))
+        {
+            config.AllowSelfSignedCert = allowCert;
+        }
+
         // 3. Ré-application des flags explicites (priorité maximale)
         for (int i = 0; i < args.Length; i++)
         {
@@ -106,6 +124,14 @@ public class Config
             else if ((arg == "--reconnect" || arg == "-reconnect" || arg == "-r") && i + 1 < args.Length)
             {
                 if (int.TryParse(args[++i], out int sec)) config.ReconnectDelaySec = sec;
+            }
+            else if (arg == "--insecure" || arg == "--allow-self-signed")
+            {
+                config.AllowSelfSignedCert = true;
+            }
+            else if (arg == "--strict-ssl")
+            {
+                config.AllowSelfSignedCert = false;
             }
         }
 

@@ -55,7 +55,7 @@ services:
       - materiel_network
 
   # -------------------------------------------------------------
-  # 4. Frontend Vue 3 (Vite + Nginx) - Image pré-buildée CD
+  # 4. Frontend Vue 3 (Vite + Nginx HTTPS) - Image pré-buildée CD
   # -------------------------------------------------------------
   frontend:
     image: ${FRONTEND_IMAGE:-ghcr.io/wd12g4/wd12-frontend:latest}
@@ -65,11 +65,16 @@ services:
       - backend
     ports:
       - "${FRONTEND_PORT:-80}:80"
+      - "${FRONTEND_HTTPS_PORT:-443}:443"
+    volumes:
+      - certs_data:/etc/nginx/certs
     networks:
       - materiel_network
 
 volumes:
   postgres_data:
+    driver: local
+  certs_data:
     driver: local
 
 networks:

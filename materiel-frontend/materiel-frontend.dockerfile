@@ -29,12 +29,12 @@ RUN if [ -n "$HTTP_PROXY" ]; then \
 COPY . .
 RUN npm run build
 
-# 2. Production stage (Nginx)
+# 2. Production stage (Nginx + OpenSSL pour HTTPS)
 FROM nginx:alpine
 WORKDIR /usr/share/nginx/html
 
-# Remove default nginx static assets
-RUN rm -rf ./*
+# Install openssl for self-signed certificates generation and remove default static assets
+RUN apk add --no-cache openssl && rm -rf ./*
 
 # Copy built assets from builder stage
 COPY --from=builder /app/dist .
@@ -42,6 +42,11 @@ COPY --from=builder /app/dist .
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+# Copy entrypoint script for automatic SSL generation
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
+EXPOSE 80 443
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
