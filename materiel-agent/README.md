@@ -1,13 +1,13 @@
-# Agent de Supervision WD12 (.NET 8 C#)
+# Agent de Supervision WD12 (.NET 10 C#)
 
-L'agent client est une application console légère écrite en **C# (.NET 8)**, 100% multiplateforme (**Windows**, **Linux**, **macOS**).
+L'agent client est une application console légère écrite en **C# (.NET 10)**, 100% multiplateforme (**Windows**, **Linux**, **macOS**).
 Il est destiné à être installé et exécuté sur chaque poste étudiant (unité centrale - UC).
 
 ---
 
 ## 1. Multiplateforme (Windows, Linux, macOS)
 
-L'agent utilise uniquement des APIs standard `.NET 8` portables :
+L'agent utilise uniquement des APIs standard `.NET 10` portables :
 - **Réseau & WebSocket** : `System.Net.WebSockets.ClientWebSocket` et `System.Net.NetworkInformation` (détection multiplateforme de la vraie adresse MAC hors adaptateurs virtuels).
 - **Processus & Sécurité** : `System.Diagnostics.Process` :
   - **Windows** : filtrage des services/processus critiques (`explorer.exe`, `svchost.exe`, etc.).
@@ -38,7 +38,7 @@ Un fichier `config.json` peut être placé à côté du binaire :
 ## 3. Compilation et Publication
 
 ### Prérequis
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) installé sur votre machine.
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) installé sur votre machine.
 
 ### Compilation classique
 ```bash
@@ -47,7 +47,7 @@ dotnet build
 
 ### Publication en exécutable autonome sans dépendances (Self-Contained)
 
-Grâce à .NET 8, vous pouvez compiler depuis une seule machine vers n'importe quelle plateforme cible :
+Grâce à .NET 10, vous pouvez compiler depuis une seule machine vers n'importe quelle plateforme cible :
 
 #### 1. Windows x64 (fichier `.exe` unique) :
 ```bash

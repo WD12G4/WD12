@@ -22,7 +22,7 @@ public class Program
                     RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux" : "osx";
 
         Console.WriteLine("==========================================================");
-        Console.WriteLine("  Agent de Supervision WD12 (.NET 8 C#)");
+        Console.WriteLine("  Agent de Supervision WD12 (.NET 10 C#)");
         Console.WriteLine("==========================================================");
         Console.WriteLine($"Système         : {RuntimeInformation.OSDescription} ({RuntimeInformation.OSArchitecture})");
         Console.WriteLine($"Machine         : {hostname}");

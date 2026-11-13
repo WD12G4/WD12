@@ -53,10 +53,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Setup .NET 8 SDK
+      - name: Setup .NET 10 SDK
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Publish Self-Contained Binary (${{ matrix.rid }})
         run: |
@@ -114,7 +114,7 @@ jobs:
           tag_name: agent-latest
           name: "Agent de Supervision (Dernière version)"
           body: |
-            Dernière compilation automatique de l'agent de supervision multiplateforme WD12 (.NET 8).
+            Dernière compilation automatique de l'agent de supervision multiplateforme WD12 (.NET 10).
             
             Cette version est mise à jour à chaque push sur la branche.
             
