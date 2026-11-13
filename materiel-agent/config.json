@@ -1,6 +1,7 @@
 {
   "server_url": "wss://172.16.131.130/ws/agent",
   "serial_number": "000000001415",
+  "shared_secret": "wd12-supervision-secret-change-in-prod",
   "reconnect_delay_sec": 5,
   "allow_self_signed_cert": true
 }

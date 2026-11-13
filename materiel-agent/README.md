@@ -21,15 +21,17 @@ L'agent utilise uniquement des APIs standard `.NET 10` portables :
 Un fichier `config.json` peut être placé à côté du binaire :
 ```json
 {
-  "server_url": "ws://127.0.0.1:8080/ws/agent",
+  "server_url": "wss://127.0.0.1/ws/agent",
   "serial_number": "UC-DELL-001",
-  "reconnect_delay_sec": 5
+  "shared_secret": "wd12-supervision-secret-change-in-prod",
+  "reconnect_delay_sec": 5,
+  "allow_self_signed_cert": true
 }
 ```
 
 ### Priorité de prise en compte :
-1. Arguments en ligne de commande (`--server`, `--serial`, `--reconnect`, `--config`)
-2. Variables d'environnement (`WD12_SERVER_URL`, `WD12_SERIAL_NUMBER`)
+1. Arguments en ligne de commande (`--server`, `--serial`, `--secret`, `--reconnect`, `--config`)
+2. Variables d'environnement (`WD12_SERVER_URL`, `WD12_SERIAL_NUMBER`, `WD12_AGENT_SECRET`)
 3. Fichier `config.json`
 4. Valeurs par défaut (adresse MAC sans séparateurs comme numéro de série automatique)
 
@@ -80,9 +82,9 @@ dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=
 
 ```bash
 # Exemple Windows
-MaterielAgent.exe --server ws://192.168.1.50:8080/ws/agent --serial UC-DELL-001
+MaterielAgent.exe --server wss://192.168.1.50/ws/agent --serial UC-DELL-001 --secret mon-secret
 
 # Exemple Linux / macOS
 chmod +x MaterielAgent
-./MaterielAgent --server ws://192.168.1.50:8080/ws/agent --serial UC-DELL-001
+./MaterielAgent --server wss://192.168.1.50/ws/agent --serial UC-DELL-001 --secret mon-secret
 ```

@@ -2,6 +2,10 @@ package net.ent.etnc.websocket;
 
 import jakarta.json.*;
 import lombok.extern.slf4j.Slf4j;
+import net.ent.etnc.models.Material;
+import net.ent.etnc.models.enums.EMaterialType;
+import net.ent.etnc.repositories.MaterialRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -20,6 +24,8 @@ import java.util.concurrent.*;
 @Component
 public class AgentWebSocketHandler extends TextWebSocketHandler {
 
+    private final MaterialRepository materialRepository;
+
     /**
      * Sessions des agents connectés, indexées par numéro de série de l'UC.
      */
@@ -35,6 +41,11 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
      */
     private final Map<String, CompletableFuture<List<AgentProcessInfo>>> pendingProcessRequests = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<AgentKillResult>> pendingKillRequests = new ConcurrentHashMap<>();
+
+    @Autowired
+    public AgentWebSocketHandler(MaterialRepository materialRepository) {
+        this.materialRepository = materialRepository;
+    }
 
     /**
      * Agent connecté. os : système remonté par l'agent (« windows », « linux », « osx »), ou null.
@@ -120,12 +131,37 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
 
         if (serialNumber.isBlank()) {
             log.warn("Tentative d'enregistrement agent sans serialNumber [sessionId={}]", session.getId());
+            closeSessionQuietly(session, CloseStatus.POLICY_VIOLATION.withReason("serialNumber obligatoire"));
+            return;
+        }
+
+        // Vérification en base de données : l'UC doit exister, être non archivée et de type UC (Point C3)
+        Optional<Material> ucOpt = materialRepository.findBySerialNumber(serialNumber);
+        if (ucOpt.isEmpty() || ucOpt.get().isArchived()) {
+            log.warn("Enregistrement agent refusé : matériel non déclaré en base ou archivé [serialNumber={}, sessionId={}]",
+                    serialNumber, session.getId());
+            closeSessionQuietly(session, CloseStatus.POLICY_VIOLATION.withReason("Matériel inconnu ou archivé"));
+            return;
+        }
+
+        Material uc = ucOpt.get();
+        if (!EMaterialType.UC.equals(uc.getMaterialType())) {
+            log.warn("Enregistrement agent refusé : le matériel n'est pas une UC [serialNumber={}, type={}, sessionId={}]",
+                    serialNumber, uc.getMaterialType(), session.getId());
+            closeSessionQuietly(session, CloseStatus.POLICY_VIOLATION.withReason("Le matériel n'est pas une unité centrale (UC)"));
             return;
         }
 
         AgentConnection connection = new AgentConnection(serialNumber, hostname, macAddress, username, os, session, Instant.now());
-        connectedAgents.put(serialNumber, connection);
+        AgentConnection previous = connectedAgents.put(serialNumber, connection);
         sessionToSerialNumber.put(session.getId(), serialNumber);
+
+        // Si une ancienne session était active pour ce numéro de série, on la ferme proprement
+        if (previous != null && previous.session().isOpen() && !previous.session().getId().equals(session.getId())) {
+            log.info("Remplacement de session pour serialNumber={} [ancienneSession={}, nouvelleSession={}]",
+                    serialNumber, previous.session().getId(), session.getId());
+            closeSessionQuietly(previous.session(), CloseStatus.NORMAL.withReason("Nouvelle session connectée"));
+        }
 
         log.info("Agent enregistré avec succès [serialNumber={}, hostname={}, macAddress={}, username={}]",
                 serialNumber, hostname, macAddress, username);
@@ -194,8 +230,11 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         String serialNumber = sessionToSerialNumber.remove(session.getId());
         if (serialNumber != null) {
-            connectedAgents.remove(serialNumber);
-            log.info("Agent déconnecté [serialNumber={}, status={}]", serialNumber, status);
+            // Nettoyage ciblé par session : évite de supprimer une reconnexion survenue entre-temps (Point I4)
+            connectedAgents.computeIfPresent(serialNumber, (s, conn) ->
+                    conn.session().getId().equals(session.getId()) ? null : conn
+            );
+            log.info("Agent déconnecté [serialNumber={}, sessionId={}, status={}]", serialNumber, session.getId(), status);
         }
     }
 
@@ -265,6 +304,16 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
         } catch (Exception e) {
             pendingKillRequests.remove(requestId);
             return new AgentKillResult(false, pid, "", "Erreur de communication : " + e.getMessage());
+        }
+    }
+
+    private void closeSessionQuietly(WebSocketSession session, CloseStatus status) {
+        try {
+            if (session != null && session.isOpen()) {
+                session.close(status);
+            }
+        } catch (Exception e) {
+            log.debug("Erreur lors de la fermeture de la session WebSocket : {}", e.getMessage());
         }
     }
 }

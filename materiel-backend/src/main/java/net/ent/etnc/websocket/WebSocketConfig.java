@@ -14,15 +14,19 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 public class WebSocketConfig implements WebSocketConfigurer {
 
     private final AgentWebSocketHandler agentWebSocketHandler;
+    private final AgentHandshakeInterceptor agentHandshakeInterceptor;
 
     @Autowired
-    public WebSocketConfig(AgentWebSocketHandler agentWebSocketHandler) {
+    public WebSocketConfig(AgentWebSocketHandler agentWebSocketHandler,
+                           AgentHandshakeInterceptor agentHandshakeInterceptor) {
         this.agentWebSocketHandler = agentWebSocketHandler;
+        this.agentHandshakeInterceptor = agentHandshakeInterceptor;
     }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(agentWebSocketHandler, "/ws/agent")
+                .addInterceptors(agentHandshakeInterceptor)
                 .setAllowedOrigins("*");
     }
 }

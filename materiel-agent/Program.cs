@@ -30,6 +30,7 @@ public class Program
         Console.WriteLine($"Session active  : {sessionUser}");
         Console.WriteLine($"UC Serial Number: {cfg.SerialNumber}");
         Console.WriteLine($"Serveur cible   : {cfg.ServerUrl}");
+        Console.WriteLine($"Secret partagé  : {(string.IsNullOrWhiteSpace(cfg.SharedSecret) ? "NON DÉFINI" : "CONFIGURÉ")}");
         Console.WriteLine($"SSL auto-signé  : {(cfg.AllowSelfSignedCert ? "Autorisé" : "Strict")}");
         Console.WriteLine("==========================================================");
 
@@ -49,6 +50,10 @@ public class Program
             if (cfg.AllowSelfSignedCert)
             {
                 ws.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+            }
+            if (!string.IsNullOrWhiteSpace(cfg.SharedSecret))
+            {
+                ws.Options.SetRequestHeader("X-Agent-Secret", cfg.SharedSecret);
             }
 
             try

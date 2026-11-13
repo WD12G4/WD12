@@ -3,6 +3,10 @@
 **/build/
 !**/gradle/wrapper/gradle-wrapper.jar
 
+# .NET / C#
+**/bin/
+**/obj/
+
 # Environment files
 .env
 .env.local

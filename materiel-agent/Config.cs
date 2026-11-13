@@ -14,6 +14,9 @@ public class Config
     [JsonPropertyName("serial_number")]
     public string SerialNumber { get; set; } = string.Empty;
 
+    [JsonPropertyName("shared_secret")]
+    public string SharedSecret { get; set; } = "wd12-supervision-secret-change-in-prod";
+
     [JsonPropertyName("reconnect_delay_sec")]
     public int ReconnectDelaySec { get; set; } = 5;
 
@@ -42,6 +45,10 @@ public class Config
             else if ((arg == "--serial" || arg == "-serial") && i + 1 < args.Length)
             {
                 config.SerialNumber = args[++i];
+            }
+            else if ((arg == "--secret" || arg == "-secret" || arg == "-k") && i + 1 < args.Length)
+            {
+                config.SharedSecret = args[++i];
             }
             else if ((arg == "--reconnect" || arg == "-reconnect" || arg == "-r") && i + 1 < args.Length)
             {
@@ -80,6 +87,7 @@ public class Config
                 {
                     if (!string.IsNullOrWhiteSpace(loaded.ServerUrl)) config.ServerUrl = loaded.ServerUrl;
                     if (!string.IsNullOrWhiteSpace(loaded.SerialNumber)) config.SerialNumber = loaded.SerialNumber;
+                    if (!string.IsNullOrWhiteSpace(loaded.SharedSecret)) config.SharedSecret = loaded.SharedSecret;
                     if (loaded.ReconnectDelaySec > 0) config.ReconnectDelaySec = loaded.ReconnectDelaySec;
                     config.AllowSelfSignedCert = loaded.AllowSelfSignedCert;
                 }
@@ -103,6 +111,12 @@ public class Config
             config.SerialNumber = envSerial;
         }
 
+        string? envSecret = Environment.GetEnvironmentVariable("WD12_AGENT_SECRET");
+        if (!string.IsNullOrWhiteSpace(envSecret))
+        {
+            config.SharedSecret = envSecret;
+        }
+
         string? envInsecure = Environment.GetEnvironmentVariable("WD12_ALLOW_SELF_SIGNED_CERT");
         if (!string.IsNullOrWhiteSpace(envInsecure) && bool.TryParse(envInsecure, out bool allowCert))
         {
@@ -120,6 +134,10 @@ public class Config
             else if ((arg == "--serial" || arg == "-serial") && i + 1 < args.Length)
             {
                 config.SerialNumber = args[++i];
+            }
+            else if ((arg == "--secret" || arg == "-secret" || arg == "-k") && i + 1 < args.Length)
+            {
+                config.SharedSecret = args[++i];
             }
             else if ((arg == "--reconnect" || arg == "-reconnect" || arg == "-r") && i + 1 < args.Length)
             {

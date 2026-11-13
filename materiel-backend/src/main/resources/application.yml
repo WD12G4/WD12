@@ -56,6 +56,8 @@ app:
   demo:
     enabled: ${DEMO_ACCOUNTS:true}
     accounts: admin,manager,user
+  agent:
+    secret: ${AGENT_SECRET:wd12-supervision-secret-change-in-prod}
 
 keycloak:
   url: ${KEYCLOAK_URL:https://localhost/auth}

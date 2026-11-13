@@ -60,21 +60,8 @@ public class SupervisionServiceImpl implements SupervisionService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<WorkstationDto> findWorkstations(Long roomId) {
-        // Auto-découverte : pour chaque agent connecté via WebSocket, s'assurer qu'il a une fiche matériel en base
-        for (AgentWebSocketHandler.AgentConnection agent : agentWebSocketHandler.getAllConnectedAgents()) {
-            if (materialRepository.findBySerialNumber(agent.serialNumber()).isEmpty()) {
-                Material newUc = new Material();
-                newUc.setSerialNumber(agent.serialNumber());
-                newUc.setMaterialType(EMaterialType.UC);
-                newUc.setEndAvailabilityDate(LocalDate.now().plusYears(5));
-                newUc.setArchived(false);
-                materialRepository.save(newUc);
-                log.info("Nouveau matériel UC auto-découvert et enregistré en base [serialNumber={}]", agent.serialNumber());
-            }
-        }
-
         List<Material> ucs = (roomId != null)
                 ? materialRepository.findByRoomIdAndMaterialTypeAndArchivedFalse(roomId, EMaterialType.UC)
                 : materialRepository.findByMaterialTypeAndArchivedFalse(EMaterialType.UC);
@@ -173,43 +160,41 @@ public class SupervisionServiceImpl implements SupervisionService {
                     agentWebSocketHandler.fetchProcesses(uc.getSerialNumber(), 3);
 
             for (AgentWebSocketHandler.AgentProcessInfo proc : agentProcs) {
-                // 1. Enregistrement / mise à jour de l'application dans le catalogue avec son icône
+                // Enregistrement / découverte de l'application en base si nouvelle
                 Application app = applicationService.registerDiscoveredApplication(proc.name(), proc.icon());
 
-                // 2. Vérification de la liste noire : auto-kill côté serveur
+                // Auto-kill si l'application est sur liste noire
                 if (app != null && app.isBlacklisted()) {
-                    log.warn("Processus interdit détecté sur liste noire [PID={}, nom={}, UC={}] : exécution de l'auto-kill",
-                            proc.pid(), proc.name(), uc.getSerialNumber());
-                    try {
-                        AgentWebSocketHandler.AgentKillResult killRes =
-                                agentWebSocketHandler.executeKill(uc.getSerialNumber(), proc.pid(), 5);
+                    log.warn("Processus interdit détecté : {} (PID={}) sur poste {}. Déclenchement arrêt automatique...",
+                            proc.name(), proc.pid(), uc.getSerialNumber());
 
-                        KillEvent autoKillEvent = new KillEvent();
-                        autoKillEvent.setProcessName(proc.name());
-                        autoKillEvent.setUc(uc);
-                        autoKillEvent.setUser(resolveCurrentUserOrFallback());
-                        autoKillEvent.setKillDateTime(LocalDateTime.now());
-                        autoKillEvent.setResult(killRes.success());
-                        killEventService.create(autoKillEvent);
+                    AgentWebSocketHandler.AgentKillResult killRes =
+                            agentWebSocketHandler.executeKill(uc.getSerialNumber(), proc.pid(), 5);
+
+                    // Journalisation dans KillEvent
+                    try {
+                        User user = userService.currentUser();
+                        KillEvent killEvent = new KillEvent();
+                        killEvent.setUc(uc);
+                        killEvent.setProcessName(proc.name());
+                        killEvent.setKillDateTime(LocalDateTime.now());
+                        killEvent.setUser(user);
+                        killEvent.setResult(killRes.success());
+                        killEventService.create(killEvent);
                     } catch (Exception e) {
-                        log.error("Erreur lors de l'auto-kill ou de l'enregistrement de l'événement : {}", e.getMessage());
+                        log.error("Échec de l'enregistrement de l'événement KillEvent pour auto-kill : {}", e.getMessage());
                     }
 
-                    // On ne renvoie pas le processus arrêté dans la liste active
+                    // Ne pas renvoyer le processus au front puisqu'il a été arrêté
                     continue;
                 }
 
-                LocalDateTime startedAt = LocalDateTime.ofInstant(
-                    Instant.ofEpochMilli(proc.startedAt()),
-                    ZoneId.systemDefault()
-                );
-                String resolvedIcon = (app != null && app.getIconBase64() != null) ? app.getIconBase64() : proc.icon();
                 allProcesses.add(new ProcessInfoDto(
                         proc.pid(),
                         uc.getId(),
                         proc.name(),
-                        startedAt,
-                        resolvedIcon
+                        Instant.ofEpochMilli(proc.startedAt()).atZone(ZoneId.systemDefault()).toLocalDateTime(),
+                        proc.icon()
                 ));
             }
         }
@@ -218,53 +203,35 @@ public class SupervisionServiceImpl implements SupervisionService {
     }
 
     @Override
+    @Transactional
     public KillProcessResponse killProcess(KillProcessRequest request) {
         Material uc = materialRepository.findById(request.workstationId())
-                .orElseThrow(() -> new ResourceNotFoundException("Poste introuvable avec l'id : " + request.workstationId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Unité centrale non trouvée avec l'id : " + request.workstationId()));
 
         if (!EMaterialType.UC.equals(uc.getMaterialType())) {
-            throw new ServiceException("Le matériel sélectionné n'est pas une unité centrale.");
+            throw new ServiceException("Le matériel ciblé n'est pas une unité centrale (UC)");
         }
 
-        log.info("Demande d'arrêt du processus [PID={}, nom={}, UC={}]",
-                request.pid(), request.processName(), uc.getSerialNumber());
-
-        AgentWebSocketHandler.AgentKillResult result =
+        AgentWebSocketHandler.AgentKillResult killResult =
                 agentWebSocketHandler.executeKill(uc.getSerialNumber(), request.pid(), 5);
 
-        // Nom effectif du processus arrêté ou visé
-        String processName = (result.processName() != null && !result.processName().isBlank())
-                ? result.processName()
-                : request.processName();
-
-        // Enregistrement systématique du KillEvent en base de données (résultat réussi ou échoué)
         KillEvent killEvent = new KillEvent();
-        killEvent.setProcessName(processName);
         killEvent.setUc(uc);
-        killEvent.setUser(this.userService.currentUser());
+        killEvent.setProcessName(request.processName());
         killEvent.setKillDateTime(LocalDateTime.now());
-        killEvent.setResult(result.success());
+        killEvent.setUser(userService.currentUser());
+        killEvent.setResult(killResult.success());
 
-        KillEvent saved = killEventService.create(killEvent);
-        log.info("KillEvent enregistré avec succès [id={}, success={}]", saved.getId(), result.success());
+        KillEvent savedEvent = killEventService.create(killEvent);
 
-        if (!result.success()) {
-            String errorMsg = (result.error() != null && !result.error().isBlank())
-                    ? result.error()
-                    : "Impossible d'arrêter le processus sur le poste client";
-            log.warn("Échec de l'arrêt du processus sur l'agent : {}", errorMsg);
-            return new KillProcessResponse(false, errorMsg, saved.getId());
+        if (!killResult.success()) {
+            return new KillProcessResponse(
+                    false,
+                    killResult.error() != null ? killResult.error() : "L'agent n'a pas pu arrêter le processus",
+                    savedEvent.getId()
+            );
         }
 
-        return new KillProcessResponse(true, "Processus arrêté avec succès", saved.getId());
-    }
-
-    private User resolveCurrentUserOrFallback() {
-        try {
-            return userService.currentUser();
-        } catch (Exception e) {
-            log.debug("Aucun utilisateur dans le contexte de sécurité, utilisation d'un fallback : {}", e.getMessage());
-            return userService.findByUsername("admin").orElse(null);
-        }
+        return new KillProcessResponse(true, "Processus arrêté avec succès", savedEvent.getId());
     }
 }
