@@ -117,6 +117,32 @@ class ApplicationServiceImplTest {
         }
 
         @Test
+        @DisplayName("Doit refuser de blacklister les processus protégés de l'agent (smartscreen, materielagent)")
+        void toggleBlacklist_ThrowsException_WhenAgentProtectedProcesses() {
+            Application smartscreen = new Application();
+            smartscreen.setId(3L);
+            smartscreen.setName("smartscreen.exe");
+            smartscreen.setBlacklisted(false);
+
+            when(repository.findById(3L)).thenReturn(Optional.of(smartscreen));
+
+            assertThatThrownBy(() -> applicationService.toggleBlacklist(3L, true))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("Impossible d'interdire un composant système protégé");
+
+            Application agent = new Application();
+            agent.setId(4L);
+            agent.setName("materielagent.exe");
+            agent.setBlacklisted(false);
+
+            when(repository.findById(4L)).thenReturn(Optional.of(agent));
+
+            assertThatThrownBy(() -> applicationService.toggleBlacklist(4L, true))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("Impossible d'interdire un composant système protégé");
+        }
+
+        @Test
         @DisplayName("Doit lever ResourceNotFoundException si l'application n'existe pas")
         void toggleBlacklist_ThrowsNotFound_WhenAppNotFound() {
             when(repository.findById(99L)).thenReturn(Optional.empty());
@@ -143,20 +169,23 @@ class ApplicationServiceImplTest {
             assertThat(created.getDisplayName()).isEqualTo("Discord");
             assertThat(created.getIconBase64()).isEqualTo("data:image/png;base64,DISCORD");
             assertThat(created.isBlacklisted()).isFalse();
-            verify(repository).saveAndFlush(any(Application.class));
         }
 
         @Test
-        @DisplayName("Doit enrichir l'icône si l'application existante n'en avait pas")
+        @DisplayName("Doit mettre à jour l'icône si elle était absente")
         void registerDiscoveredApplication_WhenExistingWithoutIcon_UpdatesIcon() {
-            sampleApp.setIconBase64(null);
-            when(repository.findByNameIgnoreCase("steam.exe")).thenReturn(Optional.of(sampleApp));
-            when(repository.saveAndFlush(sampleApp)).thenReturn(sampleApp);
+            Application existingWithoutIcon = new Application();
+            existingWithoutIcon.setId(10L);
+            existingWithoutIcon.setName("slack.exe");
+            existingWithoutIcon.setIconBase64(null);
 
-            Application result = applicationService.registerDiscoveredApplication("steam.exe", "data:image/png;base64,NEW_ICON");
+            when(repository.findByNameIgnoreCase("slack.exe")).thenReturn(Optional.of(existingWithoutIcon));
+            when(repository.saveAndFlush(any(Application.class))).thenReturn(existingWithoutIcon);
 
-            assertThat(result.getIconBase64()).isEqualTo("data:image/png;base64,NEW_ICON");
-            verify(repository).saveAndFlush(sampleApp);
+            Application result = applicationService.registerDiscoveredApplication("slack.exe", "data:image/png;base64,SLACK_NEW");
+
+            assertThat(result.getIconBase64()).isEqualTo("data:image/png;base64,SLACK_NEW");
+            verify(repository).saveAndFlush(existingWithoutIcon);
         }
 
         @Test

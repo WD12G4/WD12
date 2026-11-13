@@ -22,7 +22,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -99,6 +101,16 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("Doit lever ServiceException si l'entité est null")
+        void create_ThrowsException_WhenEntityNull() {
+            assertThatThrownBy(() -> userService.create(null))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("L'utilisateur ne peut pas être null");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @Test
         @DisplayName("Doit lever ServiceException si le nom d'utilisateur existe déjà")
         void create_ThrowsException_WhenUsernameAlreadyExists() {
             when(repository.existsByUsername("testuser")).thenReturn(true);
@@ -119,6 +131,7 @@ class UserServiceImplTest {
         @DisplayName("Doit mettre à jour l'utilisateur avec succès")
         void update_Success() {
             when(repository.existsById(1L)).thenReturn(true);
+            when(repository.findById(1L)).thenReturn(Optional.of(sampleUser));
             when(repository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             User updated = userService.update(sampleUser);
@@ -150,6 +163,162 @@ class UserServiceImplTest {
 
             verify(repository, never()).saveAndFlush(any());
         }
+
+        @Test
+        @DisplayName("Doit lever ServiceException si l'entité est null")
+        void update_WhenEntityNull_ThrowsException() {
+            assertThatThrownBy(() -> userService.update(null))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("L'utilisateur ne peut pas être null");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @Test
+        @DisplayName("Doit lever ServiceException si le nouveau nom d'utilisateur est déjà pris par un autre compte")
+        void update_WhenUsernameTakenByOtherUser_ThrowsException() {
+            when(repository.existsById(1L)).thenReturn(true);
+            when(repository.findById(1L)).thenReturn(Optional.of(sampleUser));
+
+            User otherUser = new User();
+            otherUser.setId(2L);
+            otherUser.setUsername("testuser");
+
+            when(repository.findByUsername("testuser")).thenReturn(Optional.of(otherUser));
+
+            assertThatThrownBy(() -> userService.update(sampleUser))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("Le nom d'utilisateur est déjà utilisé");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @Test
+        @DisplayName("Doit lever ServiceException si on tente de désactiver le dernier administrateur actif")
+        void update_WhenDeactivatingLastAdmin_ThrowsException() {
+            User admin = new User();
+            admin.setId(1L);
+            admin.setUsername("admin");
+            admin.setRole(ERole.ADMIN);
+            admin.setEnabled(true);
+
+            when(repository.existsById(1L)).thenReturn(true);
+            when(repository.findById(1L)).thenReturn(Optional.of(admin));
+            when(repository.countByRoleAndEnabledTrue(ERole.ADMIN)).thenReturn(1L);
+
+            User updatePayload = new User();
+            updatePayload.setId(1L);
+            updatePayload.setUsername("admin");
+            updatePayload.setRole(ERole.ADMIN);
+            updatePayload.setEnabled(false);
+
+            assertThatThrownBy(() -> userService.update(updatePayload))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("Impossible de désactiver ou rétrograder le dernier administrateur actif");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @Test
+        @DisplayName("Doit lever ServiceException si on tente de rétrograder le dernier administrateur actif")
+        void update_WhenDemotingLastAdmin_ThrowsException() {
+            User admin = new User();
+            admin.setId(1L);
+            admin.setUsername("admin");
+            admin.setRole(ERole.ADMIN);
+            admin.setEnabled(true);
+
+            when(repository.existsById(1L)).thenReturn(true);
+            when(repository.findById(1L)).thenReturn(Optional.of(admin));
+            when(repository.countByRoleAndEnabledTrue(ERole.ADMIN)).thenReturn(1L);
+
+            User updatePayload = new User();
+            updatePayload.setId(1L);
+            updatePayload.setUsername("admin");
+            updatePayload.setRole(ERole.USER);
+            updatePayload.setEnabled(true);
+
+            assertThatThrownBy(() -> userService.update(updatePayload))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("Impossible de désactiver ou rétrograder le dernier administrateur actif");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @Test
+        @DisplayName("Doit autoriser la désactivation ou rétrogradation d'un administrateur s'il en reste un autre actif")
+        void update_WhenOtherAdminsExist_AllowsDemotion() {
+            User admin = new User();
+            admin.setId(1L);
+            admin.setUsername("admin");
+            admin.setRole(ERole.ADMIN);
+            admin.setEnabled(true);
+
+            when(repository.existsById(1L)).thenReturn(true);
+            when(repository.findById(1L)).thenReturn(Optional.of(admin));
+            when(repository.countByRoleAndEnabledTrue(ERole.ADMIN)).thenReturn(2L);
+            when(repository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+            User updatePayload = new User();
+            updatePayload.setId(1L);
+            updatePayload.setUsername("admin");
+            updatePayload.setRole(ERole.USER);
+            updatePayload.setEnabled(true);
+
+            User updated = userService.update(updatePayload);
+
+            assertThat(updated).isNotNull();
+            assertThat(updated.getRole()).isEqualTo(ERole.USER);
+            verify(repository).saveAndFlush(updatePayload);
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests de suppression douce (deleteById)")
+    class DeleteByIdTests {
+
+        @Test
+        @DisplayName("Doit désactiver (soft delete) l'utilisateur")
+        void deleteById_SoftDeletesUser() {
+            when(repository.findById(1L)).thenReturn(Optional.of(sampleUser));
+            when(repository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+            userService.deleteById(1L);
+
+            assertThat(sampleUser.isEnabled()).isFalse();
+            verify(repository).saveAndFlush(sampleUser);
+        }
+
+        @Test
+        @DisplayName("Doit lever ResourceNotFoundException si l'utilisateur à supprimer n'existe pas")
+        void deleteById_WhenNotFound_ThrowsException() {
+            when(repository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.deleteById(999L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Utilisateur introuvable");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
+
+        @Test
+        @DisplayName("Doit refuser de supprimer/désactiver le dernier administrateur actif")
+        void deleteById_WhenLastAdmin_ThrowsException() {
+            User admin = new User();
+            admin.setId(1L);
+            admin.setUsername("admin");
+            admin.setRole(ERole.ADMIN);
+            admin.setEnabled(true);
+
+            when(repository.findById(1L)).thenReturn(Optional.of(admin));
+            when(repository.countByRoleAndEnabledTrue(ERole.ADMIN)).thenReturn(1L);
+
+            assertThatThrownBy(() -> userService.deleteById(1L))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("Impossible de supprimer ou désactiver le dernier administrateur actif");
+
+            verify(repository, never()).saveAndFlush(any());
+        }
     }
 
     @Nested
@@ -174,6 +343,13 @@ class UserServiceImplTest {
             Optional<User> found = userService.findByUsername("unknown");
 
             assertThat(found).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Doit retourner Optional.empty() si le username est null ou vide")
+        void findByUsername_NullOrBlank_ReturnsEmpty() {
+            assertThat(userService.findByUsername(null)).isEmpty();
+            assertThat(userService.findByUsername("   ")).isEmpty();
         }
     }
 
@@ -222,6 +398,30 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("Doit renvoyer l'utilisateur connecté quand le principal est un Jwt")
+        void currentUser_PrincipalIsJwt_ReturnsUser() {
+            Jwt jwt = Jwt.withTokenValue("mock-token")
+                    .header("alg", "none")
+                    .claim("preferred_username", "testuser")
+                    .issuedAt(Instant.now())
+                    .expiresAt(Instant.now().plusSeconds(3600))
+                    .build();
+
+            Authentication auth = new UsernamePasswordAuthenticationToken(
+                    jwt, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(auth);
+            SecurityContextHolder.setContext(context);
+
+            when(repository.findByUsername("testuser")).thenReturn(Optional.of(sampleUser));
+
+            User result = userService.currentUser();
+
+            assertThat(result).isNotNull();
+            assertThat(result.getUsername()).isEqualTo("testuser");
+        }
+
+        @Test
         @DisplayName("Doit renvoyer l'utilisateur connecté quand le principal est une simple chaîne de caractères")
         void currentUser_PrincipalIsString_ReturnsUser() {
             Authentication auth = new UsernamePasswordAuthenticationToken(
@@ -250,6 +450,22 @@ class UserServiceImplTest {
             assertThatThrownBy(() -> userService.currentUser())
                     .isInstanceOf(AccessDeniedException.class)
                     .hasMessageContaining("Type de principal non supporté");
+        }
+
+        @Test
+        @DisplayName("Doit lever AccessDeniedException si le principal est null")
+        void currentUser_NullPrincipal_ThrowsAccessDenied() {
+            Authentication auth = mock(Authentication.class);
+            when(auth.isAuthenticated()).thenReturn(true);
+            when(auth.getPrincipal()).thenReturn(null);
+
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(auth);
+            SecurityContextHolder.setContext(context);
+
+            assertThatThrownBy(() -> userService.currentUser())
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessageContaining("Principal non renseigné");
         }
 
         @Test

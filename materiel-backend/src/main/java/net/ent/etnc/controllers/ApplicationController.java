@@ -26,7 +26,7 @@ public class ApplicationController {
     private final ApplicationDtoAssembler applicationAssembler;
 
     @Autowired
-    public ApplicationController(ApplicationService applicationService, ApplicationDtoAssembler applicationAssembler) {
+    public ApplicationController(final ApplicationService applicationService, final ApplicationDtoAssembler applicationAssembler) {
         this.applicationService = applicationService;
         this.applicationAssembler = applicationAssembler;
     }
@@ -36,8 +36,8 @@ public class ApplicationController {
      */
     @GetMapping
     public Page<ApplicationResponse> getAll(
-            @RequestParam(required = false) Boolean blacklisted,
-            @PageableDefault(size = 20, sort = "name") Pageable pageable
+            @RequestParam(required = false) final Boolean blacklisted,
+            @PageableDefault(size = 20, sort = "name") final Pageable pageable
     ) {
         return applicationService.findAll(pageable, blacklisted)
                 .map(applicationAssembler::toDto);
@@ -47,7 +47,7 @@ public class ApplicationController {
      * Recherche une application par son identifiant.
      */
     @GetMapping("/{id}")
-    public ApplicationResponse getById(@PathVariable Long id) {
+    public ApplicationResponse getById(@PathVariable final Long id) {
         return applicationService.findById(id)
                 .map(applicationAssembler::toDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Application introuvable avec l'id : " + id));
@@ -58,7 +58,7 @@ public class ApplicationController {
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApplicationResponse create(@Valid @RequestBody ApplicationRequest request) {
+    public ApplicationResponse create(@Valid @RequestBody final ApplicationRequest request) {
         Application app = applicationAssembler.toEntity(request);
         Application created = applicationService.create(app);
         return applicationAssembler.toDto(created);
@@ -68,7 +68,7 @@ public class ApplicationController {
      * Met à jour une application existante.
      */
     @PutMapping("/{id}")
-    public ApplicationResponse update(@PathVariable Long id, @Valid @RequestBody ApplicationRequest request) {
+    public ApplicationResponse update(@PathVariable final Long id, @Valid @RequestBody final ApplicationRequest request) {
         Application app = applicationService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Application introuvable avec l'id : " + id));
         applicationAssembler.updateEntity(app, request);
@@ -81,8 +81,8 @@ public class ApplicationController {
      */
     @PatchMapping("/{id}/blacklist")
     public ApplicationResponse toggleBlacklist(
-            @PathVariable Long id,
-            @Valid @RequestBody ApplicationBlacklistRequest request
+            @PathVariable final Long id,
+            @Valid @RequestBody final ApplicationBlacklistRequest request
     ) {
         Application updated = applicationService.toggleBlacklist(id, request.blacklisted());
         return applicationAssembler.toDto(updated);
@@ -93,7 +93,7 @@ public class ApplicationController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable final Long id) {
         applicationService.deleteById(id);
     }
 }

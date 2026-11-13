@@ -12,7 +12,7 @@ public interface UserService extends Service<User, Long> {
     /**
      * Finds an account by login username.
      */
-    Optional<User> findByUsername(String username);
+    Optional<User> findByUsername(final String username);
 
     /**
      * Returns the authenticated user from the Spring Security context.
