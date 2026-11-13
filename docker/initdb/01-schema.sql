@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS materials (
     version BIGINT NOT NULL DEFAULT 0,
     serial_number VARCHAR(100) NOT NULL,
     material_type VARCHAR(30) NOT NULL,
-    end_availability_date DATE NOT NULL,
+    end_availability_date DATE,
     room_id BIGINT,
     archived BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT uk__material__serial_number UNIQUE (serial_number),

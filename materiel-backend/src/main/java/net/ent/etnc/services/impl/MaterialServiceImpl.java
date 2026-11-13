@@ -75,7 +75,7 @@ public class MaterialServiceImpl extends AbstractService<Material, MaterialRepos
 
         if (roomId != null) {
             Room room = roomRepository.findById(roomId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Salle introuvable avec l'id : " + roomId));
+                .orElseThrow(() -> new ResourceNotFoundException("Salle introuvable avec l'id : " + roomId));
             material.setRoom(room);
         } else {
             material.setRoom(null);
@@ -120,7 +120,9 @@ public class MaterialServiceImpl extends AbstractService<Material, MaterialRepos
             log.warn("Validation rejetée : type de matériel manquant.");
             throw new ServiceException("Le type de matériel doit être renseigné.");
         }
-        if (material.getEndAvailabilityDate().isBefore(LocalDate.now()) && !material.isArchived()) {
+        if (material.getEndAvailabilityDate() != null
+                && material.getEndAvailabilityDate().isBefore(LocalDate.now())
+                && !material.isArchived()) {
             log.warn("Validation rejetée : date de fin de disponibilité ({}) antérieure au jour en cours pour un matériel non archivé.",
                     material.getEndAvailabilityDate());
             throw new ServiceException("La date de disponibilité ne peut pas être avant le jour en cours si le matériel n'est pas archivé (soft delete).");

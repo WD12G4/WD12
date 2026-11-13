@@ -98,6 +98,18 @@ class MaterialDtoAssemblerTest {
             assertThat(response).isNotNull();
             assertThat(response.room()).isNull();
         }
+
+        @Test
+        @DisplayName("Doit gérer un matériel sans date de fin de disponibilité")
+        void toDto_WhenEndAvailabilityDateIsNull_ReturnsMaterialWithNullDate() {
+            sampleMaterial.setEndAvailabilityDate(null);
+            when(roomAssembler.toDto(sampleRoom)).thenReturn(sampleRoomResponse);
+
+            MaterialResponse response = materialAssembler.toDto(sampleMaterial);
+
+            assertThat(response).isNotNull();
+            assertThat(response.endAvailabilityDate()).isNull();
+        }
     }
 
     @Nested
@@ -139,6 +151,17 @@ class MaterialDtoAssemblerTest {
             assertThat(entity).isNotNull();
             assertThat(entity.getRoom()).isNull();
             assertThat(entity.isArchived()).isTrue();
+        }
+
+        @Test
+        @DisplayName("Doit convertir la requête sans date de fin de disponibilité en entité avec date null")
+        void toEntity_WithNullDate_Success() {
+            MaterialRequest request = new MaterialRequest("SN-8888", EMaterialType.PERIPHERAL, null, null, false);
+
+            Material entity = materialAssembler.toEntity(request);
+
+            assertThat(entity).isNotNull();
+            assertThat(entity.getEndAvailabilityDate()).isNull();
         }
 
         @Test
@@ -185,6 +208,16 @@ class MaterialDtoAssemblerTest {
             materialAssembler.updateEntity(sampleMaterial, request);
 
             assertThat(sampleMaterial.getRoom()).isNull();
+        }
+
+        @Test
+        @DisplayName("Doit mettre à jour la date de fin de disponibilité à null si spécifiée à null")
+        void updateEntity_WithNullDate_SetsNullDate() {
+            MaterialRequest request = new MaterialRequest("SN-UPDATED", EMaterialType.PROJECTOR, null, null, false);
+
+            materialAssembler.updateEntity(sampleMaterial, request);
+
+            assertThat(sampleMaterial.getEndAvailabilityDate()).isNull();
         }
 
         @Test

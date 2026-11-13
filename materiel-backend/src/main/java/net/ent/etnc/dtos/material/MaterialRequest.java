@@ -16,7 +16,6 @@ public record MaterialRequest(
         String serialNumber,
         @NotNull(message = "Le type de matériel doit être renseigné")
         EMaterialType materialType,
-        @NotNull(message = "La date de fin de disponibilité doit être renseignée")
         LocalDate endAvailabilityDate,
         Long roomId,
         boolean archived

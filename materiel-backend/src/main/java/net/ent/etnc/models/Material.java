@@ -38,10 +38,12 @@ public class Material extends AbstractPersistableWithIdSetter<Long> {
     @Column(name = "material_type", nullable = false, length = 30)
     private EMaterialType materialType;
 
+    /**
+     * Date de fin pas obligatoire.
+     */
     @Getter
     @Setter
-    @NotNull(message = "La date de fin de disponibilité doit être renseignée")
-    @Column(name = "end_availability_date", nullable = false)
+    @Column(name = "end_availability_date")
     private LocalDate endAvailabilityDate;
 
     @Getter

@@ -67,6 +67,20 @@ class MaterialServiceImplTest {
         }
 
         @Test
+        @DisplayName("Doit créer le matériel avec succès quand la date de fin de disponibilité est null")
+        void create_Success_WhenEndAvailabilityDateNull() {
+            sampleMaterial.setEndAvailabilityDate(null);
+            when(repository.existsBySerialNumber("SN-12345")).thenReturn(false);
+            when(repository.saveAndFlush(any(Material.class))).thenReturn(sampleMaterial);
+
+            Material created = materialService.create(sampleMaterial);
+
+            assertThat(created).isNotNull();
+            assertThat(created.getEndAvailabilityDate()).isNull();
+            verify(repository).saveAndFlush(sampleMaterial);
+        }
+
+        @Test
         @DisplayName("Doit échouer si le numéro de série existe déjà")
         void create_ThrowsException_WhenSerialNumberExists() {
             when(repository.existsBySerialNumber("SN-12345")).thenReturn(true);
@@ -266,6 +280,20 @@ class MaterialServiceImplTest {
             Material updated = materialService.update(sampleMaterial);
 
             assertThat(updated).isNotNull();
+            verify(repository).saveAndFlush(sampleMaterial);
+        }
+
+        @Test
+        @DisplayName("Doit mettre à jour le matériel avec succès quand la date de fin de disponibilité est null")
+        void update_Success_WhenEndAvailabilityDateNull() {
+            sampleMaterial.setEndAvailabilityDate(null);
+            when(repository.existsById(1L)).thenReturn(true);
+            when(repository.saveAndFlush(any(Material.class))).thenReturn(sampleMaterial);
+
+            Material updated = materialService.update(sampleMaterial);
+
+            assertThat(updated).isNotNull();
+            assertThat(updated.getEndAvailabilityDate()).isNull();
             verify(repository).saveAndFlush(sampleMaterial);
         }
 

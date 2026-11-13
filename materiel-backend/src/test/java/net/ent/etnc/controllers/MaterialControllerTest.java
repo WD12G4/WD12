@@ -147,6 +147,28 @@ class MaterialControllerTest {
         }
 
         @Test
+        @DisplayName("Doit créer le matériel sans date de fin de disponibilité et retourner 201 Created")
+        void create_WithoutEndAvailabilityDate_Returns201Created() throws Exception {
+            String payload = """
+                    {
+                        "serialNumber": "SN-12345",
+                        "materialType": "UC",
+                        "archived": false
+                    }
+                    """;
+
+            when(materialAssembler.toEntity(any(MaterialRequest.class))).thenReturn(sampleMaterial);
+            when(materialService.create(any(Material.class))).thenReturn(sampleMaterial);
+            when(materialAssembler.toDto(sampleMaterial)).thenReturn(sampleResponse);
+
+            mockMvc.perform(post("/api/v1/materials")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(payload))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.serialNumber").value("SN-12345"));
+        }
+
+        @Test
         @DisplayName("Doit renvoyer 400 Bad Request si le numéro de série est vide")
         void create_BlankSerialNumber_Returns400() throws Exception {
             String payload = """
