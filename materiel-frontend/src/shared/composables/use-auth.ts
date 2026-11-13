@@ -88,6 +88,9 @@ function restoreSession(): Promise<void> {
         const authenticated = await keycloak.init({
             onLoad: 'check-sso',
             checkLoginIframe: false,
+            // Adresse de retour sans fragment : par défaut, keycloak-js reprend l'adresse de la page, qui peut
+            // garder le #state=…&code=… d'un retour précédent (Keycloak refuse alors l'échange du code).
+            redirectUri: appUrl(window.location.pathname + window.location.search),
         }).catch((error: unknown) => {
             // Raison visible dans la console du navigateur (adresse de Keycloak, réseau, configuration…).
             console.error('[Keycloak] Initialisation impossible :', error);
