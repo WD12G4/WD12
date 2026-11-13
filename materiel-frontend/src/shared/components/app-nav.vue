@@ -18,6 +18,8 @@ import type {NavLink} from '../composables/use-nav-links.ts';
 import {useNavIndicator} from '../composables/use-nav-indicator.ts';
 import {useTeachingRoom} from '../composables/use-teaching-room.ts';
 import AppIcon from './app-icon.vue';
+import BrandMark from './brand-mark.vue';
+import BrandWordmark from './brand-wordmark.vue';
 import Link from './Link.vue';
 import TeachingRoomSwitch from './teaching-room-switch.vue';
 import ThemeSwitch from './theme-switch.vue';
@@ -67,8 +69,8 @@ function linkClass(link: NavLink): Record<string, boolean> {
     <!-- Marque (thème DSFR : bloc-marque de l'État, affiché par style.css) -->
     <div class="brand">
       <p class="fr-logo brand-marque">République<br>Française</p>
-      <span class="brand-logo" aria-hidden="true">B</span>
-      <span class="brand-name">BASTION</span>
+      <BrandMark class="brand-logo" />
+      <BrandWordmark class="brand-name" />
     </div>
 
     <!-- Liens (la pastille ne sert que dans la barre du haut) -->

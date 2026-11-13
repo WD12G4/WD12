@@ -15,6 +15,7 @@ import {useLocations} from '../../../shared/composables/use-locations.ts';
 import {byBuildingThenNumber} from '../../../shared/composables/use-room-label.ts';
 import {TEACHING_ROOM_QUERY, useTeachingRoom} from '../../../shared/composables/use-teaching-room.ts';
 import {navigateAfterLogin, navigateTo} from '../../../router/navigation.ts';
+import BrandMark from '../../../shared/components/brand-mark.vue';
 import LoadState from '../../../shared/components/load-state.vue';
 
 /** Salles d'un même bâtiment. */
@@ -74,7 +75,7 @@ onMounted(load);
 <template>
   <div class="room-choice">
     <div class="login-brand">
-      <span class="brand-logo" aria-hidden="true">B</span>
+      <BrandMark class="brand-logo" />
       <h1>{{ greeting }}</h1>
       <p>Dans quelle salle faites-vous cours ?</p>
     </div>

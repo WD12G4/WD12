@@ -11,6 +11,8 @@
 import {computed} from 'vue';
 import {useRoute} from 'vue-router';
 import type {RouteTarget} from '../../../router/route-types.ts';
+import BrandMark from '../../../shared/components/brand-mark.vue';
+import BrandWordmark from '../../../shared/components/brand-wordmark.vue';
 import Card from '../../../shared/components/card.vue';
 import Link from '../../../shared/components/Link.vue';
 import mindefConnectLogo from '../../../assets/mindef-connect-logo.png';
@@ -32,8 +34,8 @@ const ssoTarget = computed<RouteTarget>(() => {
 <template>
   <!-- Marque -->
   <div class="login-brand">
-    <span class="brand-logo" aria-hidden="true">B</span>
-    <h1>BASTION</h1>
+    <BrandMark class="brand-logo" />
+    <h1><BrandWordmark class="login-wordmark" /></h1>
     <p>Le matériel informatique et les salles de l'école, au même endroit.</p>
   </div>
 

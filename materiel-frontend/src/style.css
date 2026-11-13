@@ -14,6 +14,8 @@
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   color-scheme: light;
+  --logo-ink: #12233f;
+  --logo-accent: #34d399;
 
   --text: #1d1d1f;
   --title: #1d1d1f;
@@ -107,6 +109,7 @@
 /* Choisi au chargement si le système est en mode sombre (index.html). */
 [data-theme='nuit'] {
     color-scheme: dark;
+    --logo-ink: var(--title);
     --text: #f5f5f7;
     --title: #f5f5f7;
     --muted: #a1a1a6;
@@ -159,6 +162,7 @@
 /* Verre teinté plus transparent : les aurores violette, rose et cyan passent à travers. */
 [data-theme='aurore'] {
     color-scheme: dark;
+    --logo-ink: var(--title);
     --text: #f7f4ff;
     --title: #ffffff;
     --muted: #b8afd0;
@@ -422,7 +426,8 @@ p { color: var(--muted); line-height: 1.6; }
 .guest-shell .form-grid { grid-template-columns: 1fr; }
 .guest-shell button[type='submit'] { width: 100%; margin-top: 0.5rem; }
 .login-brand { text-align: center; margin-bottom: 1.75rem; }
-.login-brand .brand-logo { width: 3.25rem; height: 3.25rem; font-size: 1.1rem; margin-bottom: 1rem; }
+.login-brand .brand-logo { width: 5.5rem; margin-bottom: 0.75rem; }
+.login-wordmark { display: block; width: auto; height: 2.6rem; margin: 0 auto; }
 .login-brand p { margin: 0; }
 /* Bouton « S'identifier avec MinDefConnect » (login-view.vue) : logo (assets/mindef-connect-logo.png), libellé sur deux lignes. */
 .sso-button {
@@ -536,12 +541,13 @@ p { color: var(--muted); line-height: 1.6; }
 /* Grand écran : barre flottante en haut. Mobile : tiroir ouvert par app-topbar.vue (plus bas). */
 .main-menu { position: fixed; z-index: 30; display: flex; transition: transform 260ms var(--ease); }
 .brand { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
-.brand-logo {
-  display: inline-grid; place-items: center; flex-shrink: 0;
-  width: 2.5rem; height: 2.5rem; border-radius: 50%;
-  background: var(--brand-bg); color: var(--on-brand); font-weight: 800; font-size: 0.85rem; letter-spacing: 0.02em;
-}
-.brand-name { font-weight: 700; color: var(--title); letter-spacing: -0.01em; white-space: nowrap; }
+/* Logo (brand-mark.vue, l'œil) et nom (brand-wordmark.vue, « bastion ») : couleurs --logo-ink et
+   --logo-accent du thème (marine et vert ; marine éclairci dans les thèmes sombres). */
+.brand-logo { flex-shrink: 0; width: 2.5rem; height: auto; }
+.brand-name { flex-shrink: 0; width: auto; height: 1.15rem; }
+.brand-mark-outline { fill: none; stroke: var(--logo-ink); stroke-width: 11; stroke-linejoin: round; }
+:is(.brand-mark-pupil, .brand-wordmark-ink) { fill: var(--logo-ink); }
+:is(.brand-mark-accent, .brand-wordmark-accent) { fill: var(--logo-accent); }
 .nav { position: relative; display: flex; }
 .nav a {
   position: relative; display: flex; align-items: center;
@@ -1134,7 +1140,8 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 .brand-marque { display: none; }
 [data-theme='dsfr'] .brand-marque { display: inline-block; margin: 0 0.75rem 0 0.25rem; }
 [data-theme='dsfr'] .brand-logo { display: none; }
-[data-theme='dsfr'] .brand-name { color: var(--title); font-size: 1.1rem; font-weight: 700; }
+[data-theme='dsfr'] { --logo-ink: var(--title); }
+[data-theme='dsfr'] .brand-name { height: 1.25rem; }
 [data-theme='dsfr'] :is(button, .button-link) { border-radius: 0; box-shadow: none; font-weight: 500; }
 [data-theme='dsfr'] :is(button, .button-link):hover { transform: none; filter: none; box-shadow: none; }
 [data-theme='dsfr'] :is(button[type='submit'], .button-link:not(.secondary-button)):hover { background-color: var(--accent-hover); color: var(--on-accent); }

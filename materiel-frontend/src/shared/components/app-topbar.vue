@@ -5,6 +5,8 @@
  * Utilisé par : App.vue
  */
 import AppIcon from './app-icon.vue';
+import BrandMark from './brand-mark.vue';
+import BrandWordmark from './brand-wordmark.vue';
 
 //------------------ PROPS / EMITS ---------------------------
 defineProps<{
@@ -30,7 +32,7 @@ const emit = defineEmits<{
     >
       <AppIcon name="menu" />
     </button>
-    <span class="brand-logo" aria-hidden="true">B</span>
-    <span class="brand-name">BASTION</span>
+    <BrandMark class="brand-logo" />
+    <BrandWordmark class="brand-name" />
   </header>
 </template>
