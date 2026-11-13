@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY,
     version BIGINT NOT NULL DEFAULT 0,
     username VARCHAR(100) NOT NULL,
-    password VARCHAR(255) NOT NULL,
     role VARCHAR(30) NOT NULL DEFAULT 'USER',
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT uk__users__username UNIQUE (username)

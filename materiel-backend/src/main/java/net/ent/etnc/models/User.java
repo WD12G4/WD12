@@ -26,7 +26,7 @@ import java.util.Collection;
 public class User extends AbstractPersistableWithIdSetter<Long> implements UserDetails {
 
     /**
-     * Login name used by Spring Security.
+     * Login name matching the Keycloak preferred_username.
      */
     @Getter
     @Setter
@@ -34,15 +34,6 @@ public class User extends AbstractPersistableWithIdSetter<Long> implements UserD
     @Size(max = 100)
     @Column(name = "username", nullable = false, length = 100)
     private String username;
-
-    /**
-     * BCrypt encoded password.
-     */
-    @Setter
-    @NotBlank(message = "Le mot de passe doit être renseigné")
-    @Size(max = 255)
-    @Column(name = "password", nullable = false)
-    private String password;
 
     /**
      * Highest role explicitly assigned to the account.
@@ -69,8 +60,11 @@ public class User extends AbstractPersistableWithIdSetter<Long> implements UserD
                 .toList();
     }
 
+    /**
+     * Non utilisé : l'authentification et la gestion des mots de passe sont déléguées à Keycloak.
+     */
     @Override
     public @Nullable String getPassword() {
-        return this.password;
+        return null;
     }
 }

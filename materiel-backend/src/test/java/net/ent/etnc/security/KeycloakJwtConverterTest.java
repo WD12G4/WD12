@@ -59,7 +59,6 @@ class KeycloakJwtConverterTest {
         User user = new User();
         user.setId(id);
         user.setUsername(username);
-        user.setPassword("hashedPassword");
         user.setRole(role);
         user.setEnabled(true);
         return user;

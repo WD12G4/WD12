@@ -36,7 +36,6 @@ public class UserDtoAssembler {
         if (request == null) return null;
         User user = new User();
         user.setUsername(request.username());
-        user.setPassword(request.password());
         user.setRole(request.role());
         user.setEnabled(true);
         return user;
@@ -49,9 +48,6 @@ public class UserDtoAssembler {
             }
             if (request.enabled() != null) {
                 entity.setEnabled(request.enabled());
-            }
-            if (request.password() != null && !request.password().isBlank()) {
-                entity.setPassword(request.password());
             }
         }
     }

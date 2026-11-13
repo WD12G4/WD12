@@ -13,10 +13,6 @@ public record UserCreateRequest(
         @Size(max = 100, message = "Le nom d'utilisateur ne doit pas dépasser 100 caractères")
         String username,
 
-        @NotBlank(message = "Le mot de passe est obligatoire")
-        @Size(min = 6, max = 255, message = "Le mot de passe doit comporter au moins 6 caractères")
-        String password,
-
         @NotNull(message = "Le rôle doit être renseigné")
         ERole role
 ) {}

@@ -2,7 +2,6 @@ package net.ent.etnc.security;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -19,12 +18,8 @@ class WebSecurityConfigTest {
     );
 
     @Test
-    @DisplayName("passwordEncoder doit fournir un BCryptPasswordEncoder fonctionnel")
-    void passwordEncoder_ProvidesBCryptEncoder() {
-        PasswordEncoder encoder = config.passwordEncoder();
-
-        assertThat(encoder).isNotNull();
-        String hash = encoder.encode("password123");
-        assertThat(encoder.matches("password123", hash)).isTrue();
+    @DisplayName("WebSecurityConfig doit s'instancier correctement")
+    void webSecurityConfig_InstantiatesSuccessfully() {
+        assertThat(config).isNotNull();
     }
 }

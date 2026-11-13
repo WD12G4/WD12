@@ -3,17 +3,13 @@
 -- ==============================================================================
 
 -- 1. Utilisateurs de test
--- La connexion passe par Keycloak (docker/keycloak/gestion-parc-realm.json) : les comptes y
--- portent les mêmes identifiants et mots de passe. Ici, l'identifiant relie le compte Keycloak
--- au rôle de l'application ; le mot de passe stocké n'est plus vérifié à la connexion.
--- Mots de passe chiffrés en BCrypt :
--- 'admin'   -> mot de passe : 'admin123'
--- 'manager' -> mot de passe : 'manager123'
--- 'user'    -> mot de passe : 'user123'
-INSERT INTO users (username, password, role, enabled) VALUES
-    ('admin', '$2a$10$3PpORdX6N7emD6AAuV5HHOCVpg19GSNQ8woz6oIZ3fjmd8M5ftu4m', 'ADMIN', true),
-    ('manager', '$2a$10$FwLRxTvC5jC1luaEfRHScemmx4s1d6zmbbLVriMiSkJXLVoiXkhzm', 'MANAGER', true),
-    ('user', '$2a$10$a8wmFP3IddEoUJvVXs3QNugQeOe1N6jXrkgRZyS9IemD7J1Vi3BbK', 'USER', true)
+-- L'authentification est gérée par Keycloak (docker/keycloak/gestion-parc-realm.json).
+-- Les comptes portent les mêmes identifiants ('admin', 'manager', 'user').
+-- L'identifiant relie le compte Keycloak au rôle de l'application.
+INSERT INTO users (username, role, enabled) VALUES
+    ('admin', 'ADMIN', true),
+    ('manager', 'MANAGER', true),
+    ('user', 'USER', true)
 ON CONFLICT (username) DO NOTHING;
 
 -- 2. Bâtiments

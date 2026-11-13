@@ -28,7 +28,6 @@ class UserDtoAssemblerTest {
         sampleUser.setId(1L);
         sampleUser.setVersion(0L);
         sampleUser.setUsername("alice");
-        sampleUser.setPassword("encodedSecret");
         sampleUser.setRole(ERole.USER);
         sampleUser.setEnabled(true);
     }
@@ -92,13 +91,12 @@ class UserDtoAssemblerTest {
         @Test
         @DisplayName("Doit convertir correctement UserCreateRequest en entité")
         void toEntity_Success() {
-            UserCreateRequest request = new UserCreateRequest("bob", "secret123", ERole.MANAGER);
+            UserCreateRequest request = new UserCreateRequest("bob", ERole.MANAGER);
 
             User entity = assembler.toEntity(request);
 
             assertThat(entity).isNotNull();
             assertThat(entity.getUsername()).isEqualTo("bob");
-            assertThat(entity.getPassword()).isEqualTo("secret123");
             assertThat(entity.getRole()).isEqualTo(ERole.MANAGER);
             assertThat(entity.isEnabled()).isTrue();
         }
@@ -111,11 +109,10 @@ class UserDtoAssemblerTest {
         @Test
         @DisplayName("Doit mettre à jour tous les champs fournis")
         void updateEntity_AllFields_Success() {
-            UserUpdateRequest request = new UserUpdateRequest("newPassword123", ERole.ADMIN, false);
+            UserUpdateRequest request = new UserUpdateRequest(ERole.ADMIN, false);
 
             assembler.updateEntity(sampleUser, request);
 
-            assertThat(sampleUser.getPassword()).isEqualTo("newPassword123");
             assertThat(sampleUser.getRole()).isEqualTo(ERole.ADMIN);
             assertThat(sampleUser.isEnabled()).isFalse();
         }
@@ -123,29 +120,18 @@ class UserDtoAssemblerTest {
         @Test
         @DisplayName("Ne doit pas modifier les champs non renseignés")
         void updateEntity_PartialFields_Success() {
-            UserUpdateRequest request = new UserUpdateRequest(null, ERole.MANAGER, null);
+            UserUpdateRequest request = new UserUpdateRequest(ERole.MANAGER, null);
 
             assembler.updateEntity(sampleUser, request);
 
-            assertThat(sampleUser.getPassword()).isEqualTo("encodedSecret");
             assertThat(sampleUser.getRole()).isEqualTo(ERole.MANAGER);
             assertThat(sampleUser.isEnabled()).isTrue();
         }
 
         @Test
-        @DisplayName("Ne doit pas mettre à jour le mot de passe s'il est blanc")
-        void updateEntity_BlankPassword_DoesNotUpdatePassword() {
-            UserUpdateRequest request = new UserUpdateRequest("   ", null, null);
-
-            assembler.updateEntity(sampleUser, request);
-
-            assertThat(sampleUser.getPassword()).isEqualTo("encodedSecret");
-        }
-
-        @Test
         @DisplayName("Doit ignorer sans lever d'erreur si entité ou requête est null")
         void updateEntity_WhenNull_DoesNotThrow() {
-            assembler.updateEntity(null, new UserUpdateRequest("p", ERole.USER, true));
+            assembler.updateEntity(null, new UserUpdateRequest(ERole.USER, true));
             assembler.updateEntity(sampleUser, null);
 
             assertThat(sampleUser.getUsername()).isEqualTo("alice");

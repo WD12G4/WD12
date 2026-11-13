@@ -22,7 +22,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,9 +38,6 @@ class UserServiceImplTest {
     @Mock
     private UserRepository repository;
 
-    @Mock
-    private PasswordEncoder passwordEncoder;
-
     @InjectMocks
     private UserServiceImpl userService;
 
@@ -52,7 +48,6 @@ class UserServiceImplTest {
         sampleUser = new User();
         sampleUser.setId(1L);
         sampleUser.setUsername("testuser");
-        sampleUser.setPassword("plainPassword123");
         sampleUser.setRole(ERole.USER);
         sampleUser.setEnabled(true);
     }
@@ -67,17 +62,15 @@ class UserServiceImplTest {
     class CreateTests {
 
         @Test
-        @DisplayName("Doit encoder le mot de passe et créer l'utilisateur")
+        @DisplayName("Doit créer l'utilisateur avec succès")
         void create_Success() {
             when(repository.existsByUsername("testuser")).thenReturn(false);
-            when(passwordEncoder.encode("plainPassword123")).thenReturn("encodedPasswordHash");
             when(repository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             User created = userService.create(sampleUser);
 
             assertThat(created).isNotNull();
-            assertThat(created.getPassword()).isEqualTo("encodedPasswordHash");
-            verify(passwordEncoder).encode("plainPassword123");
+            assertThat(created.getUsername()).isEqualTo("testuser");
             verify(repository).saveAndFlush(sampleUser);
         }
 
@@ -116,32 +109,6 @@ class UserServiceImplTest {
 
             verify(repository, never()).saveAndFlush(any());
         }
-
-        @Test
-        @DisplayName("Doit lever ServiceException si le mot de passe est vide")
-        void create_ThrowsException_WhenPasswordBlank() {
-            when(repository.existsByUsername("testuser")).thenReturn(false);
-            sampleUser.setPassword("   ");
-
-            assertThatThrownBy(() -> userService.create(sampleUser))
-                    .isInstanceOf(ServiceException.class)
-                    .hasMessageContaining("Le mot de passe est obligatoire");
-
-            verify(repository, never()).saveAndFlush(any());
-        }
-
-        @Test
-        @DisplayName("Doit lever ServiceException si le mot de passe est null")
-        void create_ThrowsException_WhenPasswordNull() {
-            when(repository.existsByUsername("testuser")).thenReturn(false);
-            sampleUser.setPassword(null);
-
-            assertThatThrownBy(() -> userService.create(sampleUser))
-                    .isInstanceOf(ServiceException.class)
-                    .hasMessageContaining("Le mot de passe est obligatoire");
-
-            verify(repository, never()).saveAndFlush(any());
-        }
     }
 
     @Nested
@@ -149,47 +116,15 @@ class UserServiceImplTest {
     class UpdateTests {
 
         @Test
-        @DisplayName("Doit encoder le mot de passe s'il est en clair et sauvegarder l'utilisateur")
-        void update_WhenPlainPassword_EncodesPasswordAndSaves() {
+        @DisplayName("Doit mettre à jour l'utilisateur avec succès")
+        void update_Success() {
             when(repository.existsById(1L)).thenReturn(true);
-            when(passwordEncoder.encode("plainPassword123")).thenReturn("encodedPasswordHash");
             when(repository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             User updated = userService.update(sampleUser);
 
             assertThat(updated).isNotNull();
-            assertThat(updated.getPassword()).isEqualTo("encodedPasswordHash");
-            verify(passwordEncoder).encode("plainPassword123");
             verify(repository).saveAndFlush(sampleUser);
-        }
-
-        @Test
-        @DisplayName("Ne doit pas réencoder un mot de passe déjà sous forme de hash BCrypt")
-        void update_WhenAlreadyHashed_DoesNotReEncode() {
-            String bcryptHash = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
-            sampleUser.setPassword(bcryptHash);
-            when(repository.existsById(1L)).thenReturn(true);
-            when(repository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-            User updated = userService.update(sampleUser);
-
-            assertThat(updated).isNotNull();
-            assertThat(updated.getPassword()).isEqualTo(bcryptHash);
-            verify(passwordEncoder, never()).encode(any());
-            verify(repository).saveAndFlush(sampleUser);
-        }
-
-        @Test
-        @DisplayName("Ne doit pas encoder si le mot de passe est null ou vide lors de la mise à jour")
-        void update_WhenPasswordNullOrBlank_DoesNotEncode() {
-            sampleUser.setPassword(null);
-            when(repository.existsById(1L)).thenReturn(true);
-            when(repository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-            User updated = userService.update(sampleUser);
-
-            assertThat(updated).isNotNull();
-            verify(passwordEncoder, never()).encode(any());
         }
 
         @Test

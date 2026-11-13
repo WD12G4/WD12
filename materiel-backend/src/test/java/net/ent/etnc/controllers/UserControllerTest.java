@@ -62,7 +62,6 @@ class UserControllerTest {
         sampleUser = new User();
         sampleUser.setId(1L);
         sampleUser.setUsername("alice");
-        sampleUser.setPassword("encodedSecret123");
         sampleUser.setRole(ERole.USER);
         sampleUser.setEnabled(true);
 
@@ -127,7 +126,6 @@ class UserControllerTest {
             String payload = """
                     {
                         "username": "bob",
-                        "password": "strongPassword123",
                         "role": "MANAGER"
                     }
                     """;
@@ -157,26 +155,6 @@ class UserControllerTest {
             String payload = """
                     {
                         "username": "",
-                        "password": "strongPassword123",
-                        "role": "USER"
-                    }
-                    """;
-
-            mockMvc.perform(post("/api/v1/users")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(payload))
-                    .andExpect(status().isBadRequest());
-
-            verify(userService, never()).create(any());
-        }
-
-        @Test
-        @DisplayName("Doit renvoyer 400 Bad Request si password fait moins de 6 caractères")
-        void create_ShortPassword_Returns400() throws Exception {
-            String payload = """
-                    {
-                        "username": "bob",
-                        "password": "123",
                         "role": "USER"
                     }
                     """;
@@ -194,8 +172,7 @@ class UserControllerTest {
         void create_NullRole_Returns400() throws Exception {
             String payload = """
                     {
-                        "username": "bob",
-                        "password": "strongPassword123"
+                        "username": "bob"
                     }
                     """;
 

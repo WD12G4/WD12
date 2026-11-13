@@ -13,7 +13,6 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,19 +25,16 @@ import java.util.Optional;
 @Service
 public class UserServiceImpl extends AbstractService<User, UserRepository> implements UserService {
 
-    private final PasswordEncoder passwordEncoder;
-
     /**
      * Creates the account service.
      */
     @Autowired
-    public UserServiceImpl(UserRepository repository, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository repository) {
         super(repository);
-        this.passwordEncoder = passwordEncoder;
     }
 
     /**
-     * Creates a user after enforcing username uniqueness and encoding the password.
+     * Creates a user after enforcing username uniqueness.
      */
     @Override
     @Transactional
@@ -53,12 +49,7 @@ public class UserServiceImpl extends AbstractService<User, UserRepository> imple
             log.warn("Échec création utilisateur : le nom d'utilisateur '{}' est déjà utilisé.", entity.getUsername());
             throw new ServiceException("Le nom d'utilisateur est déjà utilisé.");
         }
-        if (entity.getPassword() == null || entity.getPassword().isBlank()) {
-            log.warn("Échec création utilisateur : mot de passe manquant pour '{}'.", entity.getUsername());
-            throw new ServiceException("Le mot de passe est obligatoire.");
-        }
 
-        entity.setPassword(passwordEncoder.encode(entity.getPassword()));
         User created = super.create(entity);
         log.info("Utilisateur créé avec succès [id={}, username={}, role={}]",
                 created.getId(), created.getUsername(), created.getRole());
@@ -66,7 +57,7 @@ public class UserServiceImpl extends AbstractService<User, UserRepository> imple
     }
 
     /**
-     * Updates an existing user, re-encoding the password if a plain text password was set.
+     * Updates an existing user.
      */
     @Override
     @Transactional
@@ -75,16 +66,6 @@ public class UserServiceImpl extends AbstractService<User, UserRepository> imple
         if (entity.getId() == null || !repository.existsById(entity.getId())) {
             log.warn("Échec mise à jour utilisateur : id introuvable ({})", entity.getId());
             throw new ResourceNotFoundException("Utilisateur introuvable avec l'id : " + entity.getId());
-        }
-
-        if (entity.getPassword() != null && !entity.getPassword().isBlank()) {
-            boolean isAlreadyBCrypt = (entity.getPassword().startsWith("$2a$")
-                    || entity.getPassword().startsWith("$2b$")
-                    || entity.getPassword().startsWith("$2y$"))
-                    && entity.getPassword().length() == 60;
-            if (!isAlreadyBCrypt) {
-                entity.setPassword(passwordEncoder.encode(entity.getPassword()));
-            }
         }
 
         User updated = super.update(entity);
