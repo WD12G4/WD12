@@ -14,7 +14,6 @@ export interface ApplicationDto {
     displayName: string | null;
     iconBase64: string | null;
     blacklisted: boolean;
-    description: string | null;
 }
 
 /**
