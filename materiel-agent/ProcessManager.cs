@@ -91,6 +91,18 @@ public static class ProcessManager
         "systemsettings.exe",
         "microsoftedgeupdate",
         "microsoftedgeupdate.exe",
+        "widgets",
+        "widgets.exe",
+        "backgroundtaskhost",
+        "backgroundtaskhost.exe",
+        "hxtsr",
+        "hxtsr.exe",
+        "rundll32",
+        "rundll32.exe",
+        "storedesktopextension",
+        "storedesktopextension.exe",
+        "defendersessionhelper",
+        "defendersessionhelper.exe",
 
         // Linux
         "systemd",

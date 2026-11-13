@@ -17,7 +17,7 @@ public class Program
         var cfg = Config.Load(args);
         string hostname = Environment.MachineName;
         string macAddress = Config.GetMacAddress();
-        string sessionUser = Config.GetActiveSessionUsername();
+        string? sessionUser = Config.GetActiveSessionUsername();
         string os = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "windows" :
                     RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux" : "osx";
 
