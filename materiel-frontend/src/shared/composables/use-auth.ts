@@ -88,7 +88,9 @@ function restoreSession(): Promise<void> {
         const authenticated = await keycloak.init({
             onLoad: 'check-sso',
             checkLoginIframe: false,
-        }).catch(() => {
+        }).catch((error: unknown) => {
+            // Raison visible dans la console du navigateur (adresse de Keycloak, réseau, configuration…).
+            console.error('[Keycloak] Initialisation impossible :', error);
             ssoUnavailable.value = true;
             return false;
         });
