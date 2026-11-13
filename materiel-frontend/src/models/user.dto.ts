@@ -16,13 +16,11 @@ export interface UserDto {
 /** Corps attendu par POST /api/v1/users. */
 export interface UserCreateRequestDto {
     username: string;
-    password: string;
     role: Role;
 }
 
-/** Corps attendu par PUT /api/v1/users/{id}. Un champ absent n'est pas modifié. */
+/** Corps attendu par PUT /api/v1/users/{id}. */
 export interface UserUpdateRequestDto {
-    password?: string;
     role: Role;
     enabled: boolean;
 }
@@ -45,13 +43,8 @@ export function userToCreateRequest(input: UserCreateInput): UserCreateRequestDt
 
 /**
  * Convertit la saisie de modification en corps de requête.
- * Le mot de passe n'est envoyé que s'il a été saisi : sinon le backend le garderait vide.
  * @param input saisie du formulaire de modification
  */
 export function userToUpdateRequest(input: UserUpdateInput): UserUpdateRequestDto {
-    const request: UserUpdateRequestDto = {role: input.role, enabled: input.enabled};
-    if (input.password.length > 0) {
-        request.password = input.password;
-    }
-    return request;
+    return {role: input.role, enabled: input.enabled};
 }

@@ -15,11 +15,15 @@ defineProps<{
   emptyLabel: string;
   /** Vrai pendant une action. */
   busy: boolean;
+  /** Vrai si l'utilisateur peut interdire une application (administrateur, vrai poste, RG-27). */
+  canForbid: boolean;
 }>();
 
 const emit = defineEmits<{
   /** Demande d'arrêt d'une application. */
   kill: [process: ProcessInfo];
+  /** Demande d'interdiction d'une application (liste noire). */
+  forbid: [process: ProcessInfo];
 }>();
 </script>
 
@@ -35,7 +39,9 @@ const emit = defineEmits<{
       <ProcessItem
           :process="process"
           :busy="busy"
+          :can-forbid="canForbid"
           @kill="emit('kill', $event)"
+          @forbid="emit('forbid', $event)"
       />
     </li>
   </TransitionGroup>

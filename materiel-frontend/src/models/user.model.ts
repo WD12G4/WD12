@@ -1,5 +1,7 @@
 /**
  * Modèle métier des comptes et des rôles.
+ * Les mots de passe sont gérés par Keycloak (MinDef Connect) : l'application ne garde que l'identifiant,
+ * le rôle et l'activation.
  * RG : RG-14 (trois rôles), RG-15 (l'administrateur hérite de tous les droits), RG-20
  */
 
@@ -24,9 +26,8 @@ const roleRanks = {
     ADMIN: 2,
 } as const;
 
-/** Longueurs autorisées, identiques à la validation du backend (RG-20). */
+/** Longueur maximale de l'identifiant, identique à la validation du backend (RG-20). */
 const usernameMaxLength = 100;
-const passwordLength = {min: 6, max: 255} as const;
 
 //----------------- TYPES --------------------------------
 /** Code d'un rôle. */
@@ -44,19 +45,17 @@ interface User {
     enabled: boolean;
 }
 
-/** Saisie du formulaire de création de compte. */
+/** Saisie du formulaire de création de compte (identifiant identique à celui de Keycloak). */
 interface UserCreateInput {
     username: string;
-    password: string;
     role: Role;
 }
 
-/** Saisie du formulaire de modification de compte. Le mot de passe vide n'est pas modifié. */
+/** Saisie du formulaire de modification de compte. */
 interface UserUpdateInput {
-    password: string;
     role: Role;
     enabled: boolean;
 }
 
-export {roles, roleLabels, roleRanks, usernameMaxLength, passwordLength};
+export {roles, roleLabels, roleRanks, usernameMaxLength};
 export type {Role, User, UserCreateInput, UserUpdateInput};

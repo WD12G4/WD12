@@ -58,7 +58,7 @@ const showReimage = computed(() => props.canReimage && props.views.some(view => 
       <h3 class="eyebrow">Ouvertes sur plusieurs postes</h3>
       <ul>
         <li v-for="app in shared" :key="app.name">
-          <AppGlyph :name="app.name" />
+          <AppGlyph :name="app.name" :icon="app.icon" />
           <span class="shared-app-text">
             <strong>{{ app.name }}</strong>
             <span class="muted">{{ app.stations }} postes</span>

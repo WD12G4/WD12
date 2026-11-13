@@ -19,7 +19,7 @@ export const usersServices = {
         return pageContent(page).map(userFromDto);
     },
 
-    /** Crée un compte. Lève ApiError 400 si l'identifiant est déjà pris ou le mot de passe trop court (RG-20). */
+    /** Crée un compte. Lève ApiError 400 si l'identifiant est déjà pris (RG-20). */
     create: async (input: UserCreateInput): Promise<User> => {
         const dto = await apiRequest<UserDto>('/users', {
             method: 'POST',
@@ -28,7 +28,7 @@ export const usersServices = {
         return userFromDto(dto);
     },
 
-    /** Modifie le rôle, l'activation (RG-19) et éventuellement le mot de passe d'un compte. */
+    /** Modifie le rôle et l'activation (RG-19) d'un compte. */
     update: async (id: number, input: UserUpdateInput): Promise<User> => {
         const dto = await apiRequest<UserDto>(`/users/${id}`, {
             method: 'PUT',

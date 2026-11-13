@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Gestion des comptes (ADMIN) : création, modification du rôle, du mot de passe et de l'activation,
+ * Gestion des comptes (ADMIN) : création, modification du rôle et de l'activation,
  * archivage (le compte est désactivé et ne peut plus se connecter ; il reste réactivable).
  * RG : RG-14, RG-19, RG-20, RG-32
  */
@@ -69,7 +69,7 @@ async function toggleArchive(user: User): Promise<void> {
   const archiving = user.enabled;
   if (archiving && !window.confirm(`Archiver le compte ${user.username} ? Il ne pourra plus se connecter (réactivable à tout moment).`)) return;
   const message = `Le compte ${user.username} a été ${archiving ? 'archivé' : 'réactivé'}.`;
-  await saveThen(() => usersServices.update(user.id, {password: '', role: user.role, enabled: !archiving}), message);
+  await saveThen(() => usersServices.update(user.id, {role: user.role, enabled: !archiving}), message);
 }
 
 //------------------ LIFECYCLE -------------------------------

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Barre d'outils de la supervision : choix de la salle (boutons segmentés s'il y en a peu, liste
- * déroulante sinon, rien s'il n'y en a qu'une) et choix de l'affichage (postes ou journal).
+ * déroulante sinon, rien s'il n'y en a qu'une) et choix de l'affichage (postes, journal, et liste noire
+ * pour l'administrateur, RG-27).
  * Formateur : sa salle de cours est affichée sans choix (il en change avec le bouton de la barre du haut).
  * Utilisé par : supervision-view.vue
  */
@@ -19,6 +20,8 @@ const props = defineProps<{
   rooms: Room[];
   /** Salle de cours du formateur, affichée sans choix ; null pour les autres rôles. */
   lockedRoom: Room | null;
+  /** Vrai si l'onglet « Liste noire » est proposé (administrateur). */
+  canManageBlacklist: boolean;
 }>();
 
 /** Salle choisie. */
@@ -29,12 +32,13 @@ const tab = defineModel<SupervisionTab>('tab', {required: true});
 //------------------ DATAS -----------------------------------
 /** Au-delà, les boutons segmentés prendraient trop de place : liste déroulante. */
 const MAX_SEGMENTED_ROOMS = 6;
-const tabOptions: SelectOption<SupervisionTab>[] = [
+const baseTabs: SelectOption<SupervisionTab>[] = [
   {value: 'stations', label: 'Postes'},
   {value: 'journal', label: 'Journal'},
 ];
 
 //------------------ COMPUTED --------------------------------
+const tabOptions = computed(() => (props.canManageBlacklist ? [...baseTabs, {value: 'blacklist' as const, label: 'Liste noire'}] : baseTabs));
 const showSegmented = computed(() => !props.lockedRoom && props.rooms.length > 1 && props.rooms.length <= MAX_SEGMENTED_ROOMS);
 const showSelect = computed(() => !props.lockedRoom && props.rooms.length > MAX_SEGMENTED_ROOMS);
 const lockedLabel = computed(() => (props.lockedRoom ? roomLabel(props.lockedRoom) : ''));

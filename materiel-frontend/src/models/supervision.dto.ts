@@ -5,6 +5,7 @@
  */
 import type {ProcessInfo, Workstation, WorkstationOs} from './supervision.model.ts';
 import {parseApiDateTime} from './date-time.dto.ts';
+import {iconFromDto} from './app-icon.dto.ts';
 
 /** Valeur renvoyée par le backend quand l'adresse MAC est inconnue (agent déconnecté). */
 const UNKNOWN_MAC = 'N/A';
@@ -35,6 +36,8 @@ export interface ProcessInfoDto {
     workstationId: number;
     name: string;
     startedAt: string;
+    /** Icône en data URI (agents Windows), ou null. */
+    icon?: string | null;
 }
 
 /** Corps attendu par POST /api/v1/supervision/kill. */
@@ -77,5 +80,5 @@ export function workstationFromDto(dto: WorkstationDto): Workstation {
  * @param dto processus reçu
  */
 export function processFromDto(dto: ProcessInfoDto): ProcessInfo {
-    return {...dto, startedAt: parseApiDateTime(dto.startedAt)};
+    return {...dto, startedAt: parseApiDateTime(dto.startedAt), icon: iconFromDto(dto.icon)};
 }

@@ -25,8 +25,8 @@ interface WorkstationView {
     installed: InstalledConfig | null;
 }
 
-/** Vue affichée : les postes en tuiles, ou le journal. */
-type SupervisionTab = 'stations' | 'journal';
+/** Vue affichée : les postes en tuiles, le journal, ou la liste noire (administrateur). */
+type SupervisionTab = 'stations' | 'journal' | 'blacklist';
 
 /** Salle chargée et listes reçues de l'API. */
 interface SupervisionState {
@@ -87,7 +87,7 @@ async function killAll(state: SupervisionState, processes: ProcessInfo[]): Promi
 
 /**
  * Crée l'état de la supervision, relu toutes les 10 secondes tant que la page est visible.
- * @returns workstationViews, events et les actions loadRoom, killProcess, killEverywhere (RG-26),
+ * @returns workstationViews, events et les actions loadRoom, reload, killProcess, killEverywhere (RG-26),
  * reimage (RG-28, postes simulés), qui lèvent ApiError en cas d'échec
  */
 export function useSupervision() {
@@ -102,6 +102,7 @@ export function useSupervision() {
         workstationViews: views,
         events: computed(() => toJournal(state)),
         loadRoom: (roomId: number | null) => loadRoom(state, roomId),
+        reload: () => loadRoom(state, state.roomId),
         killProcess: (process: ProcessInfo) => killAll(state, [process]),
         killEverywhere: (name: string) => killAll(state, views.value.flatMap(view => view.processes).filter(process => process.name === name)),
         reimage: async (workstationIds: number[], config: ReimageConfig) => {

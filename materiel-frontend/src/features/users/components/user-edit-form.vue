@@ -1,12 +1,12 @@
 <script setup lang="ts">
 /**
- * Formulaire de modification d'un compte : rôle, activation et nouveau mot de passe (ADMIN).
- * Un mot de passe laissé vide n'est pas modifié.
+ * Formulaire de modification d'un compte : rôle et activation (ADMIN).
+ * Le mot de passe se gère dans Keycloak (MinDef Connect), pas dans l'application.
  * Utilisé par : user-view.vue
- * RG : RG-15, RG-19 (un compte désactivé ne peut plus se connecter), RG-20, RG-32
+ * RG : RG-15, RG-19 (un compte désactivé ne peut plus se connecter), RG-32
  */
 import {computed, ref, watch} from 'vue';
-import {passwordLength, type User, type UserUpdateInput} from '../../../models/user.model.ts';
+import {type User, type UserUpdateInput} from '../../../models/user.model.ts';
 import FormError from '../../../shared/components/form-error.vue';
 import UserRoleSelect from './user-role-select.vue';
 
@@ -28,27 +28,21 @@ const emit = defineEmits<{
 }>();
 
 //------------------ DATAS -----------------------------------
-const draft = ref<UserUpdateInput>({password: '', role: 'USER', enabled: true});
+const draft = ref<UserUpdateInput>({role: 'USER', enabled: true});
 
 //------------------ COMPUTED --------------------------------
-/** RG-20 : le mot de passe est facultatif, mais s'il est saisi il fait au moins 6 caractères. */
-const isValid = computed(() => {
-  const length = draft.value.password.length;
-  return length === 0 || length >= passwordLength.min;
-});
-/** Le bouton d'envoi est actif si la saisie est valide et qu'aucun envoi n'est en cours. */
-const canSubmit = computed(() => isValid.value && !props.submitting);
+/** Le bouton d'envoi est actif si aucun envoi n'est en cours. */
+const canSubmit = computed(() => !props.submitting);
 
 //------------------ FUNCTIONS -------------------------------
-/** Émet la saisie si elle est valide. */
+/** Émet la saisie. */
 function submit(): void {
-  if (!isValid.value) return;
   emit('submit', {...draft.value});
 }
 
 //------------------ LIFECYCLE -------------------------------
 watch(() => props.user, user => {
-  draft.value = {password: '', role: user.role, enabled: user.enabled};
+  draft.value = {role: user.role, enabled: user.enabled};
 }, {immediate: true});
 </script>
 
@@ -57,16 +51,6 @@ watch(() => props.user, user => {
     <div class="field">
       <label for="edit-role">Rôle</label>
       <UserRoleSelect id="edit-role" v-model="draft.role" />
-    </div>
-    <div class="field">
-      <label for="edit-password">Nouveau mot de passe <span class="field-hint">(laisser vide pour ne pas changer)</span></label>
-      <input
-          id="edit-password"
-          v-model="draft.password"
-          type="password"
-          :maxlength="passwordLength.max"
-          autocomplete="new-password"
-      >
     </div>
     <label class="checkbox-field full-width">
       <input v-model="draft.enabled" type="checkbox">

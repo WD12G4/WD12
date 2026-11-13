@@ -57,9 +57,9 @@ export function materialFromDto(dto: MaterialDto): Material {
 
 /**
  * Convertit la saisie du formulaire en corps de requête.
- * Le numéro de série est nettoyé des espaces (RG-01).
+ * Le numéro de série est nettoyé des espaces (RG-01) ; une date vidée part à null (RG-04 : facultative).
  * @param input saisie du formulaire
  */
 export function materialToRequest(input: MaterialInput): MaterialRequestDto {
-    return {...input, serialNumber: input.serialNumber.trim()};
+    return {...input, serialNumber: input.serialNumber.trim(), endAvailabilityDate: input.endAvailabilityDate || null};
 }

@@ -6,7 +6,7 @@
  * installées, et, pour l'administrateur, la masterisation (assistant), à part en bas.
  * Composant de présentation : émet des événements.
  * Utilisé par : supervision-view.vue
- * RG : RG-26, RG-28 (masterisation par l'administrateur), RG-29 (identification du poste)
+ * RG : RG-26, RG-27 (interdire une application, administrateur, vrais postes), RG-28, RG-29
  */
 import {computed} from 'vue';
 import {type ProcessInfo, workstationOsLabels} from '../../../models/supervision.model.ts';
@@ -30,6 +30,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: [];
   kill: [process: ProcessInfo];
+  forbid: [process: ProcessInfo];
   reimage: [view: WorkstationView];
 }>();
 
@@ -53,6 +54,8 @@ const emptyLabel = computed(() => (props.view ? `${openAppsLabel(props.view.work
 const openCount = computed(() => props.view?.processes.length ?? 0);
 /** Poste à masteriser (administrateur, poste simulé seulement), ou null pour masquer le bouton. */
 const reimageTarget = computed(() => (props.canReimage && props.view?.workstation.simulated ? props.view : null));
+/** RG-27 : l'administrateur (même droit que la masterisation) interdit une application d'un vrai poste. */
+const canForbid = computed(() => props.canReimage && !props.view?.workstation.simulated);
 /** Pas de masterisation sur un poste éteint ou déjà en cours de masterisation. */
 const reimageDisabled = computed(() => props.busy || !isOnline.value);
 </script>
@@ -91,7 +94,9 @@ const reimageDisabled = computed(() => props.busy || !isOnline.value);
             :processes="view.processes"
             :empty-label="emptyLabel"
             :busy="busy"
+            :can-forbid="canForbid"
             @kill="emit('kill', $event)"
+            @forbid="emit('forbid', $event)"
         />
       </section>
     </template>

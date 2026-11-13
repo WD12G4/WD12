@@ -69,6 +69,8 @@ interface ProcessInfo {
     /** Nom du processus remonté par l'agent (ex. « chrome.exe », « code »). */
     name: string;
     startedAt: Date;
+    /** Icône de l'application (PNG en data URI, agents Windows), ou null. */
+    icon: string | null;
 }
 
 /** Événement du journal de supervision : quel poste, quoi, à quelle heure (entretien 4, 6:30). */

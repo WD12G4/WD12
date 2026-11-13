@@ -104,7 +104,7 @@ const os = computed(() => props.view.workstation.os);
         class="app-dock"
     >
       <li v-for="process in dockProcesses" :key="process.pid">
-        <AppGlyph :name="process.name" />
+        <AppGlyph :name="process.name" :icon="process.icon" />
         <span class="visually-hidden">{{ process.name }}</span>
       </li>
       <li

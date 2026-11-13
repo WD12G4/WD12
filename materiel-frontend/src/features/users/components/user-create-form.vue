@@ -1,12 +1,14 @@
 <script setup lang="ts">
 /**
- * Formulaire de création d'un compte (ADMIN).
+ * Formulaire de création d'un compte (ADMIN) : identifiant et rôle.
+ * La connexion passe par Keycloak (MinDef Connect) : le compte doit y exister avec le même identifiant,
+ * l'application lui attribue seulement son rôle. Pas de mot de passe ici.
  * Composant de présentation : il émet la saisie, la vue appelle le service.
  * Utilisé par : user-view.vue
- * RG : RG-14, RG-20 (identifiant unique, mot de passe de 6 à 255 caractères), RG-32
+ * RG : RG-14, RG-20 (identifiant unique), RG-32
  */
 import {computed, ref} from 'vue';
-import {passwordLength, type UserCreateInput, usernameMaxLength} from '../../../models/user.model.ts';
+import {type UserCreateInput, usernameMaxLength} from '../../../models/user.model.ts';
 import FormError from '../../../shared/components/form-error.vue';
 import UserRoleSelect from './user-role-select.vue';
 
@@ -24,14 +26,12 @@ const emit = defineEmits<{
 }>();
 
 //------------------ DATAS -----------------------------------
-const defaultUser: Readonly<UserCreateInput> = {username: '', password: '', role: 'USER'};
+const defaultUser: Readonly<UserCreateInput> = {username: '', role: 'USER'};
 const draft = ref<UserCreateInput>({...defaultUser});
 
 //------------------ COMPUTED --------------------------------
-/** RG-20 : identifiant renseigné, mot de passe d'au moins 6 caractères. */
-const isValid = computed(() =>
-  draft.value.username.trim().length > 0 && draft.value.password.length >= passwordLength.min,
-);
+/** RG-20 : identifiant renseigné. */
+const isValid = computed(() => draft.value.username.trim().length > 0);
 /** Le bouton d'envoi est actif si la saisie est valide et qu'aucun envoi n'est en cours. */
 const canSubmit = computed(() => isValid.value && !props.submitting);
 
@@ -49,7 +49,7 @@ function submit(): void {
 <template>
   <form class="form-grid" @submit.prevent="submit">
     <div class="field">
-      <label for="user-username">Identifiant</label>
+      <label for="user-username">Identifiant <span class="field-hint">(le même que dans MinDef Connect)</span></label>
       <input
           id="user-username"
           v-model="draft.username"
@@ -61,18 +61,6 @@ function submit(): void {
     <div class="field">
       <label for="user-role">Rôle</label>
       <UserRoleSelect id="user-role" v-model="draft.role" />
-    </div>
-    <div class="field">
-      <label for="user-password">Mot de passe <span class="field-hint">(6 caractères minimum)</span></label>
-      <input
-          id="user-password"
-          v-model="draft.password"
-          type="password"
-          :minlength="passwordLength.min"
-          :maxlength="passwordLength.max"
-          autocomplete="new-password"
-          required
-      >
     </div>
     <div class="full-width">
       <FormError :message="errorMessage" />

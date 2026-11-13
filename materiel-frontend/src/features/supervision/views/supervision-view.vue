@@ -6,7 +6,7 @@
  * l'administrateur les masterise avec un assistant (système, image, applications).
  * Le formateur voit sa salle de cours, choisie à la connexion ; les autres rôles choisissent la salle.
  * Vrais postes : agent de supervision (API /supervision), relus toutes les 10 s. Postes simulés : maquette.
- * RG : RG-25, RG-26, RG-28 ; journal (entretien 4). RG-27 (liste noire) : bonus, pas encore d'écran.
+ * RG : RG-25, RG-26, RG-27 (liste noire, administrateur), RG-28 ; journal (entretien 4).
  */
 import {computed, onMounted, ref, watch} from 'vue';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
@@ -14,6 +14,7 @@ import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {type SupervisionTab, useSupervision} from '../composables/use-supervision.ts';
 import {useSupervisionActions} from '../composables/use-supervision-actions.ts';
 import {useSupervisionRooms} from '../composables/use-supervision-rooms.ts';
+import BlacklistPanel from '../components/blacklist-panel.vue';
 import Card from '../../../shared/components/card.vue';
 import DemoBanner from '../../../shared/components/demo-banner.vue';
 import FormError from '../../../shared/components/form-error.vue';
@@ -32,16 +33,17 @@ const {loading, errorMessage, run} = useAsyncState();
 const {rooms, selectedRoomId, lockedRoom, loadRooms} = useSupervisionRooms();
 const supervision = useSupervision();
 const {workstationViews, events, loadRoom} = supervision;
-const {busy, actionError, wizardPreselect, simulatedViews, kill, closeEverywhere, openWizard, launchReimage} = useSupervisionActions(supervision);
+const {busy, actionError, wizardPreselect, simulatedViews, kill, forbid, closeEverywhere, openWizard, launchReimage} = useSupervisionActions(supervision);
 const tab = ref<SupervisionTab>('stations');
 const openedId = ref<number | null>(null);
 
 //------------------ COMPUTED --------------------------------
-/** RG-28 : la masterisation est réservée à l'administrateur. */
+/** RG-28 et RG-27 : la masterisation et la liste noire sont réservées à l'administrateur. */
 const canReimage = computed(() => hasRole('ADMIN'));
 /** Les tuiles, une fois la salle chargée (pas de « Aucun poste » pendant le chargement). */
 const showStations = computed(() => tab.value === 'stations' && (workstationViews.value.length > 0 || !loading.value));
 const showJournal = computed(() => tab.value === 'journal');
+const showBlacklist = computed(() => canReimage.value && tab.value === 'blacklist');
 const openedView = computed(() => workstationViews.value.find(view => view.workstation.id === openedId.value) ?? null);
 
 //------------------ FUNCTIONS -------------------------------
@@ -70,6 +72,7 @@ watch(selectedRoomId, roomId => {
           v-model:tab="tab"
           :rooms="rooms"
           :locked-room="lockedRoom"
+          :can-manage-blacklist="canReimage"
       />
       <LoadState
           :loading="loading"
@@ -92,6 +95,7 @@ watch(selectedRoomId, roomId => {
         />
       </template>
       <SupervisionJournal v-if="showJournal" :events="events" />
+      <BlacklistPanel v-if="showBlacklist" />
     </template>
   </Card>
   <WorkstationPanel
@@ -100,6 +104,7 @@ watch(selectedRoomId, roomId => {
       :busy="busy"
       @close="openedId = null"
       @kill="kill"
+      @forbid="forbid"
       @reimage="openWizard"
   />
   <ReimageWizard

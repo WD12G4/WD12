@@ -21,6 +21,8 @@ interface RoomFigures {
 interface SharedApp {
     name: string;
     stations: number;
+    /** Icône envoyée par l'agent d'un des postes, ou null. */
+    icon: string | null;
 }
 
 /** Événements d'un même jour. */
@@ -46,17 +48,18 @@ export function roomFigures(views: WorkstationView[]): RoomFigures {
  * @param views postes et leurs applications
  */
 export function sharedApps(views: WorkstationView[]): SharedApp[] {
-    const stationsByApp = new Map<string, number>();
+    const apps = new Map<string, SharedApp>();
     for (const view of views) {
-        for (const name of new Set(view.processes.map(process => process.name))) {
-            stationsByApp.set(name, (stationsByApp.get(name) ?? 0) + 1);
+        const seen = new Map(view.processes.map(process => [process.name, process.icon]));
+        for (const [name, icon] of seen) {
+            const app = apps.get(name) ?? {name, stations: 0, icon: null};
+            apps.set(name, {...app, stations: app.stations + 1, icon: app.icon ?? icon});
         }
     }
-    return [...stationsByApp]
-        .filter(([, stations]) => stations > 1)
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-        .slice(0, MAX_SHARED_APPS)
-        .map(([name, stations]) => ({name, stations}));
+    return [...apps.values()]
+        .filter(app => app.stations > 1)
+        .sort((a, b) => b.stations - a.stations || a.name.localeCompare(b.name))
+        .slice(0, MAX_SHARED_APPS);
 }
 
 /**

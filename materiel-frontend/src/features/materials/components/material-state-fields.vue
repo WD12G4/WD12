@@ -33,14 +33,12 @@ watch(() => draft.value.archived, archived => {
 
 <template>
   <div class="field">
-    <!-- TODO(question): le client veut cette date facultative (RG-04), mais l'API l'exige encore. -->
-    <label for="material-end-date">Fin de disponibilité</label>
+    <label for="material-end-date">Fin de disponibilité <span class="field-hint">(facultative)</span></label>
     <input
         id="material-end-date"
         v-model="draft.endAvailabilityDate"
         type="date"
         :min="minDate"
-        required
     >
   </div>
   <div class="field">

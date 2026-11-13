@@ -40,7 +40,7 @@ function openApps(station: SimStation, maxMinutes: number): ProcessInfo[] {
     const count = appIds.length === 0 ? 0 : 1 + Math.floor(Math.random() * Math.min(appIds.length, 5));
     return [...appIds].sort(() => Math.random() - 0.5).slice(0, count).map(appId => ({
         pid: 1000 + Math.floor(Math.random() * 30_000), workstationId: station.workstation.id,
-        name: processName(appId, osId) ?? appId, startedAt: new Date(Date.now() - Math.random() * maxMinutes * 60_000),
+        name: processName(appId, osId) ?? appId, startedAt: new Date(Date.now() - Math.random() * maxMinutes * 60_000), icon: null,
     }));
 }
 

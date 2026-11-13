@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
- * Une application ouverte sur un poste (panneau de détail) : icône, nom, depuis quand, bouton Arrêter.
+ * Une application ouverte sur un poste (panneau de détail) : icône, nom, depuis quand, bouton Arrêter,
+ * et, pour l'administrateur sur un vrai poste, bouton Interdire (liste noire).
  * Composant de présentation.
  * Utilisé par : process-list.vue
- * RG : RG-26 (arrêt en un clic)
+ * RG : RG-26 (arrêt en un clic), RG-27 (liste noire)
  */
 import {computed} from 'vue';
 import type {ProcessInfo} from '../../../models/supervision.model.ts';
@@ -16,11 +17,15 @@ const props = defineProps<{
   process: ProcessInfo;
   /** Vrai pendant une action, pour éviter les doubles clics. */
   busy: boolean;
+  /** Vrai si le bouton Interdire est affiché (administrateur, vrai poste). */
+  canForbid: boolean;
 }>();
 
 const emit = defineEmits<{
   /** Demande d'arrêt de l'application. */
   kill: [process: ProcessInfo];
+  /** Demande d'interdiction de l'application (liste noire). */
+  forbid: [process: ProcessInfo];
 }>();
 
 //------------------ COMPUTED --------------------------------
@@ -30,17 +35,29 @@ const startedAt = computed(() => `Lancée le ${formatDateTime(props.process.star
 </script>
 
 <template>
-  <AppGlyph :name="process.name" />
+  <AppGlyph :name="process.name" :icon="process.icon" />
   <span class="process-text">
     <strong>{{ process.name }}</strong>
     <span class="muted" :title="startedAt">{{ elapsed }}</span>
   </span>
-  <button
-      type="button"
-      class="delete-button"
-      :disabled="busy"
-      @click="emit('kill', process)"
-  >
-    Arrêter
-  </button>
+  <span class="process-actions">
+    <button
+        v-if="canForbid"
+        type="button"
+        class="secondary-button"
+        :disabled="busy"
+        title="Fermer cette application sur tous les postes, maintenant et à chaque lancement"
+        @click="emit('forbid', process)"
+    >
+      Interdire
+    </button>
+    <button
+        type="button"
+        class="delete-button"
+        :disabled="busy"
+        @click="emit('kill', process)"
+    >
+      Arrêter
+    </button>
+  </span>
 </template>

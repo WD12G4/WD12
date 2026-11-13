@@ -1266,6 +1266,9 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
   box-shadow: var(--app-shine), 0 2px 6px var(--shadow-strong);
 }
 .app-glyph .icon { width: 1.3rem; height: 1.3rem; }
+/* Vraie icône de l'application (agent Windows) : sur fond neutre, sans dégradé. */
+.app-glyph.has-image { background: var(--track); }
+.app-glyph img { width: 62%; height: 62%; object-fit: contain; }
 /* « +N » : applications qui ne tiennent pas dans la tuile (détail dans le panneau). */
 .app-more {
   display: inline-grid; place-items: center; min-width: 2.5rem; height: 2.5rem; padding: 0 0.5rem; border-radius: 0.72rem;
@@ -1311,6 +1314,8 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 :is(.process-list, .journal) .app-glyph { width: 2.2rem; height: 2.2rem; border-radius: 0.62rem; }
 :is(.process-text, .journal-text, .shared-app-text) { flex: 1; display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
 :is(.process-text, .journal-text, .shared-app-text) strong { color: var(--title); font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.process-actions { display: flex; flex-shrink: 0; gap: 0.4rem; }
+.blacklist { display: grid; gap: 1rem; }
 :is(.process-text, .journal-text, .shared-app-text) .muted { font-size: 0.8rem; }
 .process-list button { padding: 0.4rem 0.8rem; font-size: 0.82rem; }
 
