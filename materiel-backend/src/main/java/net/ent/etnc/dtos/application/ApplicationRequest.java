@@ -13,9 +13,6 @@ public record ApplicationRequest(
 
         String iconBase64,
 
-        Boolean blacklisted,
-
-        @Size(max = 500, message = "La description ne doit pas dépasser 500 caractères")
-        String description
+        Boolean blacklisted
 ) {
 }

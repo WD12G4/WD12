@@ -36,18 +36,30 @@ classDiagram
 
     class User {
         -String username
-        -String password
         -ERole role
         -boolean enabled
         +getUsername() String
         +setUsername(String username) void
-        +getPassword() String
-        +setPassword(String password) void
         +getRole() ERole
         +setRole(ERole role) void
         +isEnabled() boolean
         +setEnabled(boolean enabled) void
         +getAuthorities() Collection
+    }
+
+    class Application {
+        -String name
+        -String displayName
+        -String iconBase64
+        -boolean blacklisted
+        +getName() String
+        +setName(String name) void
+        +getDisplayName() String
+        +setDisplayName(String displayName) void
+        +getIconBase64() String
+        +setIconBase64(String iconBase64) void
+        +isBlacklisted() boolean
+        +setBlacklisted(boolean blacklisted) void
     }
 
     class Report {

@@ -61,19 +61,32 @@ class Material <<entity>> {
 
 class User <<entity>> {
   - username: String {unique, 1..100 chars}
-  - password: String {1..255 chars}
   - role: ERole
   - enabled: boolean
   --
   + getUsername(): String
   + setUsername(username: String): void
-  + getPassword(): String
-  + setPassword(password: String): void
   + getRole(): ERole
   + setRole(role: ERole): void
   + isEnabled(): boolean
   + setEnabled(enabled: boolean): void
   + getAuthorities(): Collection
+}
+
+class Application <<entity>> {
+  - name: String {unique, 1..150 chars}
+  - displayName: String {0..150 chars}
+  - iconBase64: String
+  - blacklisted: boolean
+  --
+  + getName(): String
+  + setName(name: String): void
+  + getDisplayName(): String
+  + setDisplayName(displayName: String): void
+  + getIconBase64(): String
+  + setIconBase64(iconBase64: String): void
+  + isBlacklisted(): boolean
+  + setBlacklisted(blacklisted: boolean): void
 }
 
 class Report <<entity>> {

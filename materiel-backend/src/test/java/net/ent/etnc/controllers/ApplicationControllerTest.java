@@ -65,7 +65,7 @@ class ApplicationControllerTest {
         sampleApp.setBlacklisted(true);
 
         sampleResponse = new ApplicationResponse(
-                1L, 0L, "steam.exe", "Steam", "data:image/png;base64,ABC", true, null
+                1L, 0L, "steam.exe", "Steam", "data:image/png;base64,ABC", true
         );
     }
 
@@ -147,7 +147,7 @@ class ApplicationControllerTest {
             unblacklisted.setBlacklisted(false);
 
             ApplicationResponse unblacklistedDto = new ApplicationResponse(
-                    1L, 0L, "steam.exe", "Steam", null, false, null
+                    1L, 0L, "steam.exe", "Steam", null, false
             );
 
             when(applicationService.toggleBlacklist(1L, false)).thenReturn(unblacklisted);

@@ -80,7 +80,6 @@ CREATE TABLE IF NOT EXISTS applications (
     display_name VARCHAR(150),
     icon_base64 TEXT,
     blacklisted BOOLEAN NOT NULL DEFAULT FALSE,
-    description VARCHAR(500),
     CONSTRAINT uk__application__name UNIQUE (name)
 );
 

@@ -42,10 +42,4 @@ public class Application extends AbstractPersistableWithIdSetter<Long> {
     @Setter
     @Column(name = "blacklisted", nullable = false)
     private boolean blacklisted = false;
-
-    @Getter
-    @Setter
-    @Size(max = 500, message = "La description ne doit pas dépasser 500 caractères")
-    @Column(name = "description", length = 500)
-    private String description;
 }

@@ -27,7 +27,6 @@ class ApplicationDtoAssemblerTest {
         sampleEntity.setDisplayName("Steam");
         sampleEntity.setIconBase64("data:image/png;base64,ABC");
         sampleEntity.setBlacklisted(true);
-        sampleEntity.setDescription("Client de jeux vidéo");
     }
 
     @Nested
@@ -52,7 +51,6 @@ class ApplicationDtoAssemblerTest {
             assertThat(dto.displayName()).isEqualTo("Steam");
             assertThat(dto.iconBase64()).isEqualTo("data:image/png;base64,ABC");
             assertThat(dto.blacklisted()).isTrue();
-            assertThat(dto.description()).isEqualTo("Client de jeux vidéo");
         }
     }
 
@@ -70,7 +68,7 @@ class ApplicationDtoAssemblerTest {
         @DisplayName("Doit convertir correctement une requête en entité")
         void toEntity_Success() {
             ApplicationRequest request = new ApplicationRequest(
-                    "discord.exe", "Discord", "data:image/png;base64,XYZ", false, "Communication vocale"
+                    "discord.exe", "Discord", "data:image/png;base64,XYZ", false
             );
 
             Application entity = assembler.toEntity(request);
@@ -80,7 +78,6 @@ class ApplicationDtoAssemblerTest {
             assertThat(entity.getDisplayName()).isEqualTo("Discord");
             assertThat(entity.getIconBase64()).isEqualTo("data:image/png;base64,XYZ");
             assertThat(entity.isBlacklisted()).isFalse();
-            assertThat(entity.getDescription()).isEqualTo("Communication vocale");
         }
     }
 
@@ -92,7 +89,7 @@ class ApplicationDtoAssemblerTest {
         @DisplayName("Doit mettre à jour les champs de l'entité")
         void updateEntity_Success() {
             ApplicationRequest request = new ApplicationRequest(
-                    "steam_updated.exe", "Steam Gaming", null, false, "Nouvelle description"
+                    "steam_updated.exe", "Steam Gaming", null, false
             );
 
             assembler.updateEntity(sampleEntity, request);
@@ -101,13 +98,12 @@ class ApplicationDtoAssemblerTest {
             assertThat(sampleEntity.getDisplayName()).isEqualTo("Steam Gaming");
             assertThat(sampleEntity.getIconBase64()).isEqualTo("data:image/png;base64,ABC"); // inchangé car null dans request
             assertThat(sampleEntity.isBlacklisted()).isFalse();
-            assertThat(sampleEntity.getDescription()).isEqualTo("Nouvelle description");
         }
 
         @Test
         @DisplayName("Ne doit pas lever d'erreur si entité ou requête est null")
         void updateEntity_WhenNull_DoesNotThrow() {
-            assembler.updateEntity(null, new ApplicationRequest("a", "b", null, null, null));
+            assembler.updateEntity(null, new ApplicationRequest("a", "b", null, null));
             assembler.updateEntity(sampleEntity, null);
 
             assertThat(sampleEntity.getName()).isEqualTo("steam.exe");
