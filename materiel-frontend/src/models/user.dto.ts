@@ -27,12 +27,6 @@ export interface UserUpdateRequestDto {
     enabled: boolean;
 }
 
-/** Corps attendu par POST /api/v1/auth/login/. */
-export interface LoginRequestDto {
-    username: string;
-    password: string;
-}
-
 /**
  * Convertit la réponse de l'API en modèle front.
  * @param dto compte reçu de l'API

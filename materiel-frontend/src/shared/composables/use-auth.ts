@@ -5,18 +5,37 @@
  * Utilisé par : router/guards.ts, App.vue, les vues qui affichent des actions selon le rôle.
  * RG : RG-14, RG-15 (héritage des rôles), RG-19 (compte désactivé refusé par le backend)
  *
- * Le jeton reste EN MÉMOIRE : jamais dans localStorage, sessionStorage ou un cookie lisible.
- * Après un rechargement de page, la session est restaurée grâce au cookie HttpOnly (restoreSession).
+ * La connexion passe par Keycloak, qui joue MinDef Connect (services/keycloak.ts) : l'application
+ * ne voit jamais le mot de passe. Keycloak prouve l'identité ; le backend retrouve le compte par son
+ * identifiant et lui applique son rôle. Un compte inconnu de l'application ou désactivé est refusé.
+ * Le jeton reste EN MÉMOIRE (keycloak-js) : jamais dans localStorage, sessionStorage ou un cookie lisible.
+ * Après un rechargement de page, la session est retrouvée auprès de Keycloak sans nouvelle saisie
+ * (restoreSession : aller-retour rapide vers Keycloak, sans cadre caché, qui fonctionne aussi en HTTP).
+ *
+ * OUTIL DE DÉMONSTRATION : un administrateur peut tester avec le rôle d'un compte de démonstration sans se
+ * déconnecter de Keycloak (actAs). Le compte choisi part dans l'en-tête X-Demo-Account ; le backend ne
+ * l'accepte que pour un administrateur. Il est gardé dans sessionStorage (onglet en cours) pour survivre
+ * à un rechargement : ce n'est qu'un identifiant, pas un secret.
  */
 import {computed, ref} from 'vue';
 import {type Role, roleRanks, type User} from '../../models/user.model.ts';
+import {ApiError} from '../../services/api-error.ts';
 import {authServices} from '../../services/auth.services.ts';
 import {configureHttpClient} from '../../services/http-client.ts';
+import {appUrl, keycloak} from '../../services/keycloak.ts';
 
 //------------------ DATAS -----------------------------------
 const accessToken = ref<string | null>(null);
 const currentUser = ref<User | null>(null);
-/** Promesse de restauration en cours : évite d'appeler refresh/ plusieurs fois au démarrage. */
+/** Vrai si Keycloak n'a pas répondu au démarrage : la connexion est alors impossible. */
+const ssoUnavailable = ref(false);
+/** Vrai si Keycloak a identifié quelqu'un que l'application refuse (compte inconnu ou désactivé). */
+const accountRefused = ref(false);
+/** Clé sessionStorage du compte de démonstration choisi. */
+const DEMO_ACCOUNT_KEY = 'gestion-parc.demo-account';
+/** Compte de démonstration avec lequel l'administrateur teste, ou null (son propre compte). */
+const demoAccount = ref<string | null>(readDemoAccount());
+/** Promesse de restauration en cours : évite d'initialiser Keycloak plusieurs fois au démarrage. */
 let restoring: Promise<void> | null = null;
 /** Fonction appelée quand la session expire ; fournie par le router pour éviter un import circulaire. */
 let sessionExpiredHandler: () => void = () => undefined;
@@ -25,19 +44,45 @@ let sessionExpiredHandler: () => void = () => undefined;
 const isAuthenticated = computed(() => accessToken.value !== null && currentUser.value !== null);
 
 //------------------ FUNCTIONS -------------------------------
-/** Vide la session locale (le cookie, lui, est effacé par le backend). */
+/** Compte de démonstration gardé pour l'onglet (sessionStorage peut être indisponible : null). */
+function readDemoAccount(): string | null {
+    try {
+        return sessionStorage.getItem(DEMO_ACCOUNT_KEY);
+    } catch {
+        return null;
+    }
+}
+
+/** Retient le compte de démonstration pour l'onglet, ou l'oublie (null). */
+function saveDemoAccount(username: string | null): void {
+    demoAccount.value = username;
+    try {
+        if (username) sessionStorage.setItem(DEMO_ACCOUNT_KEY, username);
+        else sessionStorage.removeItem(DEMO_ACCOUNT_KEY);
+    } catch {
+        // Stockage indisponible : le choix vaut jusqu'au prochain rechargement.
+    }
+}
+
+/** Vide la session locale (la session Keycloak, elle, est fermée par logout()). */
 function clearSession(): void {
     accessToken.value = null;
     currentUser.value = null;
 }
 
+/** Recopie le jeton tenu par keycloak-js (après la connexion ou un renouvellement). */
+function syncToken(): void {
+    accessToken.value = keycloak.token ?? null;
+}
+
 /**
- * Rafraîchit le jeton grâce au cookie HttpOnly.
+ * Renouvelle le jeton auprès de Keycloak, appelé par le client HTTP après une 401.
  * @returns vrai si un nouveau jeton a été obtenu
  */
 async function refreshToken(): Promise<boolean> {
     try {
-        accessToken.value = await authServices.refresh();
+        await keycloak.updateToken(-1);
+        syncToken();
         return accessToken.value !== null;
     } catch {
         clearSession();
@@ -46,34 +91,101 @@ async function refreshToken(): Promise<boolean> {
 }
 
 /**
- * Connecte l'utilisateur, puis charge son profil.
- * @throws ApiError 401 si les identifiants sont faux ou le compte désactivé
+ * Charge le profil du compte identifié par Keycloak.
+ * Une 401 du backend signifie que l'application refuse ce compte (inconnu ou désactivé, RG-19).
  */
-async function login(username: string, password: string): Promise<void> {
-    accessToken.value = await authServices.login({username: username.trim(), password});
-    currentUser.value = await authServices.me();
-}
-
-/** Déconnecte l'utilisateur. La session locale est vidée même si l'appel échoue. */
-async function logout(): Promise<void> {
+async function loadProfile(): Promise<void> {
     try {
-        await authServices.logout();
-    } finally {
+        currentUser.value = await authServices.me();
+        accountRefused.value = false;
+        // Compte de démonstration refusé (le compte Keycloak n'est pas administrateur) : on l'oublie.
+        if (demoAccount.value && currentUser.value.username !== demoAccount.value) saveDemoAccount(null);
+    } catch (error) {
+        accountRefused.value = error instanceof ApiError && error.status === 401;
+        keycloak.clearToken();
         clearSession();
     }
 }
 
 /**
- * Restaure la session au démarrage (refresh/ puis me/). Appelée une seule fois par la garde de route.
- * Un échec n'est pas une erreur : l'utilisateur est simplement non connecté.
+ * Restaure la session au démarrage : un aller-retour vers Keycloak (sans saisie) dit si l'utilisateur est
+ * déjà identifié (ou revient de la page de connexion), puis le profil est chargé. Appelée une seule fois par
+ * la garde de route. Un échec n'est pas une erreur : l'utilisateur est simplement non connecté.
+ * Pas de vérification silencieuse dans un cadre caché (silentCheckSsoRedirectUri) : elle exige HTTPS
+ * (document.requestStorageAccess) et reste bloquée sur la VM, servie en HTTP.
  */
 function restoreSession(): Promise<void> {
     restoring ??= (async () => {
-        if (await refreshToken()) {
-            currentUser.value = await authServices.me().catch(() => null);
-        }
+        const authenticated = await keycloak.init({
+            onLoad: 'check-sso',
+            checkLoginIframe: false,
+            // Adresse de retour sans fragment : par défaut, keycloak-js reprend l'adresse de la page, qui peut
+            // garder le #state=…&code=… d'un retour précédent (Keycloak refuse alors l'échange du code).
+            redirectUri: appUrl(window.location.pathname + window.location.search),
+        }).catch((error: unknown) => {
+            // Raison visible dans la console du navigateur (adresse de Keycloak, réseau, configuration…).
+            console.error('[Keycloak] Initialisation impossible :', error);
+            ssoUnavailable.value = true;
+            return false;
+        });
+        if (!authenticated) return;
+        syncToken();
+        await loadProfile();
     })();
     return restoring;
+}
+
+/**
+ * OUTIL DE DÉMONSTRATION : teste avec le rôle d'un compte de démonstration, sans se déconnecter de Keycloak.
+ * Seul un administrateur peut le faire : pour un autre compte, le backend ignore la demande et le profil
+ * reste le sien (le choix est alors annulé).
+ * @param username compte de démonstration ; celui de la connexion Keycloak revient au compte réel
+ * @returns vrai si le profil chargé est bien celui demandé
+ * @throws ApiError si le profil ne peut pas être chargé (réseau…)
+ */
+async function actAs(username: string): Promise<boolean> {
+    const previous = demoAccount.value;
+    const signedInAs = keycloak.tokenParsed?.preferred_username as string | undefined;
+    saveDemoAccount(username === signedInAs ? null : username);
+    try {
+        const profile = await authServices.me();
+        if (profile.username !== username) {
+            saveDemoAccount(previous);
+            return false;
+        }
+        currentUser.value = profile;
+        return true;
+    } catch (error) {
+        saveDemoAccount(previous);
+        throw error;
+    }
+}
+
+/**
+ * Ouvre la page de connexion de Keycloak (la page de l'application est quittée).
+ * Après un compte refusé, Keycloak redemande l'identifiant au lieu de reprendre le même compte.
+ * @param redirectPath page de l'application où revenir une fois connecté (ex. '/materiel')
+ * @param username identifiant prérempli sur la page de Keycloak (mode démonstration)
+ */
+async function login(redirectPath: string, username?: string): Promise<void> {
+    await restoreSession();
+    saveDemoAccount(null);
+    const forceLogin = username !== undefined || accountRefused.value;
+    await keycloak.login({
+        redirectUri: appUrl(redirectPath),
+        loginHint: username,
+        prompt: forceLogin ? 'login' : undefined,
+    });
+}
+
+/**
+ * Déconnecte l'utilisateur de l'application et de Keycloak (la page de l'application est quittée).
+ * @param redirectPath page affichée après la déconnexion (la page de connexion)
+ */
+async function logout(redirectPath: string): Promise<void> {
+    clearSession();
+    saveDemoAccount(null);
+    await keycloak.logout({redirectUri: appUrl(redirectPath)});
 }
 
 /**
@@ -94,6 +206,12 @@ function onSessionExpired(handler: () => void): void {
     sessionExpiredHandler = handler;
 }
 
+// Le jeton dure 5 minutes (realm Keycloak) : il est renouvelé dès qu'il expire. En cas d'échec,
+// la prochaine requête reçoit une 401 et le client HTTP termine la session.
+keycloak.onTokenExpired = () => {
+    keycloak.updateToken(30).then(syncToken).catch(() => undefined);
+};
+
 // Branche le client HTTP sur cette session (une seule fois, au chargement du module).
 configureHttpClient({
     getToken: () => accessToken.value,
@@ -102,6 +220,7 @@ configureHttpClient({
         clearSession();
         sessionExpiredHandler();
     },
+    getDemoAccount: () => demoAccount.value,
 });
 
 /**
@@ -109,5 +228,8 @@ configureHttpClient({
  * @returns l'état de la session et ses actions
  */
 export function useAuth() {
-    return {currentUser, isAuthenticated, login, logout, restoreSession, hasRole, onSessionExpired};
+    return {
+        currentUser, isAuthenticated, ssoUnavailable, accountRefused,
+        login, logout, restoreSession, hasRole, onSessionExpired, actAs,
+    };
 }

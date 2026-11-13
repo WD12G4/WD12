@@ -17,6 +17,16 @@ spring:
       max-lifetime: 1200000
 
   # -------------------------------------------------------------
+  # SÉCURITÉ : vérification des jetons Keycloak (voir keycloak: plus bas)
+  # -------------------------------------------------------------
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${keycloak.url}/realms/${keycloak.realm}
+          jwk-set-uri: ${KEYCLOAK_JWKS_URI:${keycloak.url}/realms/${keycloak.realm}/protocol/openid-connect/certs}
+
+  # -------------------------------------------------------------
   # CONFIGURATION JPA / HIBERNATE
   # -------------------------------------------------------------
   jpa:
@@ -33,23 +43,23 @@ spring:
           batch_size: 25
 
 # -------------------------------------------------------------
-# PROPRIÉTÉS MÉTIER & SÉCURITÉ
+# SÉCURITÉ : JETONS KEYCLOAK (MinDef Connect)
+# issuer-uri : adresse de Keycloak vue par le navigateur, comparée au champ « iss » des jetons.
+# jwk-set-uri : où le backend lit les clés publiques (réseau Docker : http://keycloak:8080/auth, voir .env).
+# -------------------------------------------------------------
+# -------------------------------------------------------------
+# OUTIL DE DÉMONSTRATION : un administrateur peut tester avec le rôle d'un compte de démonstration
+# (en-tête X-Demo-Account, voir KeycloakJwtConverter) sans se déconnecter de Keycloak.
+# Pour une vraie mise en production : DEMO_ACCOUNTS=false (comme VITE_DEMO_ACCOUNTS côté front).
 # -------------------------------------------------------------
 app:
-  security:
-    jwt:
-      secret: ${JWT_SECRET:uneSuperCleSecreteTresLonguePourLeDevDeMonApplication2026!}
-      expiration: 900000
-    refresh-token:
-      expiration: 2h
-      cookie:
-        name: materiel_refresh_token
-        secure: false
-        same-site: Strict
-        path: /api/v1/auth
-      audit:
-        cleanup-cron: "0 0 3 * * ?"
-        dry-run: false
+  demo:
+    enabled: ${DEMO_ACCOUNTS:true}
+    accounts: admin,manager,user
+
+keycloak:
+  url: ${KEYCLOAK_URL:https://localhost/auth}
+  realm: gestion-parc
 
 logging:
   level:

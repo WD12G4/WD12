@@ -1,6 +1,6 @@
 /**
  * Client HTTP de l'application : SEUL fichier qui appelle fetch().
- * Ajoute le jeton, rafraîchit la session une fois sur une 401, et convertit les erreurs en ApiError.
+ * Ajoute le jeton Keycloak, le renouvelle une fois sur une 401, et convertit les erreurs en ApiError.
  * Utilisé par : tous les fichiers *.services.ts
  *
  * Pour éviter un import circulaire (use-auth → auth.services → http-client → use-auth),
@@ -21,13 +21,19 @@ interface SessionHooks {
     refresh: () => Promise<boolean>;
     /** Appelé quand la session est définitivement expirée. */
     onSessionExpired: () => void;
+    /** OUTIL DE DÉMONSTRATION : compte de démonstration avec lequel l'administrateur teste, ou null. */
+    getDemoAccount: () => string | null;
 }
+
+/** En-tête lu par le backend pour le compte de démonstration (KeycloakJwtConverter). */
+const DEMO_ACCOUNT_HEADER = 'X-Demo-Account';
 
 //------------------ DATAS -----------------------------------
 let hooks: SessionHooks = {
     getToken: () => null,
     refresh: async () => false,
     onSessionExpired: () => undefined,
+    getDemoAccount: () => null,
 };
 
 //------------------ FUNCTIONS -------------------------------
@@ -39,7 +45,10 @@ export function configureHttpClient(sessionHooks: SessionHooks): void {
     hooks = sessionHooks;
 }
 
-/** Construit les en-têtes : JSON si un corps est envoyé, jeton si l'utilisateur est connecté. */
+/**
+ * Construit les en-têtes : JSON si un corps est envoyé, jeton si l'utilisateur est connecté,
+ * compte de démonstration si l'administrateur teste avec un autre rôle.
+ */
 function buildHeaders(options: RequestInit): Headers {
     const headers = new Headers(options.headers);
     if (options.body !== undefined) {
@@ -49,12 +58,16 @@ function buildHeaders(options: RequestInit): Headers {
     if (token) {
         headers.set('Authorization', `Bearer ${token}`);
     }
+    const demoAccount = hooks.getDemoAccount();
+    if (token && demoAccount) {
+        headers.set(DEMO_ACCOUNT_HEADER, demoAccount);
+    }
     return headers;
 }
 
 /**
  * Envoie la requête. Une panne réseau devient une ApiError lisible.
- * credentials 'same-origin' : le cookie de rafraîchissement doit partir avec les appels /auth.
+ * credentials 'same-origin' : aucun cookie n'est envoyé à un autre site (le jeton part dans l'en-tête).
  */
 async function send(path: string, options: RequestInit): Promise<Response> {
     try {
@@ -90,7 +103,7 @@ async function retryAfterRefresh(path: string, options: RequestInit): Promise<Re
  */
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
     let response = await send(path, options);
-    // Le jeton dure 15 minutes : sur une 401, on tente un seul rafraîchissement (section 9.2 du cadre).
+    // Le jeton Keycloak dure 5 minutes : sur une 401, on tente un seul renouvellement (section 9.2 du cadre).
     if (response.status === 401 && hooks.getToken() !== null) {
         response = await retryAfterRefresh(path, options);
     }
@@ -98,21 +111,4 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
         throw await toApiError(response);
     }
     return parseBody<T>(response);
-}
-
-/**
- * Appelle une route d'authentification et renvoie le jeton reçu dans l'en-tête Authorization.
- * Pas de rafraîchissement automatique ici : ces routes servent justement à l'obtenir.
- * @param path chemin après /api/v1 (ex. '/auth/login/')
- * @param options options de fetch
- * @returns le jeton sans le préfixe « Bearer », ou null si l'en-tête est absent
- * @throws ApiError si l'API répond en erreur
- */
-export async function apiTokenRequest(path: string, options: RequestInit = {}): Promise<string | null> {
-    const response = await send(path, options);
-    if (!response.ok) {
-        throw await toApiError(response);
-    }
-    const header = response.headers.get('Authorization');
-    return header ? header.replace(/^Bearer\s+/i, '') : null;
 }

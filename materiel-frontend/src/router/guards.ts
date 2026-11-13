@@ -23,15 +23,21 @@ const {isTrainer, roomIdFromQuery, setTeachingRoomId} = useTeachingRoom();
  * @returns true pour laisser passer, ou la route vers laquelle rediriger
  */
 async function checkAccess(to: RouteLocationNormalized, from: RouteLocationNormalized): Promise<true | RouteLocationRaw> {
-    // Au premier chargement, le jeton n'est pas encore en mémoire : on le récupère via le cookie.
+    // Au premier chargement, le jeton n'est pas encore en mémoire : la session est retrouvée auprès de Keycloak.
     await restoreSession();
+
+    // Retour de Keycloak : keycloak-js a lu #state=…&code=…, mais le routeur remettrait ce fragment dans
+    // l'adresse (et un rechargement le renverrait à Keycloak). On repart sur la même page sans lui.
+    if (/(^|[#&])state=/.test(to.hash)) {
+        return {path: to.path, query: to.query, hash: '', replace: true};
+    }
 
     if (to.meta.public) {
         // Un utilisateur déjà connecté n'a rien à faire sur la page de connexion.
         return isAuthenticated.value ? {name: 'home'} : true;
     }
     if (!isAuthenticated.value) {
-        // La page demandée est gardée : après la connexion, on y revient (navigation.ts, navigateAfterLogin).
+        // La page demandée est gardée : après la connexion, Keycloak y ramène (navigation.ts, afterLoginHref).
         return to.fullPath === '/' ? {name: 'login'} : {name: 'login', query: {redirect: to.fullPath}};
     }
     if (!to.meta.roles.some(hasRole)) {

@@ -44,24 +44,7 @@ CREATE TABLE IF NOT EXISTS materials (
     CONSTRAINT fk__materials__rooms FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE SET NULL
 );
 
--- 5. Table des refresh tokens
-CREATE TABLE IF NOT EXISTS refresh_tokens (
-    id BIGSERIAL PRIMARY KEY,
-    version BIGINT NOT NULL DEFAULT 0,
-    token_hash VARCHAR(64) NOT NULL,
-    family_id VARCHAR(36) NOT NULL,
-    user_id BIGINT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    revoked_at TIMESTAMP WITH TIME ZONE,
-    replaced_by_token_hash VARCHAR(64),
-    created_by_ip VARCHAR(64),
-    created_by_user_agent VARCHAR(512),
-    CONSTRAINT uk__refresh_tokens__token_hash UNIQUE (token_hash),
-    CONSTRAINT fk__refresh_tokens__users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- 6. Table des signalements
+-- 5. Table des signalements
 CREATE TABLE IF NOT EXISTS reports (
     id BIGSERIAL PRIMARY KEY,
     version BIGINT NOT NULL DEFAULT 0,
@@ -76,7 +59,7 @@ CREATE TABLE IF NOT EXISTS reports (
     CONSTRAINT fk__reports__materials FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE CASCADE
 );
 
--- 7. Table des événements d'arrêt (kill events)
+-- 6. Table des événements d'arrêt (kill events)
 CREATE TABLE IF NOT EXISTS killevents (
     id BIGSERIAL PRIMARY KEY,
     version BIGINT NOT NULL DEFAULT 0,
@@ -94,7 +77,6 @@ CREATE TABLE IF NOT EXISTS killevents (
 CREATE INDEX IF NOT EXISTS idx__rooms__building_id ON rooms(building_id);
 CREATE INDEX IF NOT EXISTS idx__materials__room_id ON materials(room_id);
 CREATE INDEX IF NOT EXISTS idx__materials__material_type ON materials(material_type);
-CREATE INDEX IF NOT EXISTS idx__refresh_tokens__user_id ON refresh_tokens(user_id);
 CREATE INDEX IF NOT EXISTS idx__reports__user_id ON reports(user_id);
 CREATE INDEX IF NOT EXISTS idx__reports__material_id ON reports(material_id);
 CREATE INDEX IF NOT EXISTS idx__killevents__user_id ON killevents(user_id);

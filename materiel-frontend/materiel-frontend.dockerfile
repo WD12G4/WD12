@@ -15,8 +15,8 @@ ENV http_proxy=${HTTP_PROXY} \
     no_proxy=${NO_PROXY} \
     NO_PROXY=${NO_PROXY}
 
-# Copy dependency definition files (and the DSFR license consent required by @gouvfr/dsfr's install)
-COPY package*.json .dsfr.yml ./
+# Copy dependency definition files
+COPY package*.json ./
 
 # Configure npm proxy dynamically if provided and install dependencies
 RUN if [ -n "$HTTP_PROXY" ]; then \
@@ -29,12 +29,20 @@ RUN if [ -n "$HTTP_PROXY" ]; then \
 COPY . .
 RUN npm run build
 
-# 2. Production stage (Nginx + OpenSSL pour HTTPS)
+# 2. Production stage (Nginx)
 FROM nginx:alpine
+# Proxy éventuel (même usage que l'étape de build) : pour installer openssl.
+ARG HTTP_PROXY=""
+ARG HTTPS_PROXY=""
+# openssl : création du certificat HTTPS auto-signé au démarrage (docker-entrypoint.d).
+RUN http_proxy=${HTTP_PROXY} https_proxy=${HTTPS_PROXY} apk add --no-cache openssl
+COPY docker-entrypoint.d/40-generate-certificate.sh /docker-entrypoint.d/40-generate-certificate.sh
+RUN sed -i 's/\r$//' /docker-entrypoint.d/40-generate-certificate.sh \
+    && chmod +x /docker-entrypoint.d/40-generate-certificate.sh
 WORKDIR /usr/share/nginx/html
 
-# Install openssl for self-signed certificates generation and remove default static assets
-RUN apk add --no-cache openssl && rm -rf ./*
+# Remove default nginx static assets
+RUN rm -rf ./*
 
 # Copy built assets from builder stage
 COPY --from=builder /app/dist .
@@ -42,11 +50,6 @@ COPY --from=builder /app/dist .
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy entrypoint script for automatic SSL generation
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
-
 EXPOSE 80 443
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

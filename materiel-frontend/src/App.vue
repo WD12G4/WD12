@@ -10,10 +10,9 @@
 import {computed, ref, watch} from 'vue';
 import {useRoute} from 'vue-router';
 import {useAuth} from './shared/composables/use-auth.ts';
-import {useFlashMessage} from './shared/composables/use-flash-message.ts';
 import {useNavLinks} from './shared/composables/use-nav-links.ts';
 import {useTeachingRoom} from './shared/composables/use-teaching-room.ts';
-import {navigateTo} from './router/navigation.ts';
+import {hrefOf} from './router/navigation.ts';
 import {viewTransitionsSupported} from './router/view-transition.ts';
 import AppNav from './shared/components/app-nav.vue';
 import AppTopbar from './shared/components/app-topbar.vue';
@@ -25,7 +24,6 @@ const route = useRoute();
 const {currentUser, logout} = useAuth();
 const {visibleLinks} = useNavLinks();
 const {needsRoomChoice} = useTeachingRoom();
-const {clear: clearFlash} = useFlashMessage();
 useUnreadReports();
 /** Tiroir du menu ouvert (mobile uniquement : sur grand écran, le menu est la barre du haut). */
 const menuOpen = ref(false);
@@ -38,13 +36,13 @@ const showMenu = computed(() => currentUser.value !== null && !needsRoomChoice.v
 const shellClass = computed(() => (showMenu.value ? 'app-shell' : 'guest-shell'));
 
 //------------------ FUNCTIONS -------------------------------
-/** Déconnecte l'utilisateur puis affiche la page de connexion (sans message de l'utilisateur précédent). */
+/**
+ * Déconnecte l'utilisateur de l'application et de Keycloak, qui ramène ensuite à la page de connexion
+ * (rechargée : aucun message de l'utilisateur précédent ne reste affiché).
+ */
 async function signOut(): Promise<void> {
   menuOpen.value = false;
-  await logout();
-  clearFlash();
-  
-  await navigateTo({name: 'login'});
+  await logout(hrefOf({name: 'login'}));
 }
 
 /** Ouvre ou ferme le tiroir du menu. */
