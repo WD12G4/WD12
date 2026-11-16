@@ -9,6 +9,7 @@
  * RG : RG-25, RG-26, RG-27 (liste noire, administrateur), RG-28 ; journal (entretien 4).
  */
 import {computed, onMounted, ref, watch} from 'vue';
+import {useRoute} from 'vue-router';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {type SupervisionTab, useSupervision} from '../composables/use-supervision.ts';
@@ -35,7 +36,8 @@ const supervision = useSupervision();
 const {workstationViews, events, loadRoom} = supervision;
 const {busy, actionError, wizardPreselect, simulatedViews, kill, forbid, closeEverywhere, openWizard, launchReimage} = useSupervisionActions(supervision);
 const tab = ref<SupervisionTab>('stations');
-const openedId = ref<number | null>(null);
+/** Poste ouvert dans le panneau ; ?poste= (lien du tableau de bord) l'ouvre dès l'arrivée. */
+const openedId = ref<number | null>(Number(useRoute().query.poste) || null);
 
 //------------------ COMPUTED --------------------------------
 /** RG-28 et RG-27 : la masterisation et la liste noire sont réservées à l'administrateur. */
@@ -54,8 +56,8 @@ async function load(): Promise<void> {
 
 //------------------ LIFECYCLE -------------------------------
 onMounted(load);
-watch(selectedRoomId, roomId => {
-  openedId.value = null;
+watch(selectedRoomId, (roomId, previousRoomId) => {
+  if (previousRoomId !== null) openedId.value = null; // le premier choix de salle garde le poste demandé
   void run(() => loadRoom(roomId));
 });
 </script>
