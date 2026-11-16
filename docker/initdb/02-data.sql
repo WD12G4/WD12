@@ -37,6 +37,13 @@ INSERT INTO materials (serial_number, material_type, end_availability_date, room
     ('SCR-LG-002', 'SCREEN', '2027-06-30', 2, false),
     ('PRJ-EPSON-001', 'PROJECTOR', '2029-01-15', 3, false),
     ('PER-MOUSE-001', 'PERIPHERAL', '2026-11-30', 1, false),
-    ('UC-HP-OLD-099', 'UC', '2024-01-01', NULL, true)
+    ('UC-HP-OLD-099', 'UC', '2024-01-01', NULL, true),
+    -- VM de l'école supervisées par l'agent (le backend refuse un agent dont l'UC n'est pas déclarée).
+    -- Numéro de série : celui de vms.json pour bly-manager, sinon l'adresse MAC de la VM sans séparateurs.
+    ('000000001415', 'UC', NULL, 1, false), -- bly-manager
+    ('000000001741', 'UC', NULL, 1, false), -- esl-worker
+    ('000000001742', 'UC', NULL, 1, false), -- adk-worker
+    ('000000001751', 'UC', NULL, 1, false), -- sco-worker
+    ('000000001376', 'UC', NULL, 1, false)  -- mvt-manager
 ON CONFLICT (serial_number) DO NOTHING;
 SELECT setval('materials_id_seq', (SELECT COALESCE(MAX(id), 1) FROM materials));
