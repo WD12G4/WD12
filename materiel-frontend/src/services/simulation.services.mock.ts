@@ -1,6 +1,6 @@
 // MAQUETTE : postes simulés, pour présenter la masterisation (RG-28) sans vraie machine à réinstaller.
 /**
- * Postes simulés : quatre par salle (PC-S01…), affichés à côté des vrais postes et marqués
+ * Postes simulés : 2 à 5 par salle, différents d'une salle à l'autre (simulation-rooms.mock.ts), affichés à côté des vrais postes et marqués
  * « Simulé ». Ils ont de faux processus (fermables), un système et des applications installées, et
  * se masterisent par étapes (préparation, téléchargement, système, applications, redémarrage).
  * Tout reste en mémoire : la simulation repart de zéro au rechargement de la page.
@@ -10,11 +10,8 @@
 import type {ProcessInfo, ReimageProgress, SupervisionEvent, Workstation} from '../models/supervision.model.ts';
 import type {InstalledConfig, ReimageConfig} from '../models/reimage.model.ts';
 import {appLabel, configFor, configSummary, describeConfig, findOs, processName} from './simulation-catalog.mock.ts';
+import {stationPlans} from './simulation-rooms.mock.ts';
 
-/** Système et image de départ de chaque poste simulé d'une salle. */
-const INITIAL_CONFIGS: [osId: string, profileId: string][] = [['windows-11', 'dev'], ['windows-11', 'dev'], ['ubuntu-24', 'dev'], ['windows-11', 'office']];
-/** Stagiaires fictifs des postes simulés (identifiants de session), dans l'ordre des postes. */
-const TRAINEES = ['j.martin', 'l.bernard', 'a.petit', 'm.durand'];
 /** Durée de chaque étape (applications : par application), et décalage entre deux postes. */
 const STEP_MS = {prepare: 3000, download: 9000, system: 9000, perApp: 1500, reboot: 3000};
 const STAGGER_MS = 1800;
@@ -47,13 +44,13 @@ function openApps(station: SimStation, maxMinutes: number): ProcessInfo[] {
 /** Crée les postes simulés d'une salle ; identifiants négatifs, jamais ceux d'une vraie UC. */
 function createStations(roomId: number): SimStation[] {
     const hex = (roomId % 256).toString(16).padStart(2, '0');
-    return INITIAL_CONFIGS.map(([osId, profileId], index) => {
+    return stationPlans(roomId).map((plan, index) => {
         const n = String(index + 1).padStart(2, '0');
         const workstation: Workstation = {
-            id: -(roomId * 100 + index + 1), roomId, name: `PC-S${n}`, hostname: `pc-s${n}`, sessionUser: TRAINEES[index] ?? null,
+            id: -(roomId * 100 + index + 1), roomId, name: plan.name, hostname: plan.hostname, sessionUser: plan.trainee,
             macAddress: `02:00:00:${hex}:00:${n}`, status: 'online', simulated: true, reimage: null, serialNumber: null, os: null,
         };
-        const station: SimStation = {workstation, config: configFor(osId, profileId), processes: [], job: null};
+        const station: SimStation = {workstation, config: configFor(plan.osId, plan.profileId), processes: [], job: null};
         station.processes = openApps(station, 90);
         return station;
     });
