@@ -3,8 +3,10 @@ package net.ent.etnc.services.impl;
 import lombok.extern.slf4j.Slf4j;
 import net.ent.etnc.models.Building;
 import net.ent.etnc.repositories.BuildingRepository;
+import net.ent.etnc.repositories.RoomRepository;
 import net.ent.etnc.services.BuildingService;
 import net.ent.etnc.services.commons.AbstractService;
+import net.ent.etnc.services.commons.ResourceNotFoundException;
 import net.ent.etnc.services.commons.ServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,12 +21,15 @@ import java.util.Optional;
 @Service
 public class BuildingServiceImpl extends AbstractService<Building, BuildingRepository> implements BuildingService {
 
+    private final RoomRepository roomRepository;
+
     /**
      * Constructeur du service.
      */
     @Autowired
-    public BuildingServiceImpl(final BuildingRepository repository) {
+    public BuildingServiceImpl(final BuildingRepository repository, final RoomRepository roomRepository) {
         super(repository);
+        this.roomRepository = roomRepository;
     }
 
     @Override
@@ -63,6 +68,25 @@ public class BuildingServiceImpl extends AbstractService<Building, BuildingRepos
         Building updated = super.update(building);
         log.info("Bâtiment mis à jour avec succès [id={}, number={}]", updated.getId(), updated.getNumber());
         return updated;
+    }
+
+    @Override
+    @Transactional
+    public void deleteById(final Long id) {
+        log.debug("Demande de suppression du bâtiment [id={}]", id);
+
+        if (!existsById(id)) {
+            log.warn("Échec suppression bâtiment : bâtiment introuvable avec l'id : {}", id);
+            throw new ResourceNotFoundException("Bâtiment introuvable avec l'id : " + id);
+        }
+
+        if (this.roomRepository.existsByBuildingId(id)) {
+            log.warn("Échec suppression bâtiment [id={}] : le bâtiment contient encore des salles.", id);
+            throw new ServiceException("Impossible de supprimer le bâtiment : il contient encore des salles.");
+        }
+
+        super.deleteById(id);
+        log.info("Bâtiment supprimé avec succès [id={}]", id);
     }
 
     @Override

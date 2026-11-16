@@ -46,4 +46,6 @@ public interface MaterialRepository extends BaseRepository<Material> {
 
     @EntityGraph(attributePaths = {"room", "room.building"})
     List<Material> findByMaterialTypeAndArchivedFalse(final EMaterialType materialType);
+
+    boolean existsByRoomId(final Long roomId);
 }

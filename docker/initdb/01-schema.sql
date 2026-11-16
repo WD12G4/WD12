@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS rooms (
     building_id BIGINT NOT NULL,
     number INTEGER NOT NULL,
     CONSTRAINT uk__room__building__number UNIQUE (building_id, number),
-    CONSTRAINT fk__rooms__buildings FOREIGN KEY (building_id) REFERENCES buildings(id) ON DELETE CASCADE
+    CONSTRAINT fk__rooms__buildings FOREIGN KEY (building_id) REFERENCES buildings(id) ON DELETE RESTRICT
 );
 
 -- 4. Table des matériels
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS materials (
     room_id BIGINT,
     archived BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT uk__material__serial_number UNIQUE (serial_number),
-    CONSTRAINT fk__materials__rooms FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE SET NULL
+    CONSTRAINT fk__materials__rooms FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE RESTRICT
 );
 
 -- 5. Table des signalements

@@ -6,6 +6,7 @@ import net.ent.etnc.dtos.building.BuildingResponse;
 import net.ent.etnc.handlers.GlobalExceptionHandler;
 import net.ent.etnc.models.Building;
 import net.ent.etnc.services.BuildingService;
+import net.ent.etnc.services.commons.ServiceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -252,6 +253,20 @@ class BuildingControllerTest {
                     .andExpect(status().isNotFound());
 
             verify(buildingService, never()).deleteById(anyLong());
+        }
+
+        @Test
+        @DisplayName("Doit renvoyer 400 Bad Request si le bâtiment contient des salles")
+        void delete_WhenHasRooms_Returns400BadRequest() throws Exception {
+            when(buildingService.existsById(1L)).thenReturn(true);
+            doThrow(new ServiceException("Impossible de supprimer le bâtiment : il contient encore des salles."))
+                    .when(buildingService).deleteById(1L);
+
+            mockMvc.perform(delete("/api/v1/buildings/1"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error").value("Impossible de supprimer le bâtiment : il contient encore des salles."));
+
+            verify(buildingService).deleteById(1L);
         }
     }
 }

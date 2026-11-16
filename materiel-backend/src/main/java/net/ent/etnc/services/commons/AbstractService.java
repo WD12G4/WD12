@@ -36,7 +36,7 @@ public abstract class AbstractService<T extends AbstractPersistableWithIdSetter<
     @Override
     @Transactional
     public T create(T entity) {
-        return repository.saveAndFlush(entity);
+        return this.repository.saveAndFlush(entity);
     }
 
     /**
@@ -45,10 +45,10 @@ public abstract class AbstractService<T extends AbstractPersistableWithIdSetter<
     @Override
     @Transactional
     public T update(T entity) {
-        if (entity.getId() == null || !repository.existsById(entity.getId())) {
+        if (entity.getId() == null || !this.repository.existsById(entity.getId())) {
             throw new ResourceNotFoundException("Ressource introuvable : " + entity.getId());
         }
-        return repository.saveAndFlush(entity);
+        return this.repository.saveAndFlush(entity);
     }
 
     /**
@@ -57,7 +57,7 @@ public abstract class AbstractService<T extends AbstractPersistableWithIdSetter<
     @Override
     @Transactional(readOnly = true)
     public Optional<T> findById(Long id) {
-        return repository.findById(id);
+        return this.repository.findById(id);
     }
 
     /**
@@ -66,7 +66,7 @@ public abstract class AbstractService<T extends AbstractPersistableWithIdSetter<
     @Override
     @Transactional(readOnly = true)
     public Page<T> findAll(final Pageable pageable) {
-        return repository.findAll(pageable);
+        return this.repository.findAll(pageable);
     }
 
     /**
@@ -75,7 +75,7 @@ public abstract class AbstractService<T extends AbstractPersistableWithIdSetter<
     @Override
     @Transactional(readOnly = true)
     public Page<T> findAll(final Specification<T> specification, final Pageable pageable) {
-        return repository.findAll(specification, pageable);
+        return this.repository.findAll(specification, pageable);
     }
 
     /**
@@ -84,7 +84,7 @@ public abstract class AbstractService<T extends AbstractPersistableWithIdSetter<
     @Override
     @Transactional
     public void deleteById(final Long id) {
-        repository.deleteById(id);
+        this.repository.deleteById(id);
     }
 
     /**
@@ -93,7 +93,7 @@ public abstract class AbstractService<T extends AbstractPersistableWithIdSetter<
     @Override
     @Transactional(readOnly = true)
     public boolean existsById(final Long id) {
-        return repository.existsById(id);
+        return this.repository.existsById(id);
     }
 
     /**
@@ -102,6 +102,6 @@ public abstract class AbstractService<T extends AbstractPersistableWithIdSetter<
     @Override
     @Transactional(readOnly = true)
     public long count() {
-        return repository.count();
+        return this.repository.count();
     }
 }

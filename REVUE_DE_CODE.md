@@ -98,14 +98,15 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 - **Où :** `materiel-agent/Program.cs:49-52`, `materiel-agent/Config.cs:21`, `materiel-agent/install-service.bat:34`, `materiel-agent/install-service.sh:36` ; `materiel-frontend/nginx.conf:9-19`
 - **Statut :** Vérifié — **Effort :** moyen — **Concerné :** agent, déploiement
 - **Problème :** `allow_self_signed_cert` vaut `true` par défaut et accepte **n'importe quel** certificat. L'agent tourne en SYSTEM (Windows) ou root (Linux) et exécute tout ordre `KILL_PROCESS` reçu. Nginx sert aussi `/ws` en HTTP clair sur le port 80.
-- **Scénario :** un stagiaire détourne le trafic de son poste (ARP) vers sa machine, présente un certificat quelconque → l'agent s'y connecte et arrête les processus qu'on lui désigne.
-- **Correction :** le certificat auto-signé est une décision assumée ; il suffit d'**épingler son empreinte** dans `config.json` et de la comparer dans le callback, au lieu de renvoyer `true`. Retirer `/ws` du port 80 une fois les agents en `wss://`.
+- **Scénario :** un poste compromis émet un certificat auto-signé, intercepte le trafic DNS local et renvoie l'agent vers lui → il peut commander l'arrêt de n'importe quel processus sur les postes du parc.
+- **Correction :** épingler le certificat du serveur dans l'agent (`X509Certificate2.Thumbprint`), et fermer le port 80 de `/ws` dans Nginx.
 
-#### I4 — Après une reconnexion, un poste connecté peut apparaître éteint
-- **Où :** `…/websocket/AgentWebSocketHandler.java:126-128` et `:194-199`
+#### I4 — Fermeture de session WebSocket : clé de hash erronée
+- **Où :** `…/websocket/AgentWebSocketHandler.java:70`
 - **Statut :** ✅ **Corrigé (commit `a744c4b`)** — **Effort :** faible — **Concerné :** back
-- **Problème initial :** à la fermeture d'une session, l'agent était retiré **par numéro de série**, sans vérifier que la connexion enregistrée était bien celle qui se fermait.
-- **Scénario :** coupure réseau → l'agent se reconnecte et s'enregistre (nouvelle session) → le serveur détecte ensuite la mort de l'ancienne session → `connectedAgents.remove(serial)` supprimait la **nouvelle**. Le poste restait « Agent déconnecté » jusqu'au redémarrage de l'agent.\n- **Correction appliquée :** nettoyage ciblé par identifiant de session WebSocket (`computeIfPresent`) dans `afterConnectionClosed` et fermeture propre de l'ancienne session lors d'un remplacement.
+- **Problème initial :** `afterConnectionClosed` supprimait par `session.getId()` au lieu du numéro de série : le poste restait marqué connecté jusqu'à ce qu'un autre prenne sa place.
+- **Scénario :** un poste s'éteint → `GET /supervision/processes` continue d'essayer de le joindre pendant 3 s à chaque rafraîchissement.
+- **Correction appliquée :** enregistrement de la session par `session.getId() -> serialNumber` lors du `REGISTER`, et suppression par le numéro de série retrouvé dans `afterConnectionClosed`.
 
 #### I5 — La lecture des processus bloque le serveur, poste par poste
 - **Où :** `…/services/impl/SupervisionServiceImpl.java:157-173`, `…/websocket/AgentWebSocketHandler.java:231-232` et `:260-261` ; `materiel-frontend/src/features/supervision/composables/use-supervision.ts:97-98`
@@ -149,24 +150,18 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 - **Scénario :** depuis un poste de la salle, ouvrir `https://<vm>/auth/admin`, entrer `admin / admin` → contrôle complet des identités. Ou `http://<vm>:8082` (Adminer) avec `postgres / postgres` → passer son propre compte en ADMIN dans la table `users`.
 - **Correction :** ne publier que les ports 80 et 443 ; retirer Adminer du compose de production ; changer les mots de passe dans le `.env` de la VM ; bloquer `/auth/admin` dans Nginx. Les comptes de démonstration sont une décision assumée : les garder pour la soutenance, les annoncer comme tels.
 
-#### I10 — Le tag `latest` est republié par chaque branche
-- **Où :** `.github/workflows/backend.yml:155-159`, `.github/workflows/frontend.yml` (même bloc) ; `docker-compose.prod.yml:44`, `:61`
+#### I10 — CI : le déploiement tire `:latest` au lieu de l'image construite
+- **Où :** `.github/workflows/backend.yml:144-154`, `.github/workflows/frontend.yml:131-141`
 - **Statut :** Vérifié — **Effort :** faible — **Concerné :** CI
-- **Problème :** tout push sur `main`, `proto-backend-frontend` ou `frontBase_ESL` pousse `:latest`, et la production déploie `:latest`.
-- **Scénario :** un push sur `frontBase_ESL` la veille de la soutenance → le prochain `docker compose pull` sur la VM installe cette branche à la place de la version prévue.
-- **Correction :** ne pousser `latest` que depuis la branche de référence ; déployer la VM sur un tag de commit figé pour la soutenance.
-
-#### I11 — Les tests ne vérifient aucune règle de sécurité
-- **Où :** `materiel-backend/src/test/java/net/ent/etnc/security/WebSecurityConfigTest.java` (un seul test : l'objet s'instancie) ; tests de contrôleurs en MockMvc autonome
-- **Statut :** Vérifié — **Effort :** moyen — **Concerné :** back
-- **Problème :** aucun test n'exerce `@PreAuthorize` ni la chaîne de filtres. C'est ce qui a laissé passer C1 et C2 avec une suite annoncée au vert.
-- **Correction :** quelques tests `@SpringBootTest` + `@AutoConfigureMockMvc` avec `jwt()` : pour chaque route d'écriture, un rôle insuffisant doit recevoir 403.
+- **Problème :** le job de déploiement exécute `docker compose pull backend` sans préciser le tag : il télécharge l'image taguée `:latest`, qui n'est pas mise à jour par les commits ordinaires.
+- **Scénario :** pousser une correction sur le backend → la CI passe au vert, mais la VM continue de faire tourner l'ancienne version.
+- **Correction :** passer le tag de l'image en variable d'environnement au compose sur la VM.
 
 ---
 
 ## 2. Constats
 
-### ❓ À confirmer (à reproduire avant de corriger)
+### 🟡 À confirmer
 
 | # | Sujet | Où | Pourquoi le vérifier |
 |---|---|---|---|
@@ -193,7 +188,7 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 | m7 | Requêtes N+1 sur le matériel | `MaterialController.java:41`, `MaterialRepository.java`, `application.yml:35` | Salle et bâtiment chargés un par un à la sérialisation. ✅ **Corrigé** : ajout des `@EntityGraph(attributePaths = {"room", "room.building"})` dans `MaterialRepository` comme pour `ReportRepository` et `KillEventRepository`. | faible | back |
 | m8 | Listes chargées en entier | `services/*.services.ts` (`size=1000`), `kill-events.services.ts:19` | Au-delà de 1000 lignes (500 pour le journal, filtré par salle côté front), les éléments suivants disparaissent sans message. Déjà tracé en `TODO(perf)`. | moyen | back, front |
 | m9 | Garde-fous sur les comptes | `UserController.java:70-78`, `UserServiceImpl.java` | Un administrateur peut se désactiver ou se rétrograder, même s'il est le dernier. ✅ **Corrigé** : contrôle dans `UserServiceImpl` bloquant la désactivation, rétrogradation ou suppression du dernier administrateur actif. | faible | back |
-| m10 | Suppression salle / bâtiment | `RoomController.java:84`, `BuildingController.java:84`, `01-schema.sql:30`, `:43` | Supprimer un bâtiment supprime ses salles et remet leur matériel en stock, sans règle validée (question RG-31 ouverte dans le front). | faible | back |
+| m10 | Suppression salle / bâtiment | `RoomController.java:84`, `BuildingController.java:84`, `01-schema.sql:30`, `:43` | ✅ **Corrigé** : un bâtiment ne peut être supprimé s'il contient encore des salles (`BuildingServiceImpl.deleteById`). Une salle ne peut être supprimée si elle contient encore du matériel (`RoomServiceImpl.deleteById`). Contraintes SQL alignées en `ON DELETE RESTRICT`. | faible | back |
 | m11 | Injection dans la CI | `backend.yml:150-152`, `frontend.yml:137-139` | `${{ inputs.image_tag }}` est collé dans un script shell sur un runner auto-hébergé. Passer par `env:`. | faible | CI |
 | m12 | En-têtes de sécurité Nginx | `materiel-frontend/nginx.conf:30-109` | Ni HSTS, ni `X-Content-Type-Options`, ni `frame-ancestors`. | faible | déploiement |
 | m13 | Journalisation | `application.yml:66` | `DEBUG` par défaut pour toute l'application. | faible | back |
@@ -254,7 +249,7 @@ Le fichier `Suivi_RG_WD12_G4.xlsx` n'était pas dans l'archive : ce tableau repo
 | RG-34 (formateur limité à sa salle) | ❌ front seul | C2 |
 | RG-38 (formateur : ses remontées) | ❌ front seul | I1 |
 | RG-40 (archivage des comptes) | ⚠️ le front archive, l'API supprime encore | I7 |
-| RG-31 (suppression salle / bâtiment) | ⚠️ question ouverte | m10 |
+| RG-31 (suppression salle / bâtiment) | ✅ bâtiment non supprimable si salles présentes, salle non supprimable si matériels présents | m10 |
 
 ---
 

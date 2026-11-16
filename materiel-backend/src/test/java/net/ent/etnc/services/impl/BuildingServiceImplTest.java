@@ -2,6 +2,7 @@ package net.ent.etnc.services.impl;
 
 import net.ent.etnc.models.Building;
 import net.ent.etnc.repositories.BuildingRepository;
+import net.ent.etnc.repositories.RoomRepository;
 import net.ent.etnc.services.commons.ResourceNotFoundException;
 import net.ent.etnc.services.commons.ServiceException;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +27,9 @@ class BuildingServiceImplTest {
 
     @Mock
     private BuildingRepository repository;
+
+    @Mock
+    private RoomRepository roomRepository;
 
     @InjectMocks
     private BuildingServiceImpl buildingService;
@@ -137,6 +141,47 @@ class BuildingServiceImplTest {
 
             assertThatThrownBy(() -> buildingService.update(sampleBuilding))
                     .isInstanceOf(ResourceNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests de suppression (deleteById)")
+    class DeleteTests {
+
+        @Test
+        @DisplayName("Doit supprimer le bâtiment lorsqu'il n'a pas de salles")
+        void deleteById_Success() {
+            when(repository.existsById(1L)).thenReturn(true);
+            when(roomRepository.existsByBuildingId(1L)).thenReturn(false);
+
+            buildingService.deleteById(1L);
+
+            verify(repository).deleteById(1L);
+        }
+
+        @Test
+        @DisplayName("Doit lever ResourceNotFoundException si le bâtiment n'existe pas")
+        void deleteById_ThrowsNotFound_WhenNotExisting() {
+            when(repository.existsById(1L)).thenReturn(false);
+
+            assertThatThrownBy(() -> buildingService.deleteById(1L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Bâtiment introuvable avec l'id : 1");
+
+            verify(repository, never()).deleteById(anyLong());
+        }
+
+        @Test
+        @DisplayName("Doit lever ServiceException si le bâtiment contient des salles")
+        void deleteById_ThrowsException_WhenContainsRooms() {
+            when(repository.existsById(1L)).thenReturn(true);
+            when(roomRepository.existsByBuildingId(1L)).thenReturn(true);
+
+            assertThatThrownBy(() -> buildingService.deleteById(1L))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("Impossible de supprimer le bâtiment : il contient encore des salles.");
+
+            verify(repository, never()).deleteById(anyLong());
         }
     }
 

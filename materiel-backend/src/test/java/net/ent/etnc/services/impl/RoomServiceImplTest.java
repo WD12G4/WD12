@@ -2,6 +2,7 @@ package net.ent.etnc.services.impl;
 
 import net.ent.etnc.models.Building;
 import net.ent.etnc.models.Room;
+import net.ent.etnc.repositories.MaterialRepository;
 import net.ent.etnc.repositories.RoomRepository;
 import net.ent.etnc.services.BuildingService;
 import net.ent.etnc.services.commons.ResourceNotFoundException;
@@ -31,6 +32,9 @@ class RoomServiceImplTest {
 
     @Mock
     private BuildingService buildingService;
+
+    @Mock
+    private MaterialRepository materialRepository;
 
     @InjectMocks
     private RoomServiceImpl roomService;
@@ -191,6 +195,47 @@ class RoomServiceImplTest {
 
             assertThatThrownBy(() -> roomService.update(sampleRoom))
                     .isInstanceOf(ResourceNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests de suppression (deleteById)")
+    class DeleteTests {
+
+        @Test
+        @DisplayName("Doit supprimer la salle lorsqu'elle ne contient pas de matériel")
+        void deleteById_Success() {
+            when(repository.existsById(10L)).thenReturn(true);
+            when(materialRepository.existsByRoomId(10L)).thenReturn(false);
+
+            roomService.deleteById(10L);
+
+            verify(repository).deleteById(10L);
+        }
+
+        @Test
+        @DisplayName("Doit lever ResourceNotFoundException si la salle n'existe pas")
+        void deleteById_ThrowsNotFound_WhenNotExisting() {
+            when(repository.existsById(10L)).thenReturn(false);
+
+            assertThatThrownBy(() -> roomService.deleteById(10L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Salle introuvable avec l'id : 10");
+
+            verify(repository, never()).deleteById(anyLong());
+        }
+
+        @Test
+        @DisplayName("Doit lever ServiceException si la salle contient du matériel")
+        void deleteById_ThrowsException_WhenContainsMaterial() {
+            when(repository.existsById(10L)).thenReturn(true);
+            when(materialRepository.existsByRoomId(10L)).thenReturn(true);
+
+            assertThatThrownBy(() -> roomService.deleteById(10L))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("Impossible de supprimer la salle : elle contient encore du matériel.");
+
+            verify(repository, never()).deleteById(anyLong());
         }
     }
 

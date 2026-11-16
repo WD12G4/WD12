@@ -8,6 +8,7 @@ import net.ent.etnc.handlers.GlobalExceptionHandler;
 import net.ent.etnc.models.Building;
 import net.ent.etnc.models.Room;
 import net.ent.etnc.services.RoomService;
+import net.ent.etnc.services.commons.ServiceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -228,7 +229,7 @@ class RoomControllerTest {
         }
 
         @Test
-        @DisplayName("Doit retourner 404 si la salle à mettre à jour n'existe pas")
+        @DisplayName("Doit renvoyer 404 si la salle à modifier n'existe pas")
         void update_WhenNotFound_Returns404() throws Exception {
             String payload = """
                     {
@@ -271,6 +272,20 @@ class RoomControllerTest {
                     .andExpect(status().isNotFound());
 
             verify(roomService, never()).deleteById(anyLong());
+        }
+
+        @Test
+        @DisplayName("Doit renvoyer 400 Bad Request si la salle contient du matériel")
+        void delete_WhenHasMaterials_Returns400BadRequest() throws Exception {
+            when(roomService.existsById(1L)).thenReturn(true);
+            doThrow(new ServiceException("Impossible de supprimer la salle : elle contient encore du matériel."))
+                    .when(roomService).deleteById(1L);
+
+            mockMvc.perform(delete("/api/v1/rooms/1"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error").value("Impossible de supprimer la salle : elle contient encore du matériel."));
+
+            verify(roomService).deleteById(1L);
         }
     }
 }

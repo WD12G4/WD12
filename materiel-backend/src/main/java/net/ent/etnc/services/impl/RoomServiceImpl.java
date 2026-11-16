@@ -3,6 +3,7 @@ package net.ent.etnc.services.impl;
 import lombok.extern.slf4j.Slf4j;
 import net.ent.etnc.models.Building;
 import net.ent.etnc.models.Room;
+import net.ent.etnc.repositories.MaterialRepository;
 import net.ent.etnc.repositories.RoomRepository;
 import net.ent.etnc.services.BuildingService;
 import net.ent.etnc.services.RoomService;
@@ -28,12 +29,20 @@ public class RoomServiceImpl extends AbstractService<Room, RoomRepository> imple
     private final BuildingService buildingService;
 
     /**
+     * Accès données pour les {@link net.ent.etnc.models.Material}.
+     */
+    private final MaterialRepository materialRepository;
+
+    /**
      * Constructeur du service.
      */
     @Autowired
-    public RoomServiceImpl(final RoomRepository repository, final BuildingService buildingService) {
+    public RoomServiceImpl(final RoomRepository repository,
+                           final BuildingService buildingService,
+                           final MaterialRepository materialRepository) {
         super(repository);
         this.buildingService = buildingService;
+        this.materialRepository = materialRepository;
     }
 
     @Override
@@ -85,6 +94,25 @@ public class RoomServiceImpl extends AbstractService<Room, RoomRepository> imple
         Room updated = super.update(room);
         log.info("Salle mise à jour avec succès [id={}, number={}]", updated.getId(), updated.getNumber());
         return updated;
+    }
+
+    @Override
+    @Transactional
+    public void deleteById(final Long id) {
+        log.debug("Demande de suppression de la salle [id={}]", id);
+
+        if (!existsById(id)) {
+            log.warn("Échec suppression salle : salle introuvable avec l'id : {}", id);
+            throw new ResourceNotFoundException("Salle introuvable avec l'id : " + id);
+        }
+
+        if (this.materialRepository.existsByRoomId(id)) {
+            log.warn("Échec suppression salle [id={}] : la salle contient encore du matériel.", id);
+            throw new ServiceException("Impossible de supprimer la salle : elle contient encore du matériel.");
+        }
+
+        super.deleteById(id);
+        log.info("Salle supprimée avec succès [id={}]", id);
     }
 
     @Override

@@ -14,4 +14,6 @@ import java.util.Optional;
 public interface RoomRepository extends BaseRepository<Room> {
 
     Optional<Room> findByNumberAndBuilding(Integer number, Building building);
+
+    boolean existsByBuildingId(Long buildingId);
 }
