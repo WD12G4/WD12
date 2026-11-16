@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -41,6 +42,13 @@ public class SupervisionServiceImpl implements SupervisionService {
     private final KillEventService killEventService;
     private final UserService userService;
     private final ApplicationService applicationService;
+
+    /**
+     * Cache des derniers processus applicatifs connus par numéro de série d'UC.
+     * Permet d'éviter que la liste des processus se vide à l'écran si un appel réseau agent subit un dépassement de délai
+     * (notamment lors du lancement d'une nouvelle application lourde sur le poste).
+     */
+    private final Map<String, List<ProcessInfoDto>> lastKnownProcessesBySerial = new ConcurrentHashMap<>();
 
     @Autowired
     public SupervisionServiceImpl(final MaterialRepository materialRepository, final AgentWebSocketHandler agentWebSocketHandler, final KillEventService killEventService,
@@ -65,6 +73,10 @@ public class SupervisionServiceImpl implements SupervisionService {
         for (Material uc : ucs) {
             seenSerials.add(uc.getSerialNumber());
             boolean online = this.agentWebSocketHandler.isConnected(uc.getSerialNumber());
+            if (!online) {
+                lastKnownProcessesBySerial.remove(uc.getSerialNumber());
+            }
+
             Optional<AgentWebSocketHandler.AgentConnection> conn = this.agentWebSocketHandler.getConnection(uc.getSerialNumber());
             String macAddress = conn.map(AgentWebSocketHandler.AgentConnection::macAddress).filter(mac -> !mac.isBlank()).orElse("N/A");
             String hostname = conn.map(AgentWebSocketHandler.AgentConnection::hostname).filter(h -> !h.isBlank()).orElse(null);
@@ -128,7 +140,7 @@ public class SupervisionServiceImpl implements SupervisionService {
             }
             CompletableFuture<List<AgentWebSocketHandler.AgentProcessInfo>> future =
                     futureBySerial.computeIfAbsent(uc.getSerialNumber(),
-                            serial -> this.agentWebSocketHandler.fetchProcessesAsync(serial, 3));
+                            serial -> this.agentWebSocketHandler.fetchProcessesAsync(serial, 5));
             queries.add(new WorkstationQuery(uc, future));
         }
 
@@ -138,7 +150,7 @@ public class SupervisionServiceImpl implements SupervisionService {
 
         try {
             CompletableFuture.allOf(futureBySerial.values().toArray(CompletableFuture[]::new))
-                    .orTimeout(4, TimeUnit.SECONDS)
+                    .orTimeout(6, TimeUnit.SECONDS)
                     .join();
         } catch (Exception e) {
             log.warn("Délai global d'interrogation des agents de supervision dépassé : {}", e.getMessage());
@@ -157,14 +169,31 @@ public class SupervisionServiceImpl implements SupervisionService {
             Material uc = query.uc();
             List<AgentWebSocketHandler.AgentProcessInfo> agentProcs;
             try {
-                agentProcs = query.future().getNow(Collections.emptyList());
+                agentProcs = query.future().getNow(null);
             } catch (Exception e) {
-                agentProcs = Collections.emptyList();
+                agentProcs = null;
             }
 
+            // Si l'interrogation a échoué ou dépassé le délai, on réutilise les derniers processus connus pour éviter de vider la liste
+            if (agentProcs == null) {
+                List<ProcessInfoDto> fallback = lastKnownProcessesBySerial.get(uc.getSerialNumber());
+                if (fallback != null && !fallback.isEmpty()) {
+                    log.info("Agent non réactif ou timeout pour UC={} : conservation des {} derniers processus connus",
+                            uc.getSerialNumber(), fallback.size());
+                    allProcesses.addAll(fallback);
+                }
+                continue;
+            }
+
+            List<ProcessInfoDto> ucProcesses = new ArrayList<>();
             for (AgentWebSocketHandler.AgentProcessInfo proc : agentProcs) {
                 // Enregistrement / découverte de l'application en base si nouvelle
-                Application app = this.applicationService.registerDiscoveredApplication(proc.name(), proc.icon());
+                Application app = null;
+                try {
+                    app = this.applicationService.registerDiscoveredApplication(proc.name(), proc.icon());
+                } catch (Exception e) {
+                    log.error("Erreur lors de l'enregistrement de l'application découverte [{}] : {}", proc.name(), e.getMessage());
+                }
 
                 // Auto-kill si l'application est sur liste noire
                 if (app != null && app.isBlacklisted()) {
@@ -189,10 +218,13 @@ public class SupervisionServiceImpl implements SupervisionService {
                     continue;
                 }
 
-                allProcesses.add(new ProcessInfoDto(proc.pid(), uc.getId(), proc.name(), displayNameOf(app, proc.name()),
+                ucProcesses.add(new ProcessInfoDto(proc.pid(), uc.getId(), proc.name(), displayNameOf(app, proc.name()),
                         Instant.ofEpochMilli(proc.startedAt()).atZone(ZoneId.systemDefault()).toLocalDateTime(),
                         proc.icon()));
             }
+
+            lastKnownProcessesBySerial.put(uc.getSerialNumber(), ucProcesses);
+            allProcesses.addAll(ucProcesses);
         }
 
         return allProcesses;

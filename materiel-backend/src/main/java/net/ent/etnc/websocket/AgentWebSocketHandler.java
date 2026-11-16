@@ -255,6 +255,8 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
 
     /**
      * Interroge l'agent de façon asynchrone pour récupérer la liste de ses processus (Point I5).
+     * En cas de dépassement de délai (timeout) ou d'erreur réseau, le CompletableFuture se termine avec {@code null}
+     * afin de permettre au service appelant de réutiliser ses derniers processus connus plutôt que d'effacer la liste.
      */
     public CompletableFuture<List<AgentProcessInfo>> fetchProcessesAsync(final String serialNumber, final long timeoutSeconds) {
         AgentConnection conn = connectedAgents.get(serialNumber);
@@ -283,12 +285,12 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
                         } else {
                             log.error("Erreur lors de la récupération des processus pour UC={} : {}", serialNumber, ex.getMessage());
                         }
-                        return Collections.emptyList();
+                        return null;
                     });
         } catch (Exception e) {
             pendingProcessRequests.remove(requestId);
             log.error("Erreur lors de la demande de processus pour UC={} : {}", serialNumber, e.getMessage());
-            return CompletableFuture.completedFuture(Collections.emptyList());
+            return CompletableFuture.completedFuture(null);
         }
     }
 
@@ -297,7 +299,8 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
      */
     public List<AgentProcessInfo> fetchProcesses(final String serialNumber, final long timeoutSeconds) {
         try {
-            return fetchProcessesAsync(serialNumber, timeoutSeconds).join();
+            List<AgentProcessInfo> res = fetchProcessesAsync(serialNumber, timeoutSeconds).join();
+            return res != null ? res : Collections.emptyList();
         } catch (Exception e) {
             return Collections.emptyList();
         }
