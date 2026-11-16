@@ -1106,7 +1106,7 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 }
 @media (min-width: 901px) and (max-width: 1023px) {
   [data-theme='dsfr']:not([data-layout='sidebar']) .nav a { padding-inline: 0.4rem; font-size: 0.8rem; }
-  [data-theme='dsfr']:not([data-layout='sidebar']) .brand-marque { zoom: 0.8; margin-right: 0.25rem; }
+  [data-theme='dsfr']:not([data-layout='sidebar']) .brand-marque { margin-right: 0.25rem; }
 }
 @media (min-width: 901px) {
   /* En-tête : pleine largeur en haut de page, filet bas et ombre légère. */
@@ -1114,6 +1114,9 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
     inset: 0 0 auto; width: 100%; padding: 0.6rem 2rem; border-radius: 0;
     border: none; border-bottom: 1px solid var(--border);
   }
+  /* Bloc-marque du ministère (quatre lignes) un peu réduit : l'en-tête garde sa hauteur (environ 7rem)
+     et, en barre latérale, « et des anciens » tient sur une ligne à côté du nom de l'application. */
+  [data-theme='dsfr'] .brand-marque { zoom: 0.75; }
   /* Le contenu prend tout l'écran, aligné sur l'en-tête (mêmes marges de 2rem) ; sous l'en-tête
      (environ 7rem avec le bloc-marque), ou à droite de la barre latérale. */
   [data-theme='dsfr'] .app-shell .content { width: auto; max-width: none; margin: 0; padding: 9rem 2rem 4rem; }

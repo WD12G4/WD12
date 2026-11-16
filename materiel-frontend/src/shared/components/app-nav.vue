@@ -68,7 +68,7 @@ function linkClass(link: NavLink): Record<string, boolean> {
   >
     <!-- Marque (thème DSFR : bloc-marque de l'État, affiché par style.css) -->
     <div class="brand">
-      <p class="fr-logo brand-marque">République<br>Française</p>
+      <p class="fr-logo brand-marque">Ministère<br>des Armées<br>et des Anciens<br>Combattants</p>
       <BrandMark class="brand-logo" />
       <BrandWordmark class="brand-name" />
     </div>
