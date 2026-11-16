@@ -76,6 +76,8 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 
 ---
 
+## 2. Constats
+
 ### 🟠 Important
 
 #### I1 — Un formateur peut lire toutes les remontées
@@ -162,11 +164,13 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 
 ---
 
+## 2. Constats
+
 ### ❓ À confirmer (à reproduire avant de corriger)
 
 | # | Sujet | Où | Pourquoi le vérifier |
 |---|---|---|---|
-| A1 | Taille des messages WebSocket | `AgentWebSocketHandler.java:88`, aucune limite configurée | Tomcat limite par défaut un message texte à 8 Ko. Une liste de processus avec icônes PNG en base64 devrait la dépasser et fermer la connexion de l'agent. À tester avec un poste Windows chargé ; si confirmé, déclarer un `ServletServerContainerFactoryBean` avec une taille plus grande. |
+| A1 | Taille des messages WebSocket | `AgentWebSocketHandler.java:88`, aucune limite configurée | ✅ **Confirmé & Corrigé** : reproduction sur poste réel (Tomcat coupait la connexion avec 1009 `MESSAGE_TOO_BIG` lors de la transmission de la liste des processus). Résolu en déclarant `ServletServerContainerFactoryBean` (10 Mo) dans `WebSocketConfig.java` et en redimensionnant les icônes en 32x32 dans `IconExtractor.cs`. |
 | A2 | Numéro de série trop long | `SupervisionServiceImpl.java:66-76`, `Material.java` (`@Size(max = 100)`) | Un faux agent enregistré avec un numéro de plus de 100 caractères devrait faire échouer `findWorkstations` pour tout le monde tant qu'il reste connecté. Dépend de C3. |
 | A3 | Journal vu par le gestionnaire | `KillEventServiceImpl.java:49-57` | Seul ADMIN voit tous les arrêts ; un gestionnaire ne voit que les siens. À comparer au fichier des RG. |
 | A4 | Modification d'une remontée | `ReportServiceImpl.java:86-91` | Le contexte indique « auteur ou gestionnaire » ; le code n'autorise que l'auteur. |
@@ -174,13 +178,15 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 
 ---
 
+## 2. Constats
+
 ### 🟡 Mineur
 
 | # | Sujet | Où | Détail et correction | Effort | Concerné |
 |---|---|---|---|---|---|
 | m1 | Verrou optimiste inopérant | DTO `*Request.java` (aucun champ `version`) | La version est envoyée au client mais jamais reçue : deux modifications simultanées s'écrasent sans 409. Ajouter `version` aux requêtes et la comparer. | moyen | back, front |
 | m2 | Arrêt par PID seul | `AgentWebSocketHandler.java:255-259`, `ProcessManager.cs:371-376` | Si le processus s'est terminé entre l'affichage et le clic, le PID peut désigner un autre programme. Envoyer aussi le nom et l'heure de démarrage, que l'agent compare. | faible | back, agent |
-| m3 | Envois simultanés côté agent | `Program.cs:151`, `:206`, `:235-242` | Le battement (toutes les 30 s) et la réponse à une commande peuvent appeler `SendAsync` en même temps, ce que `ClientWebSocket` interdit : le battement s'arrête alors sans bruit. Protéger par un `SemaphoreSlim`. | faible | agent |
+| m3 | Envois simultanés côté agent | `Program.cs:151`, `:206`, `:235-242` | ✅ **Corrigé** : `SendJsonAsync` protégé par un `SemaphoreSlim(1, 1)` dans `Program.cs` contre les collisions entre battement et commandes. | faible | agent |
 | m4 | Filtre par nom contournable | `ProcessManager.cs:163`, `ApplicationServiceImpl.java:194-198` | Un exécutable renommé `dllhost.exe` devient invisible et impossible à arrêter ; renommé autrement, il échappe à la liste noire. Limite à annoncer ; à terme, ne protéger que les binaires du dossier système. | élevé | agent |
 | m5 | Icônes sans limite de taille | `ApplicationRequest.java:14`, `Application.java:38`, `AgentWebSocketHandler.java:153` | Colonne `TEXT`, aucune borne ni contrôle de format côté back (le front filtre bien, `app-icon.dto.ts:8`). Borner la taille et valider le préfixe `data:image/…;base64,`. | faible | back |
 | m6 | Réponse périmée en supervision | `use-supervision.ts:43-54` | Changer de salle pendant une lecture en cours peut afficher les postes de l'ancienne salle jusqu'au rafraîchissement suivant. ✅ **Corrigé** : vérification de la concordance de salle (`state.roomId !== roomId`) après les promesses asynchrones dans `loadRoom`. | faible | front |
@@ -193,6 +199,8 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 | m13 | Journalisation | `application.yml:66` | `DEBUG` par défaut pour toute l'application. | faible | back |
 
 ---
+
+## 2. Constats
 
 ### 🔵 Suggestions
 

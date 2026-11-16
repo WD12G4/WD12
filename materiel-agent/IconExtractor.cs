@@ -63,8 +63,10 @@ public static class IconExtractor
             }
 
             using var bitmap = icon.ToBitmap();
+            // Redimensionner l'icône en 32x32 pour minimiser la taille du payload WebSocket (évite les trames > 50 Ko)
+            using var resized = new System.Drawing.Bitmap(bitmap, new System.Drawing.Size(32, 32));
             using var ms = new MemoryStream();
-            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+            resized.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
             return "data:image/png;base64," + Convert.ToBase64String(ms.ToArray());
         }
         catch

@@ -12,6 +12,8 @@ public class Program
         PropertyNameCaseInsensitive = true
     };
 
+    private static readonly SemaphoreSlim SendLock = new(1, 1);
+
     public static async Task Main(string[] args)
     {
         var cfg = Config.Load(args);
@@ -88,7 +90,6 @@ public class Program
                     Username = Config.GetActiveSessionUsername(),
                     Os = os
                 };
-
                 await SendJsonAsync(ws, registerMsg, cts.Token);
 
                 // 2. Tâche de boucle Heartbeat (PONG / Ping toutes les 30s)
@@ -98,6 +99,7 @@ public class Program
                 // 3. Boucle de réception des commandes serveur
                 await ReceiveLoopAsync(ws, cfg.SerialNumber, linkCts.Token);
 
+                // Si ReceiveLoopAsync s'est terminé (déconnexion serveur), arrêter le heartbeat
                 linkCts.Cancel();
                 await Task.WhenAny(heartbeatTask, Task.Delay(500));
             }
@@ -243,6 +245,19 @@ public class Program
 
         string json = JsonSerializer.Serialize(payload, JsonOptions);
         byte[] bytes = Encoding.UTF8.GetBytes(json);
-        await ws.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, ct);
+
+        // Verrou pour interdire les envois concurrents sur ClientWebSocket (Point m3)
+        await SendLock.WaitAsync(ct);
+        try
+        {
+            if (ws.State == WebSocketState.Open)
+            {
+                await ws.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, ct);
+            }
+        }
+        finally
+        {
+            SendLock.Release();
+        }
     }
 }

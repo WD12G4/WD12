@@ -119,13 +119,16 @@ public class SupervisionServiceImpl implements SupervisionService {
 
         record WorkstationQuery(Material uc, CompletableFuture<List<AgentWebSocketHandler.AgentProcessInfo>> future) {}
 
+        // Dédoublonnage par numéro de série : si plusieurs UC partagent le même serialNumber, n'interroger l'agent qu'une seule fois
+        Map<String, CompletableFuture<List<AgentWebSocketHandler.AgentProcessInfo>>> futureBySerial = new HashMap<>();
         List<WorkstationQuery> queries = new ArrayList<>();
         for (Material uc : ucs) {
             if (!EMaterialType.UC.equals(uc.getMaterialType())) {
                 continue;
             }
             CompletableFuture<List<AgentWebSocketHandler.AgentProcessInfo>> future =
-                    this.agentWebSocketHandler.fetchProcessesAsync(uc.getSerialNumber(), 3);
+                    futureBySerial.computeIfAbsent(uc.getSerialNumber(),
+                            serial -> this.agentWebSocketHandler.fetchProcessesAsync(serial, 3));
             queries.add(new WorkstationQuery(uc, future));
         }
 
@@ -134,7 +137,7 @@ public class SupervisionServiceImpl implements SupervisionService {
         }
 
         try {
-            CompletableFuture.allOf(queries.stream().map(WorkstationQuery::future).toArray(CompletableFuture[]::new))
+            CompletableFuture.allOf(futureBySerial.values().toArray(CompletableFuture[]::new))
                     .orTimeout(4, TimeUnit.SECONDS)
                     .join();
         } catch (Exception e) {
@@ -209,10 +212,15 @@ public class SupervisionServiceImpl implements SupervisionService {
 
         KillEvent killEvent = new KillEvent();
         killEvent.setUc(uc);
-        killEvent.setProcessName(request.processName());
+        killEvent.setProcessName(request.processName() != null ? request.processName() : killResult.processName());
         killEvent.setKillDateTime(LocalDateTime.now());
-        killEvent.setUser(this.userService.currentUser());
         killEvent.setResult(killResult.success());
+
+        try {
+            killEvent.setUser(this.userService.currentUser());
+        } catch (Exception e) {
+            log.debug("Impossible d'associer l'utilisateur à l'arrêt du processus : {}", e.getMessage());
+        }
 
         KillEvent savedEvent = this.killEventService.create(killEvent);
 
