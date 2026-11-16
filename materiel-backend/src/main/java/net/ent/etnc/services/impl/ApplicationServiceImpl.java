@@ -100,69 +100,63 @@ public class ApplicationServiceImpl extends AbstractService<Application, Applica
         PROTECTED_PROCESS_NAMES.add("mousocoreworker.exe");
         PROTECTED_PROCESS_NAMES.add("wudfhost");
         PROTECTED_PROCESS_NAMES.add("wudfhost.exe");
-
-        // Windows - Processus réseau, pilotes et sous-systèmes
-        PROTECTED_PROCESS_NAMES.add("conhost");
-        PROTECTED_PROCESS_NAMES.add("conhost.exe");
+        PROTECTED_PROCESS_NAMES.add("wmiprvse");
+        PROTECTED_PROCESS_NAMES.add("wmiprvse.exe");
+        PROTECTED_PROCESS_NAMES.add("rdpclip");
+        PROTECTED_PROCESS_NAMES.add("rdpclip.exe");
         PROTECTED_PROCESS_NAMES.add("dllhost");
         PROTECTED_PROCESS_NAMES.add("dllhost.exe");
+        PROTECTED_PROCESS_NAMES.add("conhost");
+        PROTECTED_PROCESS_NAMES.add("conhost.exe");
+        PROTECTED_PROCESS_NAMES.add("taskmgr");
+        PROTECTED_PROCESS_NAMES.add("taskmgr.exe");
+        PROTECTED_PROCESS_NAMES.add("textinputhost");
+        PROTECTED_PROCESS_NAMES.add("textinputhost.exe");
+        PROTECTED_PROCESS_NAMES.add("systemsettings");
+        PROTECTED_PROCESS_NAMES.add("systemsettings.exe");
+        PROTECTED_PROCESS_NAMES.add("microsoftedgeupdate");
+        PROTECTED_PROCESS_NAMES.add("microsoftedgeupdate.exe");
+        PROTECTED_PROCESS_NAMES.add("widgets");
+        PROTECTED_PROCESS_NAMES.add("widgets.exe");
+        PROTECTED_PROCESS_NAMES.add("backgroundtaskhost");
+        PROTECTED_PROCESS_NAMES.add("backgroundtaskhost.exe");
+        PROTECTED_PROCESS_NAMES.add("hxtsr");
+        PROTECTED_PROCESS_NAMES.add("hxtsr.exe");
         PROTECTED_PROCESS_NAMES.add("rundll32");
         PROTECTED_PROCESS_NAMES.add("rundll32.exe");
-        PROTECTED_PROCESS_NAMES.add("dashost");
-        PROTECTED_PROCESS_NAMES.add("dashost.exe");
-        PROTECTED_PROCESS_NAMES.add("audiodg");
-        PROTECTED_PROCESS_NAMES.add("audiodg.exe");
+        PROTECTED_PROCESS_NAMES.add("storedesktopextension");
+        PROTECTED_PROCESS_NAMES.add("storedesktopextension.exe");
+        PROTECTED_PROCESS_NAMES.add("defendersessionhelper");
+        PROTECTED_PROCESS_NAMES.add("defendersessionhelper.exe");
 
-        // Composants et agent de supervision WD12
+        // Agent de supervision lui-même
         PROTECTED_PROCESS_NAMES.add("materielagent");
         PROTECTED_PROCESS_NAMES.add("materielagent.exe");
-        PROTECTED_PROCESS_NAMES.add("materiel-agent");
-        PROTECTED_PROCESS_NAMES.add("materiel-agent.exe");
-        PROTECTED_PROCESS_NAMES.add("wd12agent");
-        PROTECTED_PROCESS_NAMES.add("wd12agent.exe");
 
-        // Linux - Daemons et services vitaux
+        // Linux
         PROTECTED_PROCESS_NAMES.add("systemd");
         PROTECTED_PROCESS_NAMES.add("init");
         PROTECTED_PROCESS_NAMES.add("kthreadd");
-        PROTECTED_PROCESS_NAMES.add("systemd-journald");
-        PROTECTED_PROCESS_NAMES.add("systemd-udevd");
-        PROTECTED_PROCESS_NAMES.add("systemd-logind");
-        PROTECTED_PROCESS_NAMES.add("systemd-resolved");
-        PROTECTED_PROCESS_NAMES.add("systemd-timesyncd");
-        PROTECTED_PROCESS_NAMES.add("systemd-networkd");
-        PROTECTED_PROCESS_NAMES.add("dbus-daemon");
-        PROTECTED_PROCESS_NAMES.add("dbus-broker");
         PROTECTED_PROCESS_NAMES.add("sshd");
+        PROTECTED_PROCESS_NAMES.add("dbus-daemon");
+        PROTECTED_PROCESS_NAMES.add("networkmanager");
+        PROTECTED_PROCESS_NAMES.add("xorg");
+        PROTECTED_PROCESS_NAMES.add("wayland");
+        PROTECTED_PROCESS_NAMES.add("gnome-shell");
+        PROTECTED_PROCESS_NAMES.add("polkitd");
+        PROTECTED_PROCESS_NAMES.add("rsyslogd");
         PROTECTED_PROCESS_NAMES.add("cron");
         PROTECTED_PROCESS_NAMES.add("crond");
-        PROTECTED_PROCESS_NAMES.add("rsyslogd");
-        PROTECTED_PROCESS_NAMES.add("networkmanager");
-        PROTECTED_PROCESS_NAMES.add("polkitd");
-        PROTECTED_PROCESS_NAMES.add("accounts-daemon");
-        PROTECTED_PROCESS_NAMES.add("gdm");
-        PROTECTED_PROCESS_NAMES.add("gdm3");
-        PROTECTED_PROCESS_NAMES.add("lightdm");
-        PROTECTED_PROCESS_NAMES.add("sddm");
-        PROTECTED_PROCESS_NAMES.add("xorg");
-        PROTECTED_PROCESS_NAMES.add("xwayland");
 
-        // macOS - Daemons et processus essentiels
+        // macOS
         PROTECTED_PROCESS_NAMES.add("launchd");
         PROTECTED_PROCESS_NAMES.add("kernel_task");
         PROTECTED_PROCESS_NAMES.add("windowserver");
-        PROTECTED_PROCESS_NAMES.add("loginwindow");
-        PROTECTED_PROCESS_NAMES.add("syslogd");
-        PROTECTED_PROCESS_NAMES.add("configd");
-        PROTECTED_PROCESS_NAMES.add("coreaudiod");
-        PROTECTED_PROCESS_NAMES.add("diskarbitrationd");
-        PROTECTED_PROCESS_NAMES.add("distnoted");
-        PROTECTED_PROCESS_NAMES.add("fseventsd");
-        PROTECTED_PROCESS_NAMES.add("securityd");
-        PROTECTED_PROCESS_NAMES.add("trustd");
-        PROTECTED_PROCESS_NAMES.add("tccd");
         PROTECTED_PROCESS_NAMES.add("dock");
         PROTECTED_PROCESS_NAMES.add("finder");
+        PROTECTED_PROCESS_NAMES.add("loginwindow");
+        PROTECTED_PROCESS_NAMES.add("coreaudiod");
+        PROTECTED_PROCESS_NAMES.add("systemstatusd");
         PROTECTED_PROCESS_NAMES.add("controlcenter");
         PROTECTED_PROCESS_NAMES.add("notificationcenter");
         PROTECTED_PROCESS_NAMES.add("spotlight");
