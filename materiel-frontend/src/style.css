@@ -1032,6 +1032,11 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 ::view-transition-old(room-title), ::view-transition-new(room-title) { height: 100%; object-fit: none; object-position: left center; }
 /* Toute navigation : seul le contenu passe en fondu (léger glissement à l'arrivée), le menu reste fixe. */
 .app-shell .content { view-transition-name: page; }
+/* Sans ces deux règles, le cadre de la page passe en 250 ms de la taille de l'ancienne page à celle de
+   la nouvelle, et les captures sont redimensionnées avec lui : la page paraît écrasée un instant.
+   Le cadre prend tout de suite sa taille finale et les captures gardent leur taille réelle. */
+::view-transition-group(page) { animation: none; }
+::view-transition-old(page), ::view-transition-new(page) { width: auto; height: auto; }
 ::view-transition-old(page) { animation: vt-fade-out 160ms var(--ease) both; }
 ::view-transition-new(page) { animation: vt-fade-in 280ms var(--ease) both; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 220ms; }
@@ -1043,6 +1048,8 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 .drawer { view-transition-name: side-panel; }
 ::view-transition-old(main-menu), ::view-transition-old(app-topbar) { display: none; }
 ::view-transition-new(main-menu), ::view-transition-new(app-topbar) { animation: none; }
+/* Même chose pour leur cadre : si la barre change de largeur (pastille, compteur), elle ne se redimensionne pas en écrasant sa capture. */
+::view-transition-group(main-menu), ::view-transition-group(app-topbar) { animation: none; }
 /* Capturés en image, ils perdraient leur flou : on le leur rend sur la capture. */
 ::view-transition-group(main-menu), ::view-transition-group(app-topbar) {
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border-radius: 999px;
