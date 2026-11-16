@@ -1,5 +1,5 @@
 /**
- * Actions de la supervision : fermer une application (un clic, RG-26), la fermer partout (après
+ * Actions de la supervision : fermer une application (après confirmation, RG-26), la fermer partout (après
  * confirmation), l'interdire (liste noire, RG-27, après confirmation) et masteriser des postes simulés
  * avec l'assistant (RG-28). Pendant une action, les
  * boutons sont désactivés (busy) ; une erreur s'affiche au-dessus des tuiles (actionError).
@@ -50,7 +50,8 @@ export function useSupervisionActions(supervision: Supervision) {
         supervision.workstationViews.value.filter(view => view.workstation.simulated));
     return {
         busy, actionError, wizardPreselect, simulatedViews,
-        kill: (process: ProcessInfo) => act(() => supervision.killProcess(process)),
+        kill: async (process: ProcessInfo) => window.confirm(`Arrêter « ${process.displayName} » sur ce poste ? Ce qui n'est pas enregistré sera perdu.`)
+            && act(() => supervision.killProcess(process)),
         closeEverywhere: async (name: string, label: string = name) => {
             if (!window.confirm(`Fermer « ${label} » sur tous les postes de la salle ?`)) return;
             await act(() => supervision.killEverywhere(name));

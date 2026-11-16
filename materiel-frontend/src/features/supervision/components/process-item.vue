@@ -4,7 +4,7 @@
  * et, pour l'administrateur sur un vrai poste, bouton Interdire (liste noire).
  * Composant de présentation.
  * Utilisé par : process-list.vue
- * RG : RG-26 (arrêt en un clic), RG-27 (liste noire)
+ * RG : RG-26 (arrêt, après confirmation), RG-27 (liste noire)
  */
 import {computed} from 'vue';
 import type {ProcessInfo} from '../../../models/supervision.model.ts';
@@ -46,7 +46,7 @@ const processTitle = computed(() => (props.process.displayName !== props.process
     <button
         v-if="canForbid"
         type="button"
-        class="secondary-button"
+        class="delete-button"
         :disabled="busy"
         title="Fermer cette application sur tous les postes, maintenant et à chaque lancement"
         @click="emit('forbid', process)"
@@ -55,7 +55,7 @@ const processTitle = computed(() => (props.process.displayName !== props.process
     </button>
     <button
         type="button"
-        class="delete-button"
+        class="secondary-button"
         :disabled="busy"
         @click="emit('kill', process)"
     >
