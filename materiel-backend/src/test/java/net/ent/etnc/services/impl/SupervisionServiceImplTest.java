@@ -188,6 +188,34 @@ class SupervisionServiceImplTest {
     }
 
     @Test
+    @DisplayName("findProcessesForWorkstations en cas de timeout agent conserve les derniers processus connus au lieu de vider la liste")
+    void findProcessesForWorkstations_WhenAgentTimesOut_FallsBackToLastKnownProcesses() {
+        Application app = new Application();
+        app.setName("notepad.exe");
+        app.setBlacklisted(false);
+
+        when(materialRepository.findById(10L)).thenReturn(Optional.of(sampleUc));
+        when(applicationService.registerDiscoveredApplication(eq("notepad.exe"), any())).thenReturn(app);
+
+        // 1er appel : succès, l'agent renvoie notepad.exe
+        when(agentWebSocketHandler.fetchProcessesAsync(eq("UC-TEST-01"), anyLong())).thenReturn(CompletableFuture.completedFuture(List.of(
+                new AgentWebSocketHandler.AgentProcessInfo(5000, "notepad.exe", System.currentTimeMillis())
+        )));
+
+        List<ProcessInfoDto> procsFirstCall = supervisionService.findProcessesForWorkstations(List.of(10L));
+        assertThat(procsFirstCall).hasSize(1);
+        assertThat(procsFirstCall.get(0).name()).isEqualTo("notepad.exe");
+
+        // 2ème appel : timeout ou erreur réseau (fetchProcessesAsync renvoie null)
+        when(agentWebSocketHandler.fetchProcessesAsync(eq("UC-TEST-01"), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+
+        List<ProcessInfoDto> procsSecondCall = supervisionService.findProcessesForWorkstations(List.of(10L));
+        // La liste ne doit pas être vidée, les derniers processus connus doivent être conservés
+        assertThat(procsSecondCall).hasSize(1);
+        assertThat(procsSecondCall.get(0).name()).isEqualTo("notepad.exe");
+    }
+
+    @Test
     @DisplayName("killProcess réussit et enregistre un KillEvent avec result=true")
     void killProcess_Success() {
         when(materialRepository.findById(10L)).thenReturn(Optional.of(sampleUc));

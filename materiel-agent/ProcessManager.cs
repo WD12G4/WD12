@@ -145,7 +145,14 @@ public static class ProcessManager
                 return true;
             }
 
-            // 2. Spécifique Windows : filtrer la Session 0 (démons et services système d'arrière-plan)
+            // 2. Nom dans la liste protégée (vérification rapide en mémoire sans appel d'API système)
+            string name = p.ProcessName;
+            if (ProtectedNames.Contains(name) || ProtectedNames.Contains(name + ".exe"))
+            {
+                return true;
+            }
+
+            // 3. Spécifique Windows : filtrer la Session 0 (démons et services système d'arrière-plan)
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 try
@@ -156,13 +163,6 @@ public static class ProcessManager
                     }
                 }
                 catch { }
-            }
-
-            // 3. Nom dans la liste noire
-            string name = p.ProcessName;
-            if (ProtectedNames.Contains(name) || ProtectedNames.Contains(name + ".exe"))
-            {
-                return true;
             }
 
             // 4. Spécifique Linux : vérifier UID si accessible dans /proc/{id}/status
@@ -295,7 +295,7 @@ public static class ProcessManager
 
     public static List<ProcessInfo> GetUserProcesses()
     {
-        var appCandidates = new Dictionary<string, (int pid, long startedAt, bool hasWindow, string? icon)>(StringComparer.OrdinalIgnoreCase);
+        var appCandidates = new Dictionary<string, (int pid, Process process, long startedAt, bool hasWindow)>(StringComparer.OrdinalIgnoreCase);
         var processes = Process.GetProcesses();
 
         foreach (var p in processes)
@@ -304,6 +304,7 @@ public static class ProcessManager
             {
                 if (IsSystemOrProtected(p))
                 {
+                    p.Dispose();
                     continue;
                 }
 
@@ -326,13 +327,11 @@ public static class ProcessManager
                     startedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 }
 
-                string? icon = IconExtractor.GetIcon(name, p);
-
                 // Dédoublonnage des sous-processus d'une même application (ex: Edge, Chrome, Firefox, VS Code, Discord) :
                 // On privilégie le processus principal qui possède une fenêtre graphique, sinon le plus ancien / parent.
                 if (!appCandidates.TryGetValue(name, out var existing))
                 {
-                    appCandidates[name] = (p.Id, startedAt, hasWindow, icon);
+                    appCandidates[name] = (p.Id, p, startedAt, hasWindow);
                 }
                 else
                 {
@@ -341,19 +340,16 @@ public static class ProcessManager
 
                     if (shouldReplace)
                     {
-                        appCandidates[name] = (p.Id, startedAt, hasWindow, icon ?? existing.icon);
+                        existing.process.Dispose();
+                        appCandidates[name] = (p.Id, p, startedAt, hasWindow);
                     }
-                    else if (existing.icon == null && icon != null)
+                    else
                     {
-                        appCandidates[name] = (existing.pid, existing.startedAt, existing.hasWindow, icon);
+                        p.Dispose();
                     }
                 }
             }
             catch
-            {
-                // Processus inaccessible ou terminé
-            }
-            finally
             {
                 p.Dispose();
             }
@@ -362,7 +358,15 @@ public static class ProcessManager
         var result = new List<ProcessInfo>();
         foreach (var (name, candidate) in appCandidates)
         {
-            result.Add(new ProcessInfo(candidate.pid, name, candidate.startedAt, candidate.icon));
+            try
+            {
+                string? icon = IconExtractor.GetIcon(name, candidate.process);
+                result.Add(new ProcessInfo(candidate.pid, name, candidate.startedAt, icon));
+            }
+            finally
+            {
+                candidate.process.Dispose();
+            }
         }
 
         return result;

@@ -179,7 +179,7 @@ public class Program
                 result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
-                    Console.WriteLine("Fermeture reçue du serveur.");
+                    Console.WriteLine($"Fermeture reçue du serveur (Status={result.CloseStatus}, Description={result.CloseStatusDescription}).");
                     return;
                 }
                 ms.Write(buffer, 0, result.Count);
