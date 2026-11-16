@@ -26,7 +26,7 @@ Le socle « priorité 1 » (matériel, salles, comptes) est propre, cohérent en
 
 Les risques étaient concentrés sur la **supervision**, la partie la plus récente :
 
-1. **Deux contrôleurs sans aucun contrôle de rôle** : n'importe quel compte connecté peut interdire une application ou arrêter un processus sur n'importe quel poste.
+1. ~~**Deux contrôleurs sans aucun contrôle de rôle**~~ : ✅ C1 corrigé via `@PreAuthorize("hasRole('ADMIN')")` sur les modifications du catalogue et de la liste noire (`ApplicationController` et `ApplicationServiceImpl`).
 2. ~~**Le canal des agents est ouvert**~~ : ✅ **Corrigé (commit `a744c4b`)** via secret partagé (Handshake) et validation du matériel en base.
 3. **L'agent tourne en SYSTEM / root et ne vérifie pas le certificat du serveur** : qui se place entre l'agent et le serveur peut lui faire arrêter des processus.
 4. **Les remontées et le journal ne sont protégés que par le front** : un formateur peut lire toutes les remontées et écrire de fausses lignes dans le journal des arrêts (I2 ✅ **Corrigé** : route `POST /killevents` retirée).
@@ -49,11 +49,11 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 ### 🔴 Critique
 
 #### C1 — Catalogue et liste noire modifiables par tout compte connecté
-- **Où :** `materiel-backend/src/main/java/net/ent/etnc/controllers/ApplicationController.java:59`, `:70`, `:82`, `:94`
-- **Statut :** Vérifié — **Effort :** faible — **Concerné :** back
-- **Problème :** aucune annotation `@PreAuthorize` sur la création, la modification, l'interdiction et la suppression. Le front réserve bien l'onglet à l'administrateur (`supervision-view.vue:42-46`), mais l'API accepte tout le monde. Écart à RG-27.
-- **Scénario :** un formateur envoie `PATCH /api/v1/applications/12/blacklist {"blacklisted": true}` sur le navigateur de la salle → à la prochaine lecture des processus, le backend ferme ce navigateur sur tous les postes supervisés, dans toutes les salles.
-- **Correction :** `@PreAuthorize("hasRole('ADMIN')")` sur les quatre écritures (ou sur la classe, lecture comprise si elle n'a pas à être publique).
+- **Où :** `materiel-backend/src/main/java/net/ent/etnc/controllers/ApplicationController.java:59`, `:70`, `:82`, `:94` ; `ApplicationServiceImpl.java:191`, `:246`, `:253`, `:260`
+- **Statut :** ✅ **Corrigé** — **Effort :** faible — **Concerné :** back
+- **Problème initial :** aucune annotation `@PreAuthorize` sur la création, la modification, l'interdiction et la suppression. Le front réservait bien l'onglet à l'administrateur (`supervision-view.vue:42-46`), mais l'API acceptait tout le monde. Écart à RG-27.
+- **Scénario :** un formateur envoyait `PATCH /api/v1/applications/12/blacklist {"blacklisted": true}` sur le navigateur de la salle → à la prochaine lecture des processus, le backend fermait ce navigateur sur tous les postes supervisés, dans toutes les salles.
+- **Correction appliquée :** ajout de `@PreAuthorize("hasRole('ADMIN')")` sur les méthodes d'écriture (`create`, `update`, `toggleBlacklist`, `delete`) dans `ApplicationController` et `ApplicationServiceImpl`. La consultation reste accessible, et l'arrêt de processus (`POST /supervision/kill`) reste accessible à tous les formateurs/utilisateurs authentifiés.
 
 #### C2 — Supervision : arrêt d'un processus sur n'importe quel poste, par n'importe qui
 - **Où :** `…/controllers/SupervisionController.java:31`, `:39`, `:47`, `:55` ; `…/services/impl/SupervisionServiceImpl.java:221-233`
@@ -245,7 +245,7 @@ Le fichier `Suivi_RG_WD12_G4.xlsx` n'était pas dans l'archive : ce tableau repo
 |---|---|---|
 | RG-04 (date de fin facultative) | ✅ corrigé côté back (`Material.java:46`, `MaterialRequest.java:19`) | — |
 | RG-21 (type de problème) | ❌ aucun champ dans `Report.java` | à faire, back + front |
-| RG-27 (liste noire : administrateur) | ❌ front seul | C1 |
+| RG-27 (liste noire : administrateur) | ✅ modifications et blacklist réservées à ADMIN (@PreAuthorize) | C1 |
 | RG-34 (formateur limité à sa salle) | ❌ front seul | C2 |
 | RG-38 (formateur : ses remontées) | ❌ front seul | I1 |
 | RG-40 (archivage des comptes) | ⚠️ le front archive, l'API supprime encore | I7 |
@@ -257,7 +257,7 @@ Le fichier `Suivi_RG_WD12_G4.xlsx` n'était pas dans l'archive : ce tableau repo
 
 | Priorité | Constat | Effort | Qui | État |
 |---|---|---|---|---|
-| 1 | C1 — annotations sur `ApplicationController` | faible | back | À faire |
+| 1 | C1 — annotations sur `ApplicationController` et `ApplicationServiceImpl` | faible | back | ✅ **Fait** |
 | 2 | I2 — retirer `POST /killevents` | faible | back | ✅ **Fait** |
 | 3 | I1 — filtrer les remontées par auteur | faible | back | À faire |
 | 4 | I4 — retrait de l'agent par session | faible | back | ✅ **Fait (commit `a744c4b`)** |

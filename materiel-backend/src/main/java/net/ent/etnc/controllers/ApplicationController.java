@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -54,8 +55,9 @@ public class ApplicationController {
     }
 
     /**
-     * Crée une application ou règle manuellement.
+     * Crée une application ou règle manuellement (réservé aux administrateurs, RG-27).
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApplicationResponse create(@Valid @RequestBody final ApplicationRequest request) {
@@ -65,8 +67,9 @@ public class ApplicationController {
     }
 
     /**
-     * Met à jour une application existante.
+     * Met à jour une application existante (réservé aux administrateurs, RG-27).
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ApplicationResponse update(@PathVariable final Long id, @Valid @RequestBody final ApplicationRequest request) {
         Application app = applicationService.findById(id)
@@ -77,8 +80,9 @@ public class ApplicationController {
     }
 
     /**
-     * Active ou désactive le statut de liste noire d'une application.
+     * Active ou désactive le statut de liste noire d'une application (réservé aux administrateurs, RG-27).
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/blacklist")
     public ApplicationResponse toggleBlacklist(
             @PathVariable final Long id,
@@ -89,8 +93,9 @@ public class ApplicationController {
     }
 
     /**
-     * Supprime une application du catalogue.
+     * Supprime une application du catalogue (réservé aux administrateurs, RG-27).
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable final Long id) {
