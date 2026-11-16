@@ -11,6 +11,7 @@ import type {Material} from '../../../models/material.model.ts';
 import type {TypeCount} from '../composables/use-room-overview.ts';
 import Card from '../../../shared/components/card.vue';
 import Link from '../../../shared/components/Link.vue';
+import {countLabel, plural} from '../../../shared/composables/use-plural.ts';
 import MaterialStatusBadge from '../../../shared/components/material-status-badge.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -29,7 +30,7 @@ const MAX_ROWS = 6;
 //------------------ COMPUTED --------------------------------
 const shown = computed(() => props.ucs.slice(0, MAX_ROWS));
 const isEmpty = computed(() => props.ucs.length === 0);
-const moreLabel = computed(() => (props.ucs.length > MAX_ROWS ? `Et ${props.ucs.length - MAX_ROWS} autre(s) poste(s).` : ''));
+const moreLabel = computed(() => (props.ucs.length > MAX_ROWS ? `Et ${countLabel(props.ucs.length - MAX_ROWS, 'autre')} ${plural(props.ucs.length - MAX_ROWS, 'poste')}.` : ''));
 const hasOthers = computed(() => props.others.length > 0);
 </script>
 

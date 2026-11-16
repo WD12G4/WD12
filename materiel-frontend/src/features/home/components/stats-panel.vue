@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Compteurs du tableau de bord, chacun menant à la liste du matériel, déjà filtrée quand c'est possible.
- * Formateur (roomId) : seulement le matériel de sa salle et ses fins de disponibilité, vers la fiche de la salle.
+ * Formateur (roomId) : seulement le matériel de sa salle, vers la fiche de la salle.
+ * Le compteur des fins de disponibilité (expiry-indicator.vue, horizon réglable) arrive par le slot, en fin de rangée.
  * Les chiffres défilent jusqu'à leur valeur ; les cartes apparaissent en cascade (--i) et
  * s'inclinent légèrement vers la souris (use-motion.ts).
  * Composant de présentation.
@@ -18,8 +19,6 @@ import Link from '../../../shared/components/Link.vue';
 const props = defineProps<{
   /** Compteurs à afficher. */
   stats: DashboardStats;
-  /** Horizon des fins de disponibilité, en jours (réglé dans le bandeau sous les compteurs). */
-  horizon: number;
   /** Salle de cours du formateur, ou null (tout le parc). */
   roomId: number | null;
 }>();
@@ -30,7 +29,6 @@ const items = computed<{key: string; value: number; label: string; to: RouteTarg
   {key: 'active', value: props.stats.active, label: 'Matériels suivis', to: {name: 'materials'}},
   {key: 'assigned', value: props.stats.assigned, label: 'Affectés à une salle', to: {name: 'materials', query: {emplacement: 'salle'}}},
   {key: 'stock', value: props.stats.stock, label: 'En stock', to: {name: 'materials', query: {emplacement: 'stock'}}},
-  {key: 'expiring', value: props.stats.expiring, label: `Fin de disponibilité sous ${props.horizon} j`, to: {name: 'materials'}},
 ]));
 
 //------------------ FUNCTIONS -------------------------------
@@ -40,10 +38,7 @@ const items = computed<{key: string; value: number; label: string; to: RouteTarg
  */
 function roomItems(roomId: number): {key: string; value: number; label: string; to: RouteTarget}[] {
   const to: RouteTarget = {name: 'room-detail', params: {id: roomId}};
-  return [
-    {key: 'active', value: props.stats.active, label: 'Matériels de votre salle', to},
-    {key: 'expiring', value: props.stats.expiring, label: `Fin de disponibilité sous ${props.horizon} j`, to},
-  ];
+  return [{key: 'active', value: props.stats.active, label: 'Matériels de votre salle', to}];
 }
 </script>
 
@@ -61,5 +56,6 @@ function roomItems(roomId: number): {key: string; value: number; label: string; 
       <strong><AnimatedNumber :value="item.value" /></strong>
       <span>{{ item.label }}</span>
     </Link>
+    <slot />
   </div>
 </template>

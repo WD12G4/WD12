@@ -405,14 +405,14 @@ p { color: var(--muted); line-height: 1.6; }
 /* ------------------ VERRE ---------------------------------- */
 /* Surfaces en verre : flou de ce qui passe derrière, liseré clair, reflet en haut. Les règles de
    chaque élément plus bas ne redonnent ni fond, ni bordure, ni ombre (sauf exception voulue). */
-:is(.main-menu, .topbar, .card, .stat, .expiry-panel, .drawer, .select-panel) {
+:is(.main-menu, .topbar, .card, .stat, .drawer, .select-panel) {
   background: var(--glass); border: 1px solid var(--glass-rim);
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   box-shadow: var(--glass-shine), var(--glass-shadow);
 }
 /* Éléments posés sur une carte : verre plus léger, sans flou (déjà flouté par la carte). */
 :is(.overview-tile, .filters, .detail-grid > div, .plain-list > li, .station-tile, .journal-item,
-  .summary-figures > div, .shared-apps, .process-list li) {
+  .summary-bar, .shared-apps, .process-list li) {
   background: var(--surface-soft); border: 1px solid var(--glass-rim); box-shadow: var(--glass-shine);
 }
 
@@ -688,7 +688,7 @@ p { color: var(--muted); line-height: 1.6; }
   -webkit-backdrop-filter: none; backdrop-filter: none;
 }
 [data-frame='open'] :is(.overview-tile, .filters, .detail-grid > div, .plain-list > li, .station-tile, .journal-item,
-  .summary-figures > div, .shared-apps, .process-list li) {
+  .summary-bar, .shared-apps, .process-list li) {
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
 }
 @media (min-width: 901px) {
@@ -989,18 +989,12 @@ a.preview-row:hover { background: var(--neutral-soft); }
 a.brand { color: inherit; text-decoration: none; border-radius: var(--radius); }
 .overview-tile .badge { white-space: normal; }
 
-/* Horizon des fins de disponibilité (expiry-indicator.vue) */
-.expiry-panel {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; margin-bottom: 1.5rem; padding: 0.85rem 1.1rem;
-  border-radius: var(--radius);
-}
-.expiry-panel.alert { background: var(--danger-soft); border-color: var(--danger-border); }
-.expiry-label { color: var(--muted); font-weight: 600; font-size: 0.88rem; }
-.expiry-panel .segmented { min-height: 0; }
-.expiry-panel .segmented button { padding: 0.3rem 0.65rem; }
-.expiry-count { margin: 0; color: var(--text); font-weight: 500; }
-.expiry-panel.alert .expiry-count { color: var(--danger); }
-.expiry-count strong { font-size: 1.35rem; font-weight: 750; margin-right: 0.2rem; }
+/* Compteur des fins de disponibilité (expiry-indicator.vue) : horizon réglable à droite du chiffre,
+   chiffre en rouge seulement s'il y a des matériels concernés (pas toute la carte). */
+.expiry-stat-head { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.expiry-stat .segmented { min-height: 0; }
+.expiry-stat .segmented button { padding: 0.25rem 0.55rem; font-size: 0.8rem; }
+.expiry-stat.alert strong { color: var(--danger); }
 
 /* Profondeur au survol (compteurs et tuiles) : la carte s'incline vers la souris (use-motion.ts
    écrit --tilt-x et --tilt-y) et un reflet blanc, comme sur du verre, suit le pointeur (--glow-x, --glow-y). */
@@ -1106,7 +1100,10 @@ a.brand { color: inherit; text-decoration: none; border-radius: var(--radius); }
 [data-theme='dsfr'] :is(.badge, .sim-badge) { border-radius: 0.25rem; font-weight: 700; text-transform: uppercase; font-size: 0.72rem; }
 [data-theme='dsfr'] .card { border: 1px solid var(--border); box-shadow: none; }
 [data-theme='dsfr'] :is(.demo-banner, .flash) { border-radius: 0.25rem; }
-[data-theme='dsfr'] .card a:not(.button-link):not(.code) { text-decoration: underline; text-underline-offset: 3px; }
+/* Seuls les liens dans le texte sont soulignés, pas les cartes-liens (salles, lignes d'aperçu). */
+[data-theme='dsfr'] .card a:not(.button-link, .code, .overview-tile, .preview-row) { text-decoration: underline; text-underline-offset: 3px; }
+/* Pas de halo coloré flou sur les compteurs : le DSFR est sans effet de verre. */
+[data-theme='dsfr'] .stat::after { display: none; }
 [data-theme='dsfr'] :is(.room-switch, .user-switch) .select-trigger { border-radius: 0.25rem; box-shadow: none; }
 /* Le bloc-marque prend plus de place que le logo : dans l'en-tête, l'utilisateur ne garde que sa
    pastille (nom et rôle dans la liste), et les autres paliers de repli arrivent plus tôt. */
@@ -1223,24 +1220,27 @@ a.brand { color: inherit; text-decoration: none; border-radius: var(--radius); }
 /* Formateur : sa salle de cours, sans choix (bouton de la barre du haut pour en changer). */
 .locked-room { display: flex; align-items: center; min-height: 2.5rem; margin: 0; color: var(--title); }
 
-/* Résumé de la salle : trois chiffres, et les applications ouvertes sur plusieurs postes. */
-.room-summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 0.9rem; margin-bottom: 1.25rem; }
-.summary-figures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; margin: 0; }
-.summary-figures > div { display: flex; flex-direction: column; justify-content: center; padding: 0.9rem 1rem; border-radius: var(--radius); }
-.summary-figures dd { font-size: 1.9rem; font-weight: 750; letter-spacing: -0.03em; line-height: 1.1; }
+/* Résumé de la salle : une barre compacte (trois chiffres, masterisation à droite) pour que les postes
+   restent visibles sans défiler, puis les applications ouvertes sur plusieurs postes. */
+.room-summary { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
+.summary-bar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem 1.25rem;
+  padding: 0.6rem 0.75rem 0.6rem 1rem; border-radius: var(--radius);
+}
+.summary-figures { display: flex; flex-wrap: wrap; gap: 0.3rem 1.5rem; margin: 0; }
+.summary-figures > div { display: flex; align-items: baseline; gap: 0.35rem; }
+/* Le chiffre avant son libellé (« 6 postes ») ; dt reste avant dd dans le HTML. */
+.summary-figures dt { order: 1; margin: 0; color: var(--muted); font-size: 0.88rem; font-weight: 500; text-transform: none; letter-spacing: 0; }
+.summary-figures dd { font-size: 1.35rem; font-weight: 750; letter-spacing: -0.02em; line-height: 1.1; }
+.summary-bar button { padding: 0.4rem 0.85rem; font-size: 0.82rem; }
 .shared-apps { padding: 0.9rem 1rem; border-radius: var(--radius); }
 .shared-apps h3 { margin-bottom: 0.6rem; }
-.shared-apps ul { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.55rem; margin: 0; padding: 0; list-style: none; }
+.shared-apps ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0.55rem 1.25rem; margin: 0; padding: 0; list-style: none; }
 .shared-apps li { display: flex; align-items: center; gap: 0.75rem; }
 .shared-apps .app-glyph { width: 2.1rem; height: 2.1rem; border-radius: 0.6rem; }
 .shared-apps button { padding: 0.4rem 0.85rem; font-size: 0.82rem; }
-@container (max-width: 760px) { .room-summary { grid-template-columns: 1fr; } }
-/* Carte étroite (mobile) : libellés des chiffres en minuscules, boutons plus petits, « Affichage » à gauche. */
+/* Carte étroite (mobile) : boutons plus petits, « Affichage » à gauche. */
 @container (max-width: 520px) {
-  .summary-figures { gap: 0.5rem; }
-  .summary-figures > div { padding: 0.7rem 0.75rem; }
-  .summary-figures dt { text-transform: none; letter-spacing: 0; font-size: 0.74rem; }
-  .summary-figures dd { font-size: 1.5rem; }
   .shared-apps button { padding: 0.35rem 0.7rem; font-size: 0.78rem; }
   .supervision-toolbar .field:last-child { margin-left: 0; }
 }
@@ -1339,6 +1339,14 @@ a.brand { color: inherit; text-decoration: none; border-radius: var(--radius); }
 .blacklist { display: grid; gap: 1rem; }
 :is(.process-text, .journal-text, .shared-app-text) .muted { font-size: 0.8rem; }
 .process-list button { padding: 0.4rem 0.8rem; font-size: 0.82rem; }
+/* Téléphone : les boutons passent sous le nom de l'application (sinon il est coupé dès 4 lettres),
+   alignés sur le texte (icône de 2.2rem + écart de 0.75rem), et les caractéristiques du poste
+   tiennent sur une colonne pour que l'adresse MAC reste entière. */
+@media (max-width: 600px) {
+  .process-list li { flex-wrap: wrap; }
+  .process-actions { width: 100%; padding-left: 2.95rem; }
+  .panel-facts { grid-template-columns: minmax(0, 1fr); }
+}
 
 /* Journal : façon notifications, regroupé par jour. */
 .journal-day + .journal-day { margin-top: 1.25rem; }
@@ -1360,7 +1368,6 @@ a.brand { color: inherit; text-decoration: none; border-radius: var(--radius); }
 .reimage-progress progress::-moz-progress-bar { background: var(--accent); border-radius: 999px; }
 .installed-apps { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
 .installed-apps li { padding: 0.15rem 0.55rem; border-radius: 999px; background: var(--surface-soft); border: 1px solid var(--glass-rim); color: var(--title); font-size: 0.75rem; font-weight: 550; }
-.summary-actions { margin: 0.75rem 0 0; }
 
 /* Assistant de masterisation (reimage-wizard.vue) : fenêtre en verre au-dessus de la page. */
 .wizard-backdrop { position: fixed; inset: 0; z-index: 55; display: grid; place-items: center; padding: 1rem; background: var(--backdrop); backdrop-filter: blur(3px); }

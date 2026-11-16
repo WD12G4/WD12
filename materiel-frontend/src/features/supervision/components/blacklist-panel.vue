@@ -9,6 +9,7 @@
 import {computed, onMounted, ref} from 'vue';
 import type {Application} from '../../../models/application.model.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
+import {countLabel, plural} from '../../../shared/composables/use-plural.ts';
 import {useBlacklist} from '../composables/use-blacklist.ts';
 import LoadState from '../../../shared/components/load-state.vue';
 import FormError from '../../../shared/components/form-error.vue';
@@ -25,7 +26,7 @@ const visible = computed(() => {
   const term = search.value.trim().toLowerCase();
   return applications.value.filter(app => !term || `${app.displayName} ${app.name}`.toLowerCase().includes(term));
 });
-const summary = computed(() => `${forbiddenCount.value} interdite(s) sur ${applications.value.length} application(s) vues sur les postes.`);
+const summary = computed(() => `${countLabel(forbiddenCount.value, 'interdite')} sur ${countLabel(applications.value.length, 'application')} ${plural(applications.value.length, 'vue')} sur les postes.`);
 const showEmpty = computed(() => !loading.value && errorMessage.value === null && visible.value.length === 0);
 
 //------------------ FUNCTIONS -------------------------------

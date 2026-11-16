@@ -75,12 +75,9 @@ watch(trainerRoomId, roomId => {
       @retry="load"
   />
   <template v-if="isLoaded">
-    <StatsPanel
-        :stats="stats"
-        :horizon="horizon"
-        :room-id="trainerRoomId"
-    />
-    <ExpiryIndicator v-model:horizon="horizon" :count="stats.expiring" />
+    <StatsPanel :stats="stats" :room-id="trainerRoomId">
+      <ExpiryIndicator v-model:horizon="horizon" :count="stats.expiring" />
+    </StatsPanel>
     <Card v-if="trainerRoomId === null" title="Le parc, salle par salle">
       <template #header>
         <p>Toutes les salles d'un coup d'œil. Cliquez sur une salle pour voir son matériel.</p>

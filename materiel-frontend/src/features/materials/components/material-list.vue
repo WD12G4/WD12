@@ -6,13 +6,14 @@
  * « Modifier » l'ouvre directement en modification. Un matériel enregistré est renvoyé au parent (updated).
  * Utilisé par : material-view.vue, features/rooms/views/room-detail-view.vue
  */
-import {ref} from 'vue';
+import {computed, ref} from 'vue';
 import type {Material} from '../../../models/material.model.ts';
 import MaterialItem from './material-item.vue';
 import MaterialPreview from './material-preview.vue';
+import {countLabel} from '../../../shared/composables/use-plural.ts';
 
 //------------------ PROPS / EMITS ---------------------------
-defineProps<{
+const props = defineProps<{
   /** Matériels à afficher (déjà filtrés). */
   materials: Material[];
   /** Vrai si l'utilisateur peut modifier et archiver (gestionnaire et administrateur, RG-16). */
@@ -31,6 +32,9 @@ const emit = defineEmits<{
 const previewed = ref<Material | null>(null);
 /** Vrai si l'aperçu est en modification. */
 const editing = ref(false);
+
+//------------------ COMPUTED --------------------------------
+const countText = computed(() => countLabel(props.materials.length, 'matériel'));
 
 //------------------ FUNCTIONS -------------------------------
 /** La ligne du matériel en aperçu est surlignée. */
@@ -55,7 +59,7 @@ function onSaved(material: Material): void {
 
 <template>
   <!-- Nombre de résultats -->
-  <p class="list-count">{{ materials.length }} matériel(s)</p>
+  <p class="list-count">{{ countText }}</p>
 
   <!-- État vide -->
   <p v-if="materials.length === 0" class="empty-state">

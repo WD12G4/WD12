@@ -4,10 +4,12 @@
  * Composant de présentation.
  * Utilisé par : building-list.vue
  */
+import {computed} from 'vue';
 import type {Building} from '../../../models/building.model.ts';
+import {countLabel} from '../../../shared/composables/use-plural.ts';
 
 //------------------ PROPS / EMITS ---------------------------
-defineProps<{
+const props = defineProps<{
   /** Bâtiment affiché. */
   building: Building;
   /** Nombre de salles du bâtiment. */
@@ -22,11 +24,14 @@ const emit = defineEmits<{
   /** Demande de suppression. */
   remove: [building: Building];
 }>();
+
+//------------------ COMPUTED --------------------------------
+const roomCountText = computed(() => countLabel(props.roomCount, 'salle'));
 </script>
 
 <template>
   <td>Bâtiment {{ building.number }}</td>
-  <td>{{ roomCount }} salle(s)</td>
+  <td>{{ roomCountText }}</td>
   <td class="row-actions">
     <template v-if="canEdit">
       <button

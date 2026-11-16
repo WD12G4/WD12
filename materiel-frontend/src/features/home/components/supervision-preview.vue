@@ -12,6 +12,7 @@ import type {WorkstationView} from '../../supervision/composables/use-supervisio
 import {openAppsLabel, statusLabel} from '../../supervision/composables/use-station-labels.ts';
 import Card from '../../../shared/components/card.vue';
 import Link from '../../../shared/components/Link.vue';
+import {countLabel, plural} from '../../../shared/composables/use-plural.ts';
 
 //------------------ PROPS / EMITS ---------------------------
 const props = defineProps<{
@@ -25,7 +26,7 @@ const MAX_ROWS = 6;
 //------------------ COMPUTED --------------------------------
 const online = computed(() => props.views.filter(view => view.workstation.status === 'online').length);
 const openApps = computed(() => props.views.reduce((total, view) => total + view.processes.length, 0));
-const summary = computed(() => `${online.value} poste(s) en ligne sur ${props.views.length} · ${openApps.value} application(s) ouverte(s)`);
+const summary = computed(() => `${countLabel(online.value, 'poste')} en ligne sur ${props.views.length} · ${countLabel(openApps.value, 'application')} ${plural(openApps.value, 'ouverte')}`);
 const isEmpty = computed(() => props.views.length === 0);
 /** Une ligne par poste : stagiaire (ou nom du poste), nom du poste, état, applications ouvertes. */
 const rows = computed(() => props.views.slice(0, MAX_ROWS).map(({workstation, processes}) => ({

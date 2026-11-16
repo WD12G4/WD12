@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Résumé de la salle, dans l'esprit de « Temps d'écran » : postes, postes en ligne, applications
- * ouvertes, applications ouvertes sur plusieurs postes avec « Fermer partout », et, pour
+ * Résumé de la salle, dans l'esprit de « Temps d'écran » : une barre compacte (postes, postes en ligne,
+ * applications ouvertes) pour laisser les postes visibles sans défiler, applications ouvertes sur plusieurs postes avec « Fermer partout », et, pour
  * l'administrateur, la masterisation de plusieurs postes simulés à la fois.
  * Composant de présentation : émet des événements.
  * Utilisé par : supervision-view.vue
@@ -12,6 +12,7 @@ import type {WorkstationView} from '../composables/use-supervision.ts';
 import {roomFigures, sharedApps} from '../composables/use-room-activity.ts';
 import AnimatedNumber from '../../../shared/components/animated-number.vue';
 import AppGlyph from './app-glyph.vue';
+import {plural} from '../../../shared/composables/use-plural.ts';
 
 //------------------ PROPS / EMITS ---------------------------
 const props = defineProps<{
@@ -31,7 +32,15 @@ const emit = defineEmits<{
 }>();
 
 //------------------ COMPUTED --------------------------------
-const figures = computed(() => roomFigures(props.views));
+/** Chiffres de la salle, chacun suivi de son libellé accordé. */
+const figures = computed(() => {
+  const {stations, online, openApps} = roomFigures(props.views);
+  return [
+    {key: 'stations', value: stations, label: plural(stations, 'poste')},
+    {key: 'online', value: online, label: 'en ligne'},
+    {key: 'apps', value: openApps, label: plural(openApps, 'application ouverte', 'applications ouvertes')},
+  ];
+});
 const shared = computed(() => sharedApps(props.views));
 const hasShared = computed(() => shared.value.length > 0);
 const showReimage = computed(() => props.canReimage && props.views.some(view => view.workstation.simulated));
@@ -39,13 +48,15 @@ const showReimage = computed(() => props.canReimage && props.views.some(view => 
 
 <template>
   <section class="room-summary" aria-label="Résumé de la salle">
-    <dl class="summary-figures">
-      <div><dt>Postes</dt><dd><AnimatedNumber :value="figures.stations" /></dd></div>
-      <div><dt>En ligne</dt><dd><AnimatedNumber :value="figures.online" /></dd></div>
-      <div><dt>Applications ouvertes</dt><dd><AnimatedNumber :value="figures.openApps" /></dd></div>
-    </dl>
-    <p v-if="showReimage" class="summary-actions">
+    <div class="summary-bar">
+      <dl class="summary-figures">
+        <div v-for="figure in figures" :key="figure.key">
+          <dt>{{ figure.label }}</dt>
+          <dd><AnimatedNumber :value="figure.value" /></dd>
+        </div>
+      </dl>
       <button
+          v-if="showReimage"
           type="button"
           class="secondary-button"
           :disabled="busy"
@@ -53,7 +64,7 @@ const showReimage = computed(() => props.canReimage && props.views.some(view => 
       >
         Masteriser des postes simulés…
       </button>
-    </p>
+    </div>
     <div v-if="hasShared" class="shared-apps">
       <h3 class="eyebrow">Ouvertes sur plusieurs postes</h3>
       <ul>

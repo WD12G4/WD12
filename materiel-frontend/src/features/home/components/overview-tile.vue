@@ -12,6 +12,7 @@ import type {RouteTarget} from '../../../router/route-types.ts';
 import type {MaterialSummary} from '../composables/use-room-overview.ts';
 import {resetTilt, tiltTowardsPointer} from '../../../shared/composables/use-motion.ts';
 import Link from '../../../shared/components/Link.vue';
+import {countLabel, plural} from '../../../shared/composables/use-plural.ts';
 
 //------------------ PROPS / EMITS ---------------------------
 const props = defineProps<{
@@ -30,6 +31,8 @@ const props = defineProps<{
 //------------------ COMPUTED --------------------------------
 /** Classes de la tuile : pointillés pour le stock, atténuée si elle est vide. */
 const tileClass = computed(() => ({dashed: props.dashed, empty: !props.summary.hasMaterials}));
+const materialWord = computed(() => plural(props.summary.total, 'matériel'));
+const expiringText = computed(() => countLabel(props.summary.expiring, 'bientôt expiré', 'bientôt expirés'));
 </script>
 
 <template>
@@ -43,7 +46,7 @@ const tileClass = computed(() => ({dashed: props.dashed, empty: !props.summary.h
     <span class="overview-tile-subtitle">{{ subtitle }}</span>
     <span class="overview-tile-title">{{ title }}</span>
     <span class="overview-tile-count">
-      <strong>{{ summary.total }}</strong> matériel(s)
+      <strong>{{ summary.total }}</strong> {{ materialWord }}
     </span>
     <ul v-if="summary.hasMaterials" class="type-chips">
       <li v-for="typeCount in summary.byType" :key="typeCount.type">
@@ -51,7 +54,7 @@ const tileClass = computed(() => ({dashed: props.dashed, empty: !props.summary.h
       </li>
     </ul>
     <span v-if="summary.hasExpiring" class="badge expiring">
-      {{ summary.expiring }} bientôt expiré(s)
+      {{ expiringText }}
     </span>
   </Link>
 </template>

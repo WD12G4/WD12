@@ -17,7 +17,6 @@ import {useSupervisionActions} from '../composables/use-supervision-actions.ts';
 import {useSupervisionRooms} from '../composables/use-supervision-rooms.ts';
 import BlacklistPanel from '../components/blacklist-panel.vue';
 import Card from '../../../shared/components/card.vue';
-import DemoBanner from '../../../shared/components/demo-banner.vue';
 import FormError from '../../../shared/components/form-error.vue';
 import LoadState from '../../../shared/components/load-state.vue';
 import ReimageWizard from '../components/reimage-wizard.vue';
@@ -65,8 +64,7 @@ watch(selectedRoomId, (roomId, previousRoomId) => {
 <template>
   <Card class="supervision-card" title="Supervision des postes">
     <template #header>
-      <DemoBanner>Postes réels (agent de supervision) et postes simulés, marqués « Simulé » : la masterisation n'est possible que sur ces derniers.</DemoBanner>
-      <p>Cliquez sur un poste pour voir ses applications et en fermer une.</p>
+      <p>Cliquez sur un poste pour voir ses applications et en fermer une. Seuls les postes « Simulé » peuvent être masterisés.</p>
     </template>
     <template #body>
       <SupervisionToolbar
