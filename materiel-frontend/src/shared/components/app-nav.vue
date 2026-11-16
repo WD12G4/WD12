@@ -66,12 +66,16 @@ function linkClass(link: NavLink): Record<string, boolean> {
       class="main-menu"
       :class="{ open }"
   >
-    <!-- Marque (thème DSFR : bloc-marque de l'État, affiché par style.css) -->
-    <div class="brand">
+    <!-- Marque, lien vers le tableau de bord (thème DSFR : bloc-marque de l'État, affiché par style.css) -->
+    <Link
+        class="brand"
+        :to="{ name: 'home' }"
+        aria-label="BASTION, tableau de bord"
+    >
       <p class="fr-logo brand-marque">Ministère<br>des Armées<br>et des Anciens<br>Combattants</p>
       <BrandMark class="brand-logo" />
       <BrandWordmark class="brand-name" />
-    </div>
+    </Link>
 
     <!-- Liens (la pastille ne sert que dans la barre du haut) -->
     <nav

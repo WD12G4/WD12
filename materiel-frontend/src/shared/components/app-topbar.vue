@@ -7,6 +7,7 @@
 import AppIcon from './app-icon.vue';
 import BrandMark from './brand-mark.vue';
 import BrandWordmark from './brand-wordmark.vue';
+import Link from './Link.vue';
 
 //------------------ PROPS / EMITS ---------------------------
 defineProps<{
@@ -32,7 +33,14 @@ const emit = defineEmits<{
     >
       <AppIcon name="menu" />
     </button>
-    <BrandMark class="brand-logo" />
-    <BrandWordmark class="brand-name" />
+    <!-- Logo et nom : lien vers le tableau de bord -->
+    <Link
+        class="brand"
+        :to="{ name: 'home' }"
+        aria-label="BASTION, tableau de bord"
+    >
+      <BrandMark class="brand-logo" />
+      <BrandWordmark class="brand-name" />
+    </Link>
   </header>
 </template>
