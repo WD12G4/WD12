@@ -32,12 +32,14 @@ const emit = defineEmits<{
 const elapsed = computed(() => formatElapsed(props.process.startedAt));
 /** Date exacte, en info-bulle de la durée. */
 const startedAt = computed(() => `Lancée le ${formatDateTime(props.process.startedAt)}`);
+/** Nom du processus, en info-bulle du nom affiché quand ils diffèrent. */
+const processTitle = computed(() => (props.process.displayName !== props.process.name ? `Processus : ${props.process.name}` : undefined));
 </script>
 
 <template>
   <AppGlyph :name="process.name" :icon="process.icon" />
   <span class="process-text">
-    <strong>{{ process.name }}</strong>
+    <strong :title="processTitle">{{ process.displayName }}</strong>
     <span class="muted" :title="startedAt">{{ elapsed }}</span>
   </span>
   <span class="process-actions">

@@ -51,12 +51,12 @@ export function useSupervisionActions(supervision: Supervision) {
     return {
         busy, actionError, wizardPreselect, simulatedViews,
         kill: (process: ProcessInfo) => act(() => supervision.killProcess(process)),
-        closeEverywhere: async (name: string) => {
-            if (!window.confirm(`Fermer « ${name} » sur tous les postes de la salle ?`)) return;
+        closeEverywhere: async (name: string, label: string = name) => {
+            if (!window.confirm(`Fermer « ${label} » sur tous les postes de la salle ?`)) return;
             await act(() => supervision.killEverywhere(name));
         },
         forbid: async (process: ProcessInfo) => {
-            if (!window.confirm(`Interdire « ${process.name} » ? Elle sera fermée sur tous les postes, maintenant et à chaque lancement.`)) return;
+            if (!window.confirm(`Interdire « ${process.displayName} » ? Elle sera fermée sur tous les postes, maintenant et à chaque lancement.`)) return;
             await act(() => forbidApp(supervision, process));
         },
         openWizard: (view?: WorkstationView) => void (wizardPreselect.value = preselection(simulatedViews.value, view)),

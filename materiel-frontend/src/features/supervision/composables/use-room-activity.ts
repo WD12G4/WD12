@@ -19,7 +19,10 @@ interface RoomFigures {
 
 /** Application ouverte sur plusieurs postes. */
 interface SharedApp {
+    /** Nom du processus : sert à « Fermer partout ». */
     name: string;
+    /** Nom affiché (catalogue des applications, sinon nom du processus). */
+    displayName: string;
     stations: number;
     /** Icône envoyée par l'agent d'un des postes, ou null. */
     icon: string | null;
@@ -50,15 +53,15 @@ export function roomFigures(views: WorkstationView[]): RoomFigures {
 export function sharedApps(views: WorkstationView[]): SharedApp[] {
     const apps = new Map<string, SharedApp>();
     for (const view of views) {
-        const seen = new Map(view.processes.map(process => [process.name, process.icon]));
-        for (const [name, icon] of seen) {
-            const app = apps.get(name) ?? {name, stations: 0, icon: null};
-            apps.set(name, {...app, stations: app.stations + 1, icon: app.icon ?? icon});
+        const seen = new Map(view.processes.map(process => [process.name, process]));
+        for (const [name, process] of seen) {
+            const app = apps.get(name) ?? {name, displayName: process.displayName, stations: 0, icon: null};
+            apps.set(name, {...app, stations: app.stations + 1, icon: app.icon ?? process.icon});
         }
     }
     return [...apps.values()]
         .filter(app => app.stations > 1)
-        .sort((a, b) => b.stations - a.stations || a.name.localeCompare(b.name))
+        .sort((a, b) => b.stations - a.stations || a.displayName.localeCompare(b.displayName))
         .slice(0, MAX_SHARED_APPS);
 }
 

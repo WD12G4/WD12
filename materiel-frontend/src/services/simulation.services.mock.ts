@@ -9,7 +9,7 @@
  */
 import type {ProcessInfo, ReimageProgress, SupervisionEvent, Workstation} from '../models/supervision.model.ts';
 import type {InstalledConfig, ReimageConfig} from '../models/reimage.model.ts';
-import {configFor, configSummary, describeConfig, findOs, processName} from './simulation-catalog.mock.ts';
+import {appLabel, configFor, configSummary, describeConfig, findOs, processName} from './simulation-catalog.mock.ts';
 
 /** Système et image de départ de chaque poste simulé d'une salle. */
 const INITIAL_CONFIGS: [osId: string, profileId: string][] = [['windows-11', 'dev'], ['windows-11', 'dev'], ['ubuntu-24', 'dev'], ['windows-11', 'office']];
@@ -39,7 +39,7 @@ function openApps(station: SimStation, maxMinutes: number): ProcessInfo[] {
     const {osId, appIds} = station.config;
     const count = appIds.length === 0 ? 0 : 1 + Math.floor(Math.random() * Math.min(appIds.length, 5));
     return [...appIds].sort(() => Math.random() - 0.5).slice(0, count).map(appId => ({
-        pid: 1000 + Math.floor(Math.random() * 30_000), workstationId: station.workstation.id,
+        pid: 1000 + Math.floor(Math.random() * 30_000), workstationId: station.workstation.id, displayName: appLabel(appId),
         name: processName(appId, osId) ?? appId, startedAt: new Date(Date.now() - Math.random() * maxMinutes * 60_000), icon: null,
     }));
 }

@@ -66,8 +66,10 @@ interface Workstation {
 interface ProcessInfo {
     pid: number;
     workstationId: number;
-    /** Nom du processus remonté par l'agent (ex. « chrome.exe », « code »). */
+    /** Nom du processus remonté par l'agent (ex. « chrome.exe », « code ») : sert à l'arrêt et à la liste noire. */
     name: string;
+    /** Nom affiché : celui de l'application dans le catalogue (liste noire), sinon le nom du processus. */
+    displayName: string;
     startedAt: Date;
     /** Icône de l'application (PNG en data URI, agents Windows), ou null. */
     icon: string | null;

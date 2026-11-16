@@ -35,6 +35,8 @@ export interface ProcessInfoDto {
     pid: number;
     workstationId: number;
     name: string;
+    /** Nom de l'application dans le catalogue (ou nom du processus) ; absent d'un ancien backend. */
+    displayName?: string | null;
     startedAt: string;
     /** Icône en data URI (agents Windows), ou null. */
     icon?: string | null;
@@ -80,5 +82,10 @@ export function workstationFromDto(dto: WorkstationDto): Workstation {
  * @param dto processus reçu
  */
 export function processFromDto(dto: ProcessInfoDto): ProcessInfo {
-    return {...dto, startedAt: parseApiDateTime(dto.startedAt), icon: iconFromDto(dto.icon)};
+    return {
+        ...dto,
+        displayName: dto.displayName?.trim() || dto.name,
+        startedAt: parseApiDateTime(dto.startedAt),
+        icon: iconFromDto(dto.icon),
+    };
 }

@@ -24,8 +24,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  /** Fermer cette application sur tous les postes de la salle. */
-  killEverywhere: [name: string];
+  /** Fermer cette application sur tous les postes de la salle (nom du processus, nom affiché). */
+  killEverywhere: [name: string, label: string];
   /** Ouvrir l'assistant de masterisation des postes simulés. */
   reimage: [];
 }>();
@@ -60,14 +60,14 @@ const showReimage = computed(() => props.canReimage && props.views.some(view => 
         <li v-for="app in shared" :key="app.name">
           <AppGlyph :name="app.name" :icon="app.icon" />
           <span class="shared-app-text">
-            <strong>{{ app.name }}</strong>
+            <strong>{{ app.displayName }}</strong>
             <span class="muted">{{ app.stations }} postes</span>
           </span>
           <button
               type="button"
               class="secondary-button"
               :disabled="busy"
-              @click="emit('killEverywhere', app.name)"
+              @click="emit('killEverywhere', app.name, app.displayName)"
           >
             Fermer partout
           </button>

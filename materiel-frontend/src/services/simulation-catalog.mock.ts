@@ -67,6 +67,11 @@ export function processName(appId: string, osId: string): string | null {
     return appOptions.find(app => app.id === appId)?.[findOs(osId).family] ?? null;
 }
 
+/** Nom affiché d'une application (« Visual Studio Code »), ou son identifiant si elle est inconnue. */
+export function appLabel(appId: string): string {
+    return appOptions.find(app => app.id === appId)?.label ?? appId;
+}
+
 /** Configuration d'une image de base sur un système : ses applications disponibles sur ce système. */
 export function configFor(osId: string, profileId: string): ReimageConfig {
     const available = new Set(appsForOs(osId).map(app => app.id));

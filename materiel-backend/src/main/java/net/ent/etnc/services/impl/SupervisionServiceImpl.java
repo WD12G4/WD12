@@ -189,13 +189,23 @@ public class SupervisionServiceImpl implements SupervisionService {
                     continue;
                 }
 
-                allProcesses.add(new ProcessInfoDto(proc.pid(), uc.getId(), proc.name(),
+                allProcesses.add(new ProcessInfoDto(proc.pid(), uc.getId(), proc.name(), displayNameOf(app, proc.name()),
                         Instant.ofEpochMilli(proc.startedAt()).atZone(ZoneId.systemDefault()).toLocalDateTime(),
                         proc.icon()));
             }
         }
 
         return allProcesses;
+    }
+
+    /**
+     * Nom affiché d'un processus : nom d'affichage de l'application dans le catalogue, sinon nom remonté par l'agent.
+     */
+    private static String displayNameOf(final Application app, final String processName) {
+        if (app == null || app.getDisplayName() == null || app.getDisplayName().isBlank()) {
+            return processName;
+        }
+        return app.getDisplayName();
     }
 
     @Override

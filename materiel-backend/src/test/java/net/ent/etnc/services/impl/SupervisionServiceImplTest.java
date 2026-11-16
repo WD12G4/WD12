@@ -108,7 +108,29 @@ class SupervisionServiceImplTest {
         assertThat(procs).hasSize(1);
         assertThat(procs.get(0).pid()).isEqualTo(4321);
         assertThat(procs.get(0).name()).isEqualTo("code.exe");
+        assertThat(procs.get(0).displayName()).isEqualTo("code.exe");
         assertThat(procs.get(0).icon()).isEqualTo("data:image/png;base64,ABC");
+    }
+
+    @Test
+    @DisplayName("findProcessesForWorkstations renvoie le nom d'affichage de l'application du catalogue")
+    void findProcessesForWorkstations_WithCatalogDisplayName_ReturnsDisplayName() {
+        Application app = new Application();
+        app.setName("code.exe");
+        app.setDisplayName("Visual Studio Code");
+        app.setBlacklisted(false);
+
+        when(materialRepository.findById(10L)).thenReturn(Optional.of(sampleUc));
+        when(agentWebSocketHandler.fetchProcessesAsync(eq("UC-TEST-01"), anyLong())).thenReturn(CompletableFuture.completedFuture(List.of(
+                new AgentWebSocketHandler.AgentProcessInfo(4321, "code.exe", System.currentTimeMillis())
+        )));
+        when(applicationService.registerDiscoveredApplication(eq("code.exe"), any())).thenReturn(app);
+
+        List<ProcessInfoDto> procs = supervisionService.findProcessesForWorkstations(List.of(10L));
+
+        assertThat(procs).hasSize(1);
+        assertThat(procs.get(0).name()).isEqualTo("code.exe");
+        assertThat(procs.get(0).displayName()).isEqualTo("Visual Studio Code");
     }
 
     @Test
