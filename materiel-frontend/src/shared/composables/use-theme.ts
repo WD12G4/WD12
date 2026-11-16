@@ -46,7 +46,8 @@ const isTheme = (value: string | undefined): value is ThemeId => themes.some(the
 const initial = document.documentElement.dataset.theme;
 const currentTheme = ref<ThemeId>(isTheme(initial) ? initial : 'givre');
 const currentLayout = ref<LayoutId>('top');
-const currentFrame = ref<FrameId>('card');
+/** Pleine largeur par défaut (posée aussi dans index.html, avant le premier affichage). */
+const currentFrame = ref<FrameId>('open');
 
 //------------------ FUNCTIONS -------------------------------
 /**
