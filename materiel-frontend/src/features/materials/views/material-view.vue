@@ -10,6 +10,7 @@ import {useRoute} from 'vue-router';
 import type {Material} from '../../../models/material.model.ts';
 import {materialsServices} from '../../../services/materials.services.ts';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
+import {useTeachingRoom} from '../../../shared/composables/use-teaching-room.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {useLocations} from '../../../shared/composables/use-locations.ts';
 import {filtersFromQuery, useMaterialFilters} from '../composables/use-material-filters.ts';
@@ -25,10 +26,20 @@ const {hasRole} = useAuth();
 const {loading, errorMessage, run} = useAsyncState();
 const {buildings, rooms, loadLocations} = useLocations();
 const {archiveMaterial} = useArchiveMaterial();
+const {isTrainer, teachingRoomId} = useTeachingRoom();
 const materials = ref<Material[]>([]);
-const {filters, visibleMaterials} = useMaterialFilters(materials, filtersFromQuery(useRoute().query));
 
 //------------------ COMPUTED --------------------------------
+/** Formateur : seulement le matériel et la salle de sa salle de cours (choisie à la connexion). */
+const trainerRoomId = computed(() => (isTrainer.value ? teachingRoomId.value : null));
+const scopedMaterials = computed(() => (trainerRoomId.value === null
+  ? materials.value : materials.value.filter(material => material.room?.id === trainerRoomId.value)));
+const scopedRooms = computed(() => (trainerRoomId.value === null ? rooms.value : rooms.value.filter(room => room.id === trainerRoomId.value)));
+const scopedBuildings = computed(() => (trainerRoomId.value === null
+  ? buildings.value : buildings.value.filter(building => scopedRooms.value.some(room => room.building.id === building.id))));
+const intro = computed(() => (trainerRoomId.value === null
+  ? 'Retrouvez un matériel par son numéro de série, sa salle ou son bâtiment.' : 'Le matériel de votre salle de cours.'));
+const {filters, visibleMaterials} = useMaterialFilters(scopedMaterials, filtersFromQuery(useRoute().query));
 /** RG-16 : le gestionnaire et l'administrateur créent et archivent (backend : ADMIN ou MANAGER). */
 const canManage = computed(() => hasRole('MANAGER'));
 const isLoaded = computed(() => !loading.value && errorMessage.value === null);
@@ -63,7 +74,7 @@ onMounted(load);
 <template>
   <Card class="materials-card" title="Matériel">
     <template #header>
-      <p>Retrouvez un matériel par son numéro de série, sa salle ou son bâtiment.</p>
+      <p>{{ intro }}</p>
       <Link
           v-if="canManage"
           class="button-link"
@@ -75,8 +86,8 @@ onMounted(load);
     <template #body>
       <MaterialFilters
           v-model:filters="filters"
-          :buildings="buildings"
-          :rooms="rooms"
+          :buildings="scopedBuildings"
+          :rooms="scopedRooms"
       />
       <LoadState
           :loading="loading"
