@@ -1034,15 +1034,9 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 /* Le contenu ne déborde pas du cadre qui grandit : la fiche se dévoile à mesure que la tuile s'agrandit. */
 ::view-transition-image-pair(room-card) { overflow: hidden; border-radius: var(--radius-lg); }
 ::view-transition-old(room-title), ::view-transition-new(room-title) { height: 100%; object-fit: none; object-position: left center; }
-/* Toute navigation : seul le contenu passe en fondu (léger glissement à l'arrivée), le menu reste fixe. */
-.app-shell .content { view-transition-name: page; }
-/* Sans ces deux règles, le cadre de la page passe en 250 ms de la taille de l'ancienne page à celle de
-   la nouvelle, et les captures sont redimensionnées avec lui : la page paraît écrasée un instant.
-   Le cadre prend tout de suite sa taille finale et les captures gardent leur taille réelle. */
-::view-transition-group(page) { animation: none; }
-::view-transition-old(page), ::view-transition-new(page) { width: auto; height: auto; }
-::view-transition-old(page) { animation: vt-fade-out 160ms var(--ease) both; }
-::view-transition-new(page) { animation: vt-fade-in 280ms var(--ease) both; }
+/* Toute navigation : le contenu passe en fondu avec le reste de l'écran (capture « root », toujours de
+   la taille de la fenêtre), le menu reste fixe. Le contenu n'a pas sa propre capture : souvent plus
+   haut que l'écran, Firefox la tassait vers le haut pendant le fondu. */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 220ms; }
 /* Éléments fixes, capturés à part pour rester au-dessus du contenu pendant la transition. Leur
    contenu ne change presque pas : on montre directement le nouvel état, sans fondu enchaîné (sinon la
@@ -1063,8 +1057,6 @@ dd { margin: 0; font-weight: 650; color: var(--title); }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes rise { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(14px) scale(0.98); } }
-@keyframes vt-fade-out { to { opacity: 0; } }
-@keyframes vt-fade-in { from { opacity: 0; transform: translateY(8px); } }
 @keyframes pulse { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
