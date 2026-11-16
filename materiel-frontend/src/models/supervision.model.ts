@@ -91,6 +91,8 @@ interface SupervisionEvent {
     at: Date;
     /** Vrai pour une action sur un poste simulé. */
     simulated: boolean;
+    /** Identifiant du compte qui a fait l'action, ou null s'il n'est pas connu. */
+    actor: string | null;
     /** Précision affichée (masterisation : « Ubuntu 24.04 LTS · Développement · 7 applications »), ou null. */
     detail: string | null;
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Un événement du journal, façon notification iOS : icône, quoi, sur quel poste, à quelle heure.
+ * Un événement du journal, façon notification iOS : icône, quoi, par qui, sur quel poste, à quelle heure.
  * Composant de présentation.
  * Utilisé par : supervision-journal.vue
  */
@@ -18,9 +18,10 @@ const props = defineProps<{
 //------------------ COMPUTED --------------------------------
 /** Application arrêtée, ou « Masterisation » (icône dédiée dans use-app-style.ts). */
 const title = computed(() => props.event.processName ?? 'Masterisation');
-/** Action et poste : « Application arrêtée sur … », « Arrêt refusé sur … », « Lancée sur … · Ubuntu… ». */
+/** Action, auteur et poste : « Application arrêtée par admin sur … », « Lancée par admin sur … · Ubuntu… ». */
 const detail = computed(() => {
-  const action = `${actionLabel(props.event)} sur ${props.event.workstationName}`;
+  const actor = props.event.actor ? ` par ${props.event.actor}` : '';
+  const action = `${actionLabel(props.event)}${actor} sur ${props.event.workstationName}`;
   return props.event.detail ? `${action} · ${props.event.detail}` : action;
 });
 const time = computed(() => formatTime(props.event.at));

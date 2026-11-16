@@ -11,6 +11,7 @@ import type {ProcessInfo, ReimageProgress, SupervisionEvent, Workstation} from '
 import type {InstalledConfig, ReimageConfig} from '../models/reimage.model.ts';
 import {appLabel, configFor, configSummary, describeConfig, findOs, processName} from './simulation-catalog.mock.ts';
 import {stationPlans} from './simulation-rooms.mock.ts';
+import {useAuth} from '../shared/composables/use-auth.ts';
 
 /** Durée de chaque étape (applications : par application), et décalage entre deux postes. */
 const STEP_MS = {prepare: 3000, download: 9000, system: 9000, perApp: 1500, reboot: 3000};
@@ -99,7 +100,7 @@ function settle(station: SimStation): ReimageProgress | null {
 function addEvent(station: SimStation, event: Pick<SupervisionEvent, 'kind' | 'processName' | 'detail'>): void {
     events.unshift({
         id: `sim-${nextEventId++}`, roomId: station.workstation.roomId, workstationName: station.workstation.name,
-        succeeded: true, at: new Date(), simulated: true, ...event,
+        succeeded: true, at: new Date(), simulated: true, actor: useAuth().currentUser.value?.username ?? null, ...event,
     });
 }
 

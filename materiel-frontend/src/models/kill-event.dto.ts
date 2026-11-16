@@ -15,6 +15,8 @@ export interface KillEventDto {
     /** UC sur laquelle l'application a été arrêtée, avec sa salle. */
     uc: MaterialDto;
     killDateTime: string;
+    /** Compte qui a demandé l'arrêt (UserSummaryResponse), ou null. */
+    user: {id: number; username: string} | null;
     /** Vrai si l'arrêt a réussi ; null pour un arrêt enregistré avant ce champ (réussi). */
     result: boolean | null;
 }
@@ -33,6 +35,7 @@ export function killEventFromDto(dto: KillEventDto): SupervisionEvent {
         succeeded: dto.result ?? true,
         at: parseApiDateTime(dto.killDateTime),
         simulated: false,
+        actor: dto.user?.username ?? null,
         detail: null,
     };
 }
