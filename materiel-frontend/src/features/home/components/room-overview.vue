@@ -17,6 +17,8 @@ const props = defineProps<{
   rooms: RoomSummary[];
   /** Résumé du matériel sans salle. */
   stock: MaterialSummary;
+  /** Faux pour le formateur : pas de tuile « En stock ». */
+  showStock: boolean;
 }>();
 
 /** Les tuiles apparaissent en cascade après les 4 compteurs du tableau de bord. */
@@ -53,6 +55,7 @@ function tileClass(roomId: number): Record<string, boolean> {
     />
     <!-- RG-07 : le matériel sans salle est en stock ; la tuile ouvre la liste déjà filtrée. -->
     <OverviewTile
+        v-if="showStock"
         title="En stock"
         subtitle="Hors salle"
         :style="tileStyle(rooms.length)"
