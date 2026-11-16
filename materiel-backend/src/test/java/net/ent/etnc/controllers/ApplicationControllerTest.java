@@ -1,5 +1,6 @@
 package net.ent.etnc.controllers;
 
+import net.ent.etnc.dtos.application.ApplicationBlacklistRequest;
 import net.ent.etnc.dtos.application.ApplicationRequest;
 import net.ent.etnc.dtos.application.ApplicationResponse;
 import net.ent.etnc.dtos.assemblers.ApplicationDtoAssembler;
@@ -20,12 +21,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -201,6 +204,51 @@ class ApplicationControllerTest {
                     .andExpect(status().isNoContent());
 
             verify(applicationService).deleteById(1L);
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests de sécurité des rôles (RG-27)")
+    class SecurityTests {
+
+        @Test
+        @DisplayName("toggleBlacklist doit être restreint aux administrateurs via @PreAuthorize(\"hasRole('ADMIN')\")")
+        void toggleBlacklist_MustBeProtectedByAdminRole() throws NoSuchMethodException {
+            PreAuthorize annotation = ApplicationController.class.getMethod("toggleBlacklist", Long.class, ApplicationBlacklistRequest.class)
+                    .getAnnotation(PreAuthorize.class);
+            assertThat(annotation).isNotNull();
+            assertThat(annotation.value()).isEqualTo("hasRole('ADMIN')");
+        }
+
+        @Test
+        @DisplayName("create, update et delete doivent être restreints aux administrateurs via @PreAuthorize(\"hasRole('ADMIN')\")")
+        void mutationMethods_MustBeProtectedByAdminRole() throws NoSuchMethodException {
+            PreAuthorize createAnnotation = ApplicationController.class.getMethod("create", ApplicationRequest.class)
+                    .getAnnotation(PreAuthorize.class);
+            assertThat(createAnnotation).isNotNull();
+            assertThat(createAnnotation.value()).isEqualTo("hasRole('ADMIN')");
+
+            PreAuthorize updateAnnotation = ApplicationController.class.getMethod("update", Long.class, ApplicationRequest.class)
+                    .getAnnotation(PreAuthorize.class);
+            assertThat(updateAnnotation).isNotNull();
+            assertThat(updateAnnotation.value()).isEqualTo("hasRole('ADMIN')");
+
+            PreAuthorize deleteAnnotation = ApplicationController.class.getMethod("delete", Long.class)
+                    .getAnnotation(PreAuthorize.class);
+            assertThat(deleteAnnotation).isNotNull();
+            assertThat(deleteAnnotation.value()).isEqualTo("hasRole('ADMIN')");
+        }
+
+        @Test
+        @DisplayName("getAll et getById doivent être accessibles sans restriction ADMIN")
+        void readMethods_MustNotRequireAdmin() throws NoSuchMethodException {
+            PreAuthorize getAllAnnotation = ApplicationController.class.getMethod("getAll", Boolean.class, Pageable.class)
+                    .getAnnotation(PreAuthorize.class);
+            assertThat(getAllAnnotation).isNull();
+
+            PreAuthorize getByIdAnnotation = ApplicationController.class.getMethod("getById", Long.class)
+                    .getAnnotation(PreAuthorize.class);
+            assertThat(getByIdAnnotation).isNull();
         }
     }
 }

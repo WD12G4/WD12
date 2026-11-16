@@ -16,7 +16,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 
@@ -228,6 +230,51 @@ class ApplicationServiceImplTest {
 
             assertThat(result).hasSize(1);
             verify(repository).findAll(pageable);
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests de sécurité des rôles (RG-27)")
+    class SecurityTests {
+
+        @Test
+        @DisplayName("toggleBlacklist doit être restreint aux administrateurs via @PreAuthorize(\"hasRole('ADMIN')\")")
+        void toggleBlacklist_MustBeProtectedByAdminRole() throws NoSuchMethodException {
+            PreAuthorize annotation = ApplicationServiceImpl.class.getMethod("toggleBlacklist", Long.class, boolean.class)
+                    .getAnnotation(PreAuthorize.class);
+            assertThat(annotation).isNotNull();
+            assertThat(annotation.value()).isEqualTo("hasRole('ADMIN')");
+        }
+
+        @Test
+        @DisplayName("create, update et deleteById doivent être restreints aux administrateurs via @PreAuthorize(\"hasRole('ADMIN')\")")
+        void mutationMethods_MustBeProtectedByAdminRole() throws NoSuchMethodException {
+            PreAuthorize createAnnotation = ApplicationServiceImpl.class.getMethod("create", Application.class)
+                    .getAnnotation(PreAuthorize.class);
+            assertThat(createAnnotation).isNotNull();
+            assertThat(createAnnotation.value()).isEqualTo("hasRole('ADMIN')");
+
+            PreAuthorize updateAnnotation = ApplicationServiceImpl.class.getMethod("update", Application.class)
+                    .getAnnotation(PreAuthorize.class);
+            assertThat(updateAnnotation).isNotNull();
+            assertThat(updateAnnotation.value()).isEqualTo("hasRole('ADMIN')");
+
+            PreAuthorize deleteAnnotation = ApplicationServiceImpl.class.getMethod("deleteById", Long.class)
+                    .getAnnotation(PreAuthorize.class);
+            assertThat(deleteAnnotation).isNotNull();
+            assertThat(deleteAnnotation.value()).isEqualTo("hasRole('ADMIN')");
+        }
+
+        @Test
+        @DisplayName("isBlacklisted et registerDiscoveredApplication doivent rester accessibles sans restriction ADMIN")
+        void systemMethods_MustNotRequireAdmin() throws NoSuchMethodException {
+            PreAuthorize isBlacklistedAnnotation = ApplicationServiceImpl.class.getMethod("isBlacklisted", String.class)
+                    .getAnnotation(PreAuthorize.class);
+            assertThat(isBlacklistedAnnotation).isNull();
+
+            PreAuthorize registerAnnotation = ApplicationServiceImpl.class.getMethod("registerDiscoveredApplication", String.class, String.class)
+                    .getAnnotation(PreAuthorize.class);
+            assertThat(registerAnnotation).isNull();
         }
     }
 }
