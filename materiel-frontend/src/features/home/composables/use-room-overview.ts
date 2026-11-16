@@ -91,4 +91,4 @@ export function useRoomOverview(rooms: Ref<Room[]>, materials: Ref<Material[]>, 
     return {roomSummaries, stockSummary};
 }
 
-export type {MaterialSummary, RoomSummary};
+export type {MaterialSummary, RoomSummary, TypeCount};
