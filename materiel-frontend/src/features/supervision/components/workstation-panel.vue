@@ -90,7 +90,9 @@ const reimageDisabled = computed(() => props.busy || !isOnline.value);
         <h3 class="eyebrow">
           Applications ouvertes · <span class="panel-count">{{ openCount }}</span>
         </h3>
+        <!-- Clé = poste : changer de machine remplace la liste, sans animer la sortie des applications de l'ancienne -->
         <ProcessList
+            :key="view.workstation.id"
             :processes="view.processes"
             :empty-label="emptyLabel"
             :busy="busy"
