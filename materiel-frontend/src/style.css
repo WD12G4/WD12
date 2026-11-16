@@ -374,6 +374,10 @@
 
 /* ------------------ BASE ----------------------------------- */
 * { box-sizing: border-box; }
+/* Place de la barre de défilement toujours réservée : sans cela, sur Windows, elle apparaît ou disparaît
+   à chaque changement de page (page courte pendant le chargement, longue ensuite), et toute l'interface
+   se rétrécit ou s'élargit de sa largeur. */
+html { scrollbar-gutter: stable; }
 body {
   margin: 0;
   min-width: 320px;
