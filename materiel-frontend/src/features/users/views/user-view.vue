@@ -2,7 +2,7 @@
 /**
  * Gestion des comptes (ADMIN) : création, modification du rôle et de l'activation,
  * archivage (le compte est désactivé et ne peut plus se connecter ; il reste réactivable).
- * RG : RG-14, RG-19, RG-20, RG-32
+ * RG : RG-14, RG-19, RG-20, RG-32, RG-40 (supprimer un compte, c'est l'archiver)
  */
 import {computed, onMounted, ref} from 'vue';
 import type {User, UserCreateInput, UserUpdateInput} from '../../../models/user.model.ts';
@@ -64,7 +64,7 @@ async function update(input: UserUpdateInput): Promise<void> {
   await saveThen(() => usersServices.update(user.id, input), `Le compte ${user.username} a été modifié.`);
 }
 
-/** Archive un compte actif (après confirmation) ou réactive un compte archivé (RG-19). */
+/** Archive un compte actif (après confirmation) ou réactive un compte archivé (RG-19, RG-40). */
 async function toggleArchive(user: User): Promise<void> {
   const archiving = user.enabled;
   if (archiving && !window.confirm(`Archiver le compte ${user.username} ? Il ne pourra plus se connecter (réactivable à tout moment).`)) return;

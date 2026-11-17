@@ -4,7 +4,7 @@
  * détail dans le panneau latéral ; le document et « Marquer comme traitée » restent en bout de ligne.
  * Composant de présentation.
  * Utilisé par : report-list.vue
- * RG : RG-22 (document disponible), RG-23 (à traiter / traitée)
+ * RG : RG-35 (document disponible), RG-36 (à traiter / traitée)
  */
 import {computed} from 'vue';
 import {problemTypeLabels, type Report} from '../../../models/report.model.ts';

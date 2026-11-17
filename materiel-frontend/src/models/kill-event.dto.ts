@@ -1,7 +1,7 @@
 /**
  * Forme JSON échangée avec /api/v1/killevents et conversion vers le journal de supervision.
  * Source : KillEventRequest, KillEventResponse (backend, package dtos.killevent).
- * RG : RG-26 (arrêt d'une application) ; journal demandé en entretien 4
+ * RG : RG-26 (arrêt d'une application), RG-39 (journal des arrêts)
  */
 import type {MaterialDto} from './material.dto.ts';
 import type {SupervisionEvent} from './supervision.model.ts';

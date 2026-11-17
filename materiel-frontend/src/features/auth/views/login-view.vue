@@ -11,7 +11,7 @@
  * sur la VM). Pour une vraie mise en production, construire avec VITE_DEMO_ACCOUNTS=false : les boutons
  * de démonstration sont alors retirés du build (condition écrite telle quelle pour que Vite la remplace
  * par une constante).
- * RG : RG-14 (rôles liés à des comptes), RG-19 (un compte désactivé est refusé par le backend)
+ * RG : RG-14 (rôles liés à des comptes), RG-19 (un compte désactivé est refusé par le backend), RG-41 (logo), RG-50 (MinDef Connect)
  */
 import {computed, defineAsyncComponent, ref} from 'vue';
 import {useRoute} from 'vue-router';

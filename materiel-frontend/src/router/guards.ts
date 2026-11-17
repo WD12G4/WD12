@@ -2,7 +2,7 @@
  * Garde de route : restaure la session, renvoie vers la connexion si besoin,
  * refuse les pages réservées à un rôle supérieur, et impose au formateur le choix de sa salle.
  * Utilisé par : router/index.ts
- * RG : RG-14 à RG-18 (droits par rôle), RG-31, RG-32
+ * RG : RG-14 à RG-16 (droits par rôle), RG-31, RG-32, RG-33 (le formateur choisit une salle avant toute page)
  *
  * Ce contrôle évite d'afficher des pages inutilisables : la vraie sécurité reste
  * assurée par le backend (@PreAuthorize).

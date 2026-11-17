@@ -5,7 +5,7 @@
  * gestionnaire, « Marquer comme traitée » ou « Rouvrir ».
  * Composant de présentation.
  * Utilisé par : report-view.vue
- * RG : RG-21 (contenu), RG-22 (document), RG-23 (traitement)
+ * RG : RG-21 (contenu), RG-35 (document), RG-36 (traitement)
  */
 import {computed} from 'vue';
 import {problemTypeLabels, type Report} from '../../../models/report.model.ts';

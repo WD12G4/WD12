@@ -4,7 +4,7 @@
  * par salle), puis le matériel en stock. Rien à déplier : un seul clic mène à la fiche d'une salle.
  * Composant de présentation.
  * Utilisé par : home-view.vue
- * RG : RG-07 (le matériel sans salle est en stock)
+ * RG : RG-07 (le matériel sans salle est en stock), RG-44 (vue des salles simple, sans 3D)
  */
 import {computed} from 'vue';
 import type {MaterialSummary, RoomSummary} from '../composables/use-room-overview.ts';

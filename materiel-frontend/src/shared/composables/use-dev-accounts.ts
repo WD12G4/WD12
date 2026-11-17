@@ -8,6 +8,7 @@
  *   l'identifiant déjà rempli, il ne reste qu'à taper le mot de passe (le front ne connaît aucun mot de passe).
  * Chargé seulement en mode démonstration (user-card.vue, login-view.vue) : sinon le build le retire.
  * Utilisé par : dev-user-switch.vue, demo-login.vue
+ * RG : RG-48 (démonstration : changer de rôle sans se reconnecter)
  */
 import {roleLabels, type Role} from '../../models/user.model.ts';
 import {router} from '../../router/index.ts';

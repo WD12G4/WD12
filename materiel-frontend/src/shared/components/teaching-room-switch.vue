@@ -4,6 +4,7 @@
  * problème ») : affiche « Salle 10 » et ouvre la liste des salles pour en changer en un clic.
  * La salle choisie remplace ?salle= dans l'adresse de la page courante (use-teaching-room.ts).
  * Utilisé par : app-nav.vue (formateur uniquement)
+ * RG : RG-33 (changer de salle sans se reconnecter), RG-42 (le formateur voit sa salle)
  */
 import {computed, onMounted, ref, watch} from 'vue';
 import type {SelectOption} from '../composables/use-listbox.ts';

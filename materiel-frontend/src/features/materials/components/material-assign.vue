@@ -3,7 +3,7 @@
  * Affectation d'un matériel à une salle, ou remise en stock (MANAGER et ADMIN).
  * Composant de présentation : il émet la salle choisie, la vue appelle le service.
  * Utilisé par : material-detail-view.vue
- * RG : RG-06 (pas de salle pour un archivé), RG-07 (en stock = sans salle), RG-17 (droit du gestionnaire)
+ * RG : RG-06 (pas de salle pour un archivé), RG-07 (en stock = sans salle), RG-16 (gestionnaire et administrateur)
  */
 import {computed, ref, watch} from 'vue';
 import type {Material} from '../../../models/material.model.ts';

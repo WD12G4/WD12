@@ -4,6 +4,7 @@
  * en carré vert, comme dans l'œil de brand-mark.vue). Couleurs par thème : --logo-ink, --logo-accent.
  * Composant de présentation, lu comme « BASTION » par les lecteurs d'écran.
  * Utilisé par : app-nav.vue, app-topbar.vue, login-view.vue
+ * RG : RG-45 (nom de l'application : BASTION)
  */
 
 //------------------ DATAS -----------------------------------

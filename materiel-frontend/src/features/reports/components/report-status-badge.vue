@@ -3,7 +3,7 @@
  * Pastille de l'état d'une remontée : « À traiter » ou « Traitée ».
  * Composant de présentation.
  * Utilisé par : report-item.vue, report-panel.vue
- * RG : RG-23
+ * RG : RG-36 (état d'une remontée), RG-37 (le formateur voit que sa remontée est traitée)
  */
 
 //------------------ PROPS / EMITS ---------------------------

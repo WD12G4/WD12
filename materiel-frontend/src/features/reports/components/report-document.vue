@@ -4,7 +4,7 @@
  * Conçu pour être imprimé (ou enregistré en PDF depuis la fenêtre d'impression du navigateur).
  * Composant de présentation.
  * Utilisé par : report-document-view.vue
- * RG : RG-22
+ * RG : RG-35
  */
 import {computed} from 'vue';
 import {problemTypeLabels, type Report} from '../../../models/report.model.ts';

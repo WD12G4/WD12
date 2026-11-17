@@ -4,6 +4,7 @@
  * masterisations, regroupées par jour, de la plus récente à la plus ancienne.
  * Composant de présentation.
  * Utilisé par : supervision-view.vue
+ * RG : RG-39 (chaque arrêt est historisé et consultable)
  */
 import {computed} from 'vue';
 import type {SupervisionEvent} from '../../../models/supervision.model.ts';

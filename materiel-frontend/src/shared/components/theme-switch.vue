@@ -5,6 +5,7 @@
  * le referment ; il reste ouvert après un choix, pour comparer. Le panneau est rendu dans <body> :
  * dans la barre de menu (déjà floutée), son verre ne flouterait pas la page dessous.
  * Utilisé par : app-nav.vue
+ * RG : RG-47
  */
 import {computed, type CSSProperties, nextTick, onBeforeUnmount, ref, useTemplateRef, watch} from 'vue';
 import {useTheme} from '../composables/use-theme.ts';

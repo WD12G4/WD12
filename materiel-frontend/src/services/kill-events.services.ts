@@ -3,7 +3,7 @@
  * Les arrêts sont enregistrés par le backend lui-même, à chaque POST /api/v1/supervision/kill.
  * Toutes les méthodes lèvent ApiError si l'API répond en erreur.
  * Utilisé par : features/supervision
- * RG : RG-26 (arrêt enregistré) ; journal demandé en entretien 4
+ * RG : RG-26 (arrêt enregistré), RG-39 (journal : l'administrateur voit tout, les autres rôles leurs arrêts)
  */
 import type {SupervisionEvent} from '../models/supervision.model.ts';
 import {type KillEventDto, killEventFromDto} from '../models/kill-event.dto.ts';

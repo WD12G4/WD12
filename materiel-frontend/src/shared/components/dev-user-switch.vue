@@ -4,6 +4,7 @@
  * changer de compte de démonstration (Administrateur, Gestionnaire, Formateur) sans se déconnecter.
  * Absent hors mode démonstration (voir user-card.vue).
  * Utilisé par : user-card.vue
+ * RG : RG-48
  */
 import {computed, ref, watch} from 'vue';
 import type {User} from '../../models/user.model.ts';

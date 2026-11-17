@@ -4,7 +4,7 @@
  * rouvertes) en un clic. Formateur : l'historique de ses propres remontées et leur suivi.
  * Un clic sur une remontée affiche son détail (description complète) dans le panneau latéral ;
  * chaque remontée garde son document d'état des lieux.
- * RG : RG-21, RG-22, RG-23
+ * RG : RG-21, RG-35 (document), RG-36 (traitement), RG-37 et RG-38 (le formateur suit ses remontées, et elles seules)
  */
 import {computed, onMounted, ref} from 'vue';
 import type {Report} from '../../../models/report.model.ts';
@@ -28,7 +28,7 @@ const reports = ref<Report[]>([]);
 const openedId = ref<number | null>(null);
 
 //------------------ COMPUTED --------------------------------
-/** RG-23 : le gestionnaire (et l'administrateur) voit toutes les remontées et les traite. */
+/** RG-36 : le gestionnaire (et l'administrateur) voit toutes les remontées et les traite ; RG-38 : le formateur, les siennes. */
 const isManager = computed(() => hasRole('MANAGER'));
 const title = computed(() => (isManager.value ? 'Remontées' : 'Mes remontées'));
 const intro = computed(() => (isManager.value

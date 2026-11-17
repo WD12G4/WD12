@@ -8,6 +8,7 @@
  * Le choix reste EN MÉMOIRE (pas de stockage navigateur, cadre du projet) : un rechargement
  * revient au thème du système.
  * Utilisé par : theme-switch.vue
+ * RG : RG-47 (thème d'affichage au choix de l'utilisateur)
  */
 import {ref} from 'vue';
 

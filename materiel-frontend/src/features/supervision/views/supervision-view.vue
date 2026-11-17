@@ -6,7 +6,7 @@
  * l'administrateur les masterise avec un assistant (système, image, applications).
  * Le formateur voit sa salle de cours, choisie à la connexion ; les autres rôles choisissent la salle.
  * Vrais postes : agent de supervision (API /supervision), relus toutes les 10 s. Postes simulés : maquette.
- * RG : RG-25, RG-26, RG-27 (liste noire, administrateur), RG-28 ; journal (entretien 4).
+ * RG : RG-25, RG-26, RG-27 (liste noire, administrateur), RG-28, RG-34 (salle du formateur), RG-39 (journal).
  */
 import {computed, onMounted, ref, watch} from 'vue';
 import {useRoute} from 'vue-router';

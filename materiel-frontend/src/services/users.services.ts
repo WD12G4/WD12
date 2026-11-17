@@ -1,7 +1,7 @@
 /**
  * Accès à la ressource /api/v1/users (réservée à l'ADMIN).
  * Toutes les méthodes lèvent ApiError si l'API répond en erreur.
- * RG : RG-19, RG-20, RG-32
+ * RG : RG-19, RG-20, RG-32, RG-40 (archivage par désactivation, jamais de suppression)
  */
 import type {User, UserCreateInput, UserUpdateInput} from '../models/user.model.ts';
 import {type UserDto, userFromDto, userToCreateRequest, userToUpdateRequest} from '../models/user.dto.ts';

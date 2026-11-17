@@ -1,7 +1,7 @@
 /**
  * Accès à la ressource /api/v1/materials.
  * Toutes les méthodes lèvent ApiError si l'API répond en erreur.
- * RG : RG-07 (affectation / remise en stock), RG-10 (archivage), RG-16, RG-17 (droits)
+ * RG : RG-07 (affectation / remise en stock), RG-10 (archivage), RG-16 (droits)
  */
 import type {Material, MaterialInput} from '../models/material.model.ts';
 import {
@@ -48,7 +48,7 @@ export const materialsServices = {
 
     /**
      * Affecte le matériel à une salle, ou le remet en stock si roomId vaut null (RG-07).
-     * Réservé à MANAGER et ADMIN (RG-17). Refusé si le matériel est archivé (RG-06).
+     * Réservé à MANAGER et ADMIN (RG-16). Refusé si le matériel est archivé (RG-06).
      */
     assignRoom: async (id: number, roomId: number | null): Promise<Material> => {
         const body: MaterialAssignRequestDto = {roomId};

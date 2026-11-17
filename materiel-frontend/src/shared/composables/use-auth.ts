@@ -3,7 +3,7 @@
  * L'état est déclaré au niveau du module (comme use-project-data.ts du cours) :
  * tous les composants qui appellent useAuth() partagent la même session.
  * Utilisé par : router/guards.ts, App.vue, les vues qui affichent des actions selon le rôle.
- * RG : RG-14, RG-15 (héritage des rôles), RG-19 (compte désactivé refusé par le backend)
+ * RG : RG-14, RG-15 (héritage des rôles), RG-19 (compte désactivé refusé par le backend), RG-50 (MinDef Connect)
  *
  * La connexion passe par Keycloak, qui joue MinDef Connect (services/keycloak.ts) : l'application
  * ne voit jamais le mot de passe. Keycloak prouve l'identité ; le backend retrouve le compte par son

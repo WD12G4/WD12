@@ -2,9 +2,9 @@
 /**
  * Document d'état des lieux d'une remontée, imprimable.
  * Le document est affiché par le navigateur ; « Imprimer » permet de l'enregistrer en PDF.
- * TODO(question): le client attend un PDF « créé au moment de la remontée, stocké et récupérable »
- * (entretien 2, 8:58). À générer côté backend ? Décision d'équipe à prendre (cadre, section 12).
- * RG : RG-22
+ * Le PDF n'est ni créé ni stocké par le serveur : il est produit à la volée, au moment de l'impression
+ * (décision validée par le client aux entretiens 4 et 5 ; seules les remontées sont en base).
+ * RG : RG-35
  */
 import {computed, onMounted, ref} from 'vue';
 import type {Report} from '../../../models/report.model.ts';

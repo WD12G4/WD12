@@ -3,6 +3,7 @@
  * Un événement du journal, façon notification iOS : icône, quoi, par qui, sur quel poste, à quelle heure.
  * Composant de présentation.
  * Utilisé par : supervision-journal.vue
+ * RG : RG-39 (processus, poste, heure, auteur)
  */
 import {computed} from 'vue';
 import type {SupervisionEvent} from '../../../models/supervision.model.ts';

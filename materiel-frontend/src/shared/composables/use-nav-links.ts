@@ -1,7 +1,7 @@
 /**
  * Liens du menu principal, filtrés selon le rôle de l'utilisateur connecté.
  * Utilisé par : App.vue, app-nav.vue
- * RG : RG-16, RG-17, RG-31, RG-32 (un lien n'apparaît que si la page est accessible),
+ * RG : RG-16, RG-31, RG-32 (un lien n'apparaît que si la page est accessible),
  * RG-23 (« Remontées » porte le nombre de remontées à traiter du gestionnaire)
  */
 import {computed} from 'vue';

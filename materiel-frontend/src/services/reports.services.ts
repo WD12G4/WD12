@@ -1,7 +1,8 @@
 /**
  * Accès à la ressource /api/v1/reports (remontées de problème).
  * Toutes les méthodes lèvent ApiError si l'API répond en erreur.
- * RG : RG-21 (création), RG-22 (document), RG-23 (remontées à traiter, gestionnaire) ; historique du formateur
+ * RG : RG-21 (création), RG-23 (remontées à traiter, gestionnaire), RG-35 (document), RG-36 (traitement),
+ * RG-37 et RG-38 (historique du formateur : ses remontées et leur état)
  */
 import type {Report, ReportInput} from '../models/report.model.ts';
 import {type ReportDto, reportFromDto, reportToRequest} from '../models/report.dto.ts';
@@ -41,7 +42,7 @@ export const reportsServices = {
         return reportFromDto(dto);
     },
 
-    /** Marque une remontée comme traitée, ou la rouvre (gestionnaire et administrateur, RG-23). */
+    /** Marque une remontée comme traitée, ou la rouvre (gestionnaire et administrateur, RG-36). */
     setHandled: async (id: number, handled: boolean): Promise<Report> => {
         const dto = await apiRequest<ReportDto>(`/reports/${id}/handle?handled=${handled}`, {method: 'PATCH'});
         return reportFromDto(dto);

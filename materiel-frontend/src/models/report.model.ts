@@ -2,7 +2,7 @@
  * Modèle d'une remontée de problème (signalement d'un matériel défectueux).
  * Source : /api/v1/reports (ReportResponse). Le backend enregistre l'auteur et la date ; le
  * gestionnaire marque la remontée comme traitée.
- * RG : RG-21 (contenu), RG-22 (document), RG-23 (notification du gestionnaire)
+ * RG : RG-21 (contenu), RG-23 (notification du gestionnaire), RG-35 (document), RG-36 (état traité)
  */
 import type {Material} from './material.model.ts';
 
@@ -41,7 +41,7 @@ interface Report {
     /** Type de problème, ou null si la description n'en indique pas. */
     problemType: ProblemType | null;
     description: string;
-    /** Vrai une fois traitée par le gestionnaire (RG-23 : seules les autres sont signalées). */
+    /** Vrai une fois traitée par le gestionnaire (RG-36 ; RG-23 : seules les autres sont signalées). */
     handled: boolean;
     handledAt: Date | null;
 }

@@ -4,6 +4,7 @@
  * une salle inconnue (adresse modifiée à la main, salle supprimée) renvoie au choix de la salle.
  * Gestionnaire et administrateur : toutes les salles, la première (par bâtiment, puis par numéro) d'abord.
  * Utilisé par : supervision-view.vue
+ * RG : RG-34 (supervision limitée à la salle du formateur)
  */
 import {computed, ref} from 'vue';
 import {replaceWith} from '../../../router/navigation.ts';

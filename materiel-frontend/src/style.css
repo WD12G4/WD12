@@ -411,7 +411,7 @@ p { color: var(--muted); line-height: 1.6; }
   box-shadow: var(--glass-shine), var(--glass-shadow);
 }
 /* Éléments posés sur une carte : verre plus léger, sans flou (déjà flouté par la carte). */
-:is(.overview-tile, .filters, .detail-grid > div, .plain-list > li, .station-tile, .journal-item,
+:is(.overview-tile, .filters, .detail-grid > div, .station-tile, .journal-item,
   .summary-bar, .shared-apps, .process-list li) {
   background: var(--surface-soft); border: 1px solid var(--glass-rim); box-shadow: var(--glass-shine);
 }
@@ -687,7 +687,7 @@ p { color: var(--muted); line-height: 1.6; }
   padding: 0.25rem 0.25rem 0; border: none; border-radius: 0; background: none; box-shadow: none;
   -webkit-backdrop-filter: none; backdrop-filter: none;
 }
-[data-frame='open'] :is(.overview-tile, .filters, .detail-grid > div, .plain-list > li, .station-tile, .journal-item,
+[data-frame='open'] :is(.overview-tile, .filters, .detail-grid > div, .station-tile, .journal-item,
   .summary-bar, .shared-apps, .process-list li) {
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
 }
@@ -733,10 +733,6 @@ p { color: var(--muted); line-height: 1.6; }
 .flash.info { background: var(--accent-soft); color: var(--accent); }
 .flash.success { background: var(--success-soft); color: var(--success); }
 .flash.error { background: var(--danger-soft); color: var(--danger); }
-.demo-banner {
-  display: inline-flex; padding: 0.45rem 0.85rem; border-radius: 2rem;
-  background: var(--warning-soft); color: var(--warning); font-weight: 600; font-size: 0.8rem;
-}
 
 /* ------------------ FORMULAIRES ---------------------------- */
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem; margin-top: 1rem; }
@@ -896,12 +892,6 @@ button.delete-button:hover { color: var(--danger); background: var(--danger-bord
 }
 .row-link:hover { color: var(--accent-hover); box-shadow: none; filter: none; transform: none; }
 .report-description { font-weight: 500; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
-.plain-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.75rem; }
-.plain-list > li {
-  padding: 1rem 1.15rem; border-radius: var(--radius);
-  transition: box-shadow var(--speed) var(--ease), transform var(--speed) var(--ease);
-}
-.plain-list > li:hover { box-shadow: var(--glass-shine), 0 16px 32px -18px var(--shadow-strong); transform: translateY(-1px); }
 .detail-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;
   padding: 0; margin: 0.75rem 0 0;
@@ -1099,7 +1089,7 @@ a.brand { color: inherit; text-decoration: none; border-radius: var(--radius); }
 [data-theme='dsfr'] .segmented button[aria-checked='true'] { box-shadow: inset 0 0 0 1px var(--accent); color: var(--accent); }
 [data-theme='dsfr'] :is(.badge, .sim-badge) { border-radius: 0.25rem; font-weight: 700; text-transform: uppercase; font-size: 0.72rem; }
 [data-theme='dsfr'] .card { border: 1px solid var(--border); box-shadow: none; }
-[data-theme='dsfr'] :is(.demo-banner, .flash) { border-radius: 0.25rem; }
+[data-theme='dsfr'] .flash { border-radius: 0.25rem; }
 /* Seuls les liens dans le texte sont soulignés, pas les cartes-liens (salles, lignes d'aperçu). */
 [data-theme='dsfr'] .card a:not(.button-link, .code, .overview-tile, .preview-row) { text-decoration: underline; text-underline-offset: 3px; }
 /* Pas de halo coloré flou sur les compteurs : le DSFR est sans effet de verre. */

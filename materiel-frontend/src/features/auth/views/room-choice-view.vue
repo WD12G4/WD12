@@ -6,6 +6,7 @@
  * dans l'adresse (?salle=), que la garde recopie de page en page. On change ensuite de salle avec le
  * bouton de la barre du haut (teaching-room-switch.vue).
  * Utilisé par : router/routes.ts (route room-choice)
+ * RG : RG-33 (le formateur choisit obligatoirement une salle après la connexion)
  */
 import {computed, onMounted, ref} from 'vue';
 import type {Room} from '../../../models/room.model.ts';

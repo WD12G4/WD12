@@ -8,6 +8,7 @@
  * keycloak-js exige l'API Web Crypto (crypto.subtle), que les navigateurs ne fournissent qu'en HTTPS ou sur
  * localhost : l'application est donc servie en HTTPS par le Nginx du front (nginx.conf, port 80 redirigé).
  * Utilisé par : shared/composables/use-auth.ts
+ * RG : RG-50 (connexion par MinDef Connect, joué ici par Keycloak)
  */
 import Keycloak from 'keycloak-js';
 

@@ -9,6 +9,7 @@
  * pour que Vite la remplace par une constante).
  * Composant de présentation.
  * Utilisé par : app-nav.vue
+ * RG : RG-42 (l'utilisateur voit son rôle), RG-48 (changement de rôle en démonstration)
  */
 import {computed, defineAsyncComponent} from 'vue';
 import {roleLabels, type User} from '../../models/user.model.ts';
