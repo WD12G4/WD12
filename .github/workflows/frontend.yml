@@ -102,6 +102,81 @@ jobs:
           npx --yes @sonar/scan
 
   # --------------------------------------------------------------------------
+  # 1 bis. Tests navigateur (Playwright) : le front avec une fausse API qui remplace
+  # Keycloak et le backend (materiel-frontend/e2e). Chaque test cite les RG vérifiées.
+  # Ne bloque pas la publication de l'image : le job 2 ne dépend que du job 1.
+  # --------------------------------------------------------------------------
+  frontend-e2e:
+    name: Frontend E2E Tests (Playwright)
+    runs-on: self-hosted
+    needs: [frontend-build-test]
+    if: ${{ !inputs.skip_tests }}
+
+    defaults:
+      run:
+        working-directory: ./materiel-frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Detect & Configure Proxy
+        run: |
+          if timeout 2 bash -c '</dev/tcp/172.16.0.1/8080' 2>/dev/null; then
+            echo "Proxy 172.16.0.1:8080 détecté -> Activation du proxy"
+            echo "HTTP_PROXY=http://172.16.0.1:8080" >> "$GITHUB_ENV"
+            echo "HTTPS_PROXY=http://172.16.0.1:8080" >> "$GITHUB_ENV"
+            echo "NO_PROXY=localhost,127.0.0.1,*.internet.comsic,*.etrs.net,*.etrs.terre.defense.gouv.fr,192.168.*,172.16.*,10.10.*,*.pdi,*.etnc.terre.defense.gouv.fr" >> "$GITHUB_ENV"
+            echo "USE_PROXY=true" >> "$GITHUB_ENV"
+          else
+            echo "Proxy 172.16.0.1:8080 non joignable -> Connexion directe"
+            echo "USE_PROXY=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: './materiel-frontend/package-lock.json'
+
+      - name: Configure NPM Proxy
+        run: |
+          if [ "$USE_PROXY" = "true" ]; then
+            npm config set proxy http://172.16.0.1:8080
+            npm config set https-proxy http://172.16.0.1:8080
+          else
+            npm config delete proxy 2>/dev/null || true
+            npm config delete https-proxy 2>/dev/null || true
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Chromium est téléchargé une fois par exécuteur (cache ~/.cache/ms-playwright), à travers le proxy
+      # (HTTPS_PROXY). Les bibliothèques système ne sont installées que si sudo est possible sans mot de passe.
+      - name: Install Chromium for Playwright
+        run: |
+          if sudo -n true 2>/dev/null; then
+            npx playwright install --with-deps chromium
+          else
+            npx playwright install chromium
+          fi
+
+      - name: Run E2E tests
+        env:
+          CI: 'true'
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: materiel-frontend/playwright-report
+          retention-days: 7
+
+  # --------------------------------------------------------------------------
   # 2. CD : Construction et publication de l'image Docker sur GHCR
   # Ne s'exécute JAMAIS sur les Pull Requests.
   # En push / dispatch, s'exécute uniquement si le build a réussi (ou si skip_tests est coché).

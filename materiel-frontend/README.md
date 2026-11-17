@@ -59,19 +59,48 @@ sans lui, Keycloak refuse la connexion ; sans compte dans la base, c'est l'appli
 npm run build
 ```
 
-`vue-tsc` doit passer sans erreur ni avertissement. Il n'y a pas encore de test automatisé du front dans le
-dépôt : la CI vérifie les types, construit l'application et lance l'analyse SonarQube.
+`vue-tsc` doit passer sans erreur ni avertissement.
+
+### Tests navigateur (Playwright)
+
+```bash
+npx playwright install chromium
+```
+
+```bash
+npm run test:e2e
+```
+
+La première commande télécharge Chromium, une seule fois. La seconde démarre le serveur de Vite et joue les
+tests de `e2e/` dans Chromium. Le front y est branché sur une fausse API (`e2e/support/`) qui remplace Keycloak
+(session déjà ouverte) et le backend (données en mémoire, propres à chaque test) : ni base, ni Keycloak, ni
+backend à lancer. Ce sont donc des tests du front ; le backend a ses propres tests.
+
+| Fichier | Ce qui est vérifié | RG |
+|---|---|---|
+| `trainer-room.spec.ts` | Choix de la salle, formateur limité à sa salle (listes, fiches refusées par l'adresse), salle imposée dans une remontée, page refusée sans perdre sa salle | RG-33, RG-34, RG-46 |
+| `dashboard.spec.ts` | Compteurs, stock, fins de disponibilité à 30 ou 90 jours, tuiles des salles ; vue du formateur et aperçu de ses postes | RG-07, RG-24, RG-34, RG-44 |
+| `materials.spec.ts` | Création sans date de fin, numéro de série unique, archivage, droits selon le rôle | RG-01, RG-04, RG-10, RG-16 |
+| `reports.spec.ts` | Signalement, suivi par le formateur (ses remontées seulement), compteur et traitement par le gestionnaire | RG-21, RG-23, RG-36, RG-37, RG-38 |
+| `supervision.spec.ts` | Postes et session ouverte, applications, arrêt après confirmation, journal avec l'auteur, liste noire réservée à l'administrateur, postes simulés par salle | RG-25, RG-26, RG-27, RG-28, RG-30, RG-39 |
+| `session.spec.ts` | Menu selon le rôle, rôle affiché, changement de rôle de démonstration, déconnexion | RG-32, RG-42, RG-48 |
+| `appearance.spec.ts` | Pleine largeur par défaut, choix du thème, panneau qui ne recouvre pas la page | RG-47 |
+
+La CI (« Frontend CI/CD ») vérifie les types, construit l'application, lance l'analyse SonarQube, puis joue ces
+tests dans un job à part, qui ne bloque pas la publication de l'image. En cas d'échec, le rapport de Playwright
+(captures comprises) est joint au run.
 
 ## Organisation
 
 ```
 src/
 ├── main.ts, App.vue, style.css
-├── router/        routes.ts (déclaration typée), index.ts, guards.ts (accès par rôle), route-types.ts, navigation.ts
+├── router/        routes.ts (déclaration typée), index.ts, guards.ts (accès par rôle), route-types.ts, navigation.ts, back-link.ts
 ├── models/        <entite>.model.ts (types, listes as const, libellés) et <entite>.dto.ts (forme JSON + conversions)
 ├── services/      http-client.ts (seul appel à fetch), un service par ressource, *.services.mock.ts (maquettes)
 ├── shared/        composants et composables utilisés par plusieurs features
 └── features/      auth, home, materials, rooms, buildings, users, reports, supervision
+e2e/               tests navigateur (Playwright) et fausse API (support/)
 ```
 
 Écart avec l'arborescence du cadre : les routes sont dans `router/routes.ts` et non dans `router/index.ts`,
@@ -123,7 +152,6 @@ de suivi des règles de gestion de l'équipe, conservé hors du dépôt.
 
 Les questions encore ouvertes sont marquées `TODO(question)` dans le code :
 
-- RG-03 : le type « switch » n'existe pas côté API.
 - RG-08 : statuts « HS » et « À rendre » sans champ côté API.
 - RG-21 : la liste des types de problème est à valider avec le client ; faute de champ côté API, le type est écrit
   en tête de la description.

@@ -136,7 +136,7 @@ Des comptes de test sont préconfigurés dans Keycloak et dans le jeu de donnée
 | Composant | Commande d'exécution | Périmètre vérifié |
 |---|---|---|
 | **Backend** | `./gradlew test` (dans `materiel-backend/`) | 335 tests unitaires et d'intégration (contrôleurs REST, services métier, unicité, sécurité, WebSocket). |
-| **Frontend** | `npm run build` (dans `materiel-frontend/`) | Contrôle strict du typage TypeScript (`vue-tsc`) et compilation de production Vite sans erreur. |
+| **Frontend** | `npm run build`, puis `npm run test:e2e` (dans `materiel-frontend/`) | Contrôle strict du typage TypeScript (`vue-tsc`), compilation de production Vite, et 33 tests navigateur Playwright sur une fausse API (voir `materiel-frontend/README.md`). |
 | **Agent** | `dotnet build` (dans `materiel-agent/`) | Compilation de la solution C# multiplateforme. |
 
 À chaque push sur le dépôt, la chaîne CI GitHub Actions rejoue l'ensemble des vérifications, exécute l'analyse de qualité SonarQube, publie les images conteneurs sur GHCR (`latest` et tag de commit) et génère l'exécutable de l'agent dans la release `agent-latest`.
