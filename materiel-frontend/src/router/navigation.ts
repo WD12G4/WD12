@@ -1,7 +1,7 @@
 /**
  * Navigation par programme, typée. Copié du projet du cours (vue1).
- * Toujours passer par navigateTo({ name, params }) : jamais router.push('/chemin').
- * Ajouts pour une navigation cohérente :
+ * Toujours naviguer vers une route nommée ({ name, params }) : jamais router.push('/chemin').
+ * Fonctions pour une navigation cohérente :
  * - replaceWith / returnTo : après un formulaire, il ne reste pas dans l'historique ;
  * - backLinkTarget / followBackLink : le lien « ← Retour » ramène à la page d'où l'on vient
  *   (Vue Router range le chemin de la page précédente dans history.state.back) ;
@@ -33,14 +33,6 @@ export interface BackLinkTarget {
     href: string;
     usesHistory: boolean;
     to: RouteTarget;
-}
-
-/**
- * Navigue vers une route nommée.
- * @param to cible typée (nom de route et paramètres)
- */
-export function navigateTo(to: RouteTarget) {
-    return router.push(to);
 }
 
 /**

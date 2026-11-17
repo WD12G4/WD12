@@ -82,7 +82,7 @@ export const routes = [
         component: () => import('../features/users/views/user-view.vue'),
         meta: {roles: ['ADMIN']},
     },
-    //------------------ REMONTÉES (lot 5, maquette) -------------
+    //------------------ REMONTÉES (lot 5) ----------------------
     {
         path: '/remontees/nouvelle',
         name: 'report-new',
@@ -102,7 +102,7 @@ export const routes = [
         props: true,
         meta: {roles: ['USER']},
     },
-    //------------------ SUPERVISION (lot 6, maquette) -----------
+    //------------------ SUPERVISION (lot 6) --------------------
     {
         path: '/supervision',
         name: 'supervision',

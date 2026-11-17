@@ -19,12 +19,6 @@ export const buildingsServices = {
         return pageContent(page).map(buildingFromDto);
     },
 
-    /** Récupère un bâtiment. Lève ApiError 404 s'il n'existe pas. */
-    findById: async (id: number): Promise<Building> => {
-        const dto = await apiRequest<BuildingDto>(`/buildings/${id}`);
-        return buildingFromDto(dto);
-    },
-
     /** Crée un bâtiment (ADMIN). Lève ApiError 400 si le numéro est invalide ou déjà pris. */
     create: async (input: BuildingInput): Promise<Building> => {
         const dto = await apiRequest<BuildingDto>('/buildings', {

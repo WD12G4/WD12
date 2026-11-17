@@ -36,9 +36,4 @@ export const usersServices = {
         });
         return userFromDto(dto);
     },
-
-    /** Supprime un compte. Suppression définitive côté backend. */
-    delete: async (id: number): Promise<void> => {
-        await apiRequest<void>(`/users/${id}`, {method: 'DELETE'});
-    },
 };
