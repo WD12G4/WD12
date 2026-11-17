@@ -42,9 +42,19 @@ async function checkAccess(to: RouteLocationNormalized, from: RouteLocationNorma
     }
     if (!to.meta.roles.some(hasRole)) {
         show("Vous n'avez pas accès à cette page.", 'error');
-        return {name: 'home'};
+        return homeWithRoom(roomIdFromQuery(to.query) ?? roomIdFromQuery(from.query));
     }
     return checkTeachingRoom(to, from);
+}
+
+/**
+ * Tableau de bord, avec la salle de cours du formateur s'il en a une : sans elle, un formateur qui tape
+ * l'adresse d'une page refusée serait renvoyé au choix de la salle.
+ * @param roomId salle de cours, ou null
+ * @returns la route du tableau de bord
+ */
+function homeWithRoom(roomId: number | null): RouteLocationRaw {
+    return roomId === null ? {name: 'home'} : {name: 'home', query: {[TEACHING_ROOM_QUERY]: String(roomId)}};
 }
 
 /**

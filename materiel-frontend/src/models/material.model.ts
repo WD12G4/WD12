@@ -8,7 +8,7 @@ import type {Room} from './room.model.ts';
 //----------------- VALEURS ------------------------------
 /**
  * Types de matériel acceptés par l'API (EMaterialType côté backend).
- * TODO(question): le client cite des switches (RG-03). Type à part ou « Périphérique » ?
+ * Un switch (matériel réseau cité par le client, RG-03) est un « Périphérique » : décision d'équipe du 17/11.
  * Ne pas ajouter de valeur ici tant que le backend ne l'accepte pas.
  */
 const materialTypes = ['UC', 'SCREEN', 'PROJECTOR', 'PERIPHERAL'] as const;
