@@ -28,7 +28,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -100,35 +99,6 @@ class KillEventControllerTest {
                     .andExpect(jsonPath("$.content[0].processName").value("malicious.exe"))
                     .andExpect(jsonPath("$.content[0].uc.serialNumber").value("UC-12345"))
                     .andExpect(jsonPath("$.content[0].result").value(true));
-        }
-    }
-
-    @Nested
-    @DisplayName("GET /api/v1/killevents/{id}")
-    class GetByIdTests {
-
-        @Test
-        @DisplayName("Doit retourner le KillEvent quand il existe")
-        void getById_WhenExists_ReturnsKillEvent() throws Exception {
-            when(killEventService.findById(10L)).thenReturn(Optional.of(sampleEntity));
-            when(killEventDtoAssembler.toDto(sampleEntity)).thenReturn(sampleResponse);
-
-            mockMvc.perform(get("/api/v1/killevents/10"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.id").value(10))
-                    .andExpect(jsonPath("$.processName").value("malicious.exe"))
-                    .andExpect(jsonPath("$.uc.serialNumber").value("UC-12345"))
-                    .andExpect(jsonPath("$.result").value(true));
-        }
-
-        @Test
-        @DisplayName("Doit renvoyer 404 si le KillEvent n'existe pas")
-        void getById_WhenNotFound_Returns404() throws Exception {
-            when(killEventService.findById(999L)).thenReturn(Optional.empty());
-
-            mockMvc.perform(get("/api/v1/killevents/999"))
-                    .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.error").exists());
         }
     }
 

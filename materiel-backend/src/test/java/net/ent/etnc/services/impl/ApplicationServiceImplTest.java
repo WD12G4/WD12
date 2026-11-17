@@ -50,19 +50,8 @@ class ApplicationServiceImplTest {
     }
 
     @Nested
-    @DisplayName("Tests findByName et isBlacklisted")
+    @DisplayName("Tests isBlacklisted")
     class SearchTests {
-
-        @Test
-        @DisplayName("findByName retourne l'application quand elle existe")
-        void findByName_WhenExists_ReturnsApp() {
-            when(repository.findByNameIgnoreCase("steam.exe")).thenReturn(Optional.of(sampleApp));
-
-            Optional<Application> result = applicationService.findByName("steam.exe");
-
-            assertThat(result).isPresent();
-            assertThat(result.get().getName()).isEqualTo("steam.exe");
-        }
 
         @Test
         @DisplayName("isBlacklisted retourne true si l'application est sur liste noire")

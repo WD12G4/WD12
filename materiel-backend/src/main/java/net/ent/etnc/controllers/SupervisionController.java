@@ -30,15 +30,7 @@ public class SupervisionController {
      */
     @GetMapping("/rooms/{roomId}/workstations")
     public List<WorkstationDto> getWorkstationsByRoom(@PathVariable final Long roomId) {
-        return supervisionService.findWorkstations(roomId);
-    }
-
-    /**
-     * Récupère la liste des postes de travail (tous les postes ou filtrés par salle).
-     */
-    @GetMapping("/workstations")
-    public List<WorkstationDto> getWorkstations(@RequestParam(name = "roomId", required = false) final Long roomId) {
-        return supervisionService.findWorkstations(roomId);
+        return this.supervisionService.findWorkstations(roomId);
     }
 
     /**
@@ -46,7 +38,7 @@ public class SupervisionController {
      */
     @GetMapping("/processes")
     public List<ProcessInfoDto> getProcesses(@RequestParam(name = "workstationIds", required = false) final List<Long> workstationIds) {
-        return supervisionService.findProcessesForWorkstations(workstationIds);
+        return this.supervisionService.findProcessesForWorkstations(workstationIds);
     }
 
     /**
@@ -54,6 +46,6 @@ public class SupervisionController {
      */
     @PostMapping("/kill")
     public KillProcessResponse killProcess(@Valid @RequestBody final KillProcessRequest request) {
-        return supervisionService.killProcess(request);
+        return this.supervisionService.killProcess(request);
     }
 }

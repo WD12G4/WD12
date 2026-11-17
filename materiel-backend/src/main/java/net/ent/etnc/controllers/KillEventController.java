@@ -4,7 +4,6 @@ import net.ent.etnc.dtos.assemblers.KillEventDtoAssembler;
 import net.ent.etnc.dtos.killevent.KillEventResponse;
 import net.ent.etnc.models.KillEvent;
 import net.ent.etnc.services.KillEventService;
-import net.ent.etnc.services.commons.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,15 +39,5 @@ public class KillEventController {
                 ? this.killEventService.findByUserId(userId, pageable)
                 : this.killEventService.findAll(pageable);
         return events.map(this.killEventDtoAssembler::toDto);
-    }
-
-    /**
-     * Recherche un killevent par son identifiant.
-     */
-    @GetMapping("/{id}")
-    public KillEventResponse getById(@PathVariable final Long id) {
-        return this.killEventService.findById(id)
-                .map(this.killEventDtoAssembler::toDto)
-                .orElseThrow(() -> new ResourceNotFoundException("KillEvent introuvable avec l'id : " + id));
     }
 }

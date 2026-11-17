@@ -1,7 +1,6 @@
 package net.ent.etnc.controllers;
 
 import net.ent.etnc.dtos.application.ApplicationBlacklistRequest;
-import net.ent.etnc.dtos.application.ApplicationRequest;
 import net.ent.etnc.dtos.application.ApplicationResponse;
 import net.ent.etnc.dtos.assemblers.ApplicationDtoAssembler;
 import net.ent.etnc.handlers.GlobalExceptionHandler;
@@ -26,7 +25,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -106,32 +104,6 @@ class ApplicationControllerTest {
     }
 
     @Nested
-    @DisplayName("GET /api/v1/applications/{id}")
-    class GetByIdTests {
-
-        @Test
-        @DisplayName("Doit retourner l'application si elle existe")
-        void getById_WhenExists_ReturnsApp() throws Exception {
-            when(applicationService.findById(1L)).thenReturn(Optional.of(sampleApp));
-            when(applicationAssembler.toDto(sampleApp)).thenReturn(sampleResponse);
-
-            mockMvc.perform(get("/api/v1/applications/1"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.id").value(1))
-                    .andExpect(jsonPath("$.name").value("steam.exe"));
-        }
-
-        @Test
-        @DisplayName("Doit retourner 404 si l'application n'existe pas")
-        void getById_WhenNotFound_Returns404() throws Exception {
-            when(applicationService.findById(99L)).thenReturn(Optional.empty());
-
-            mockMvc.perform(get("/api/v1/applications/99"))
-                    .andExpect(status().isNotFound());
-        }
-    }
-
-    @Nested
     @DisplayName("PATCH /api/v1/applications/{id}/blacklist")
     class ToggleBlacklistTests {
 
@@ -165,49 +137,6 @@ class ApplicationControllerTest {
     }
 
     @Nested
-    @DisplayName("POST /api/v1/applications")
-    class CreateTests {
-
-        @Test
-        @DisplayName("Doit créer l'application et retourner 201 Created")
-        void create_Success() throws Exception {
-            String payload = """
-                    {
-                        "name": "torrent.exe",
-                        "displayName": "BitTorrent",
-                        "blacklisted": true
-                    }
-                    """;
-
-            when(applicationAssembler.toEntity(any(ApplicationRequest.class))).thenReturn(sampleApp);
-            when(applicationService.create(any(Application.class))).thenReturn(sampleApp);
-            when(applicationAssembler.toDto(sampleApp)).thenReturn(sampleResponse);
-
-            mockMvc.perform(post("/api/v1/applications")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(payload))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.name").value("steam.exe"));
-        }
-    }
-
-    @Nested
-    @DisplayName("DELETE /api/v1/applications/{id}")
-    class DeleteTests {
-
-        @Test
-        @DisplayName("Doit supprimer l'application et retourner 204 No Content")
-        void delete_Success() throws Exception {
-            doNothing().when(applicationService).deleteById(1L);
-
-            mockMvc.perform(delete("/api/v1/applications/1"))
-                    .andExpect(status().isNoContent());
-
-            verify(applicationService).deleteById(1L);
-        }
-    }
-
-    @Nested
     @DisplayName("Tests de sécurité des rôles (RG-27)")
     class SecurityTests {
 
@@ -221,34 +150,11 @@ class ApplicationControllerTest {
         }
 
         @Test
-        @DisplayName("create, update et delete doivent être restreints aux administrateurs via @PreAuthorize(\"hasRole('ADMIN')\")")
-        void mutationMethods_MustBeProtectedByAdminRole() throws NoSuchMethodException {
-            PreAuthorize createAnnotation = ApplicationController.class.getMethod("create", ApplicationRequest.class)
-                    .getAnnotation(PreAuthorize.class);
-            assertThat(createAnnotation).isNotNull();
-            assertThat(createAnnotation.value()).isEqualTo("hasRole('ADMIN')");
-
-            PreAuthorize updateAnnotation = ApplicationController.class.getMethod("update", Long.class, ApplicationRequest.class)
-                    .getAnnotation(PreAuthorize.class);
-            assertThat(updateAnnotation).isNotNull();
-            assertThat(updateAnnotation.value()).isEqualTo("hasRole('ADMIN')");
-
-            PreAuthorize deleteAnnotation = ApplicationController.class.getMethod("delete", Long.class)
-                    .getAnnotation(PreAuthorize.class);
-            assertThat(deleteAnnotation).isNotNull();
-            assertThat(deleteAnnotation.value()).isEqualTo("hasRole('ADMIN')");
-        }
-
-        @Test
-        @DisplayName("getAll et getById doivent être accessibles sans restriction ADMIN")
+        @DisplayName("getAll doit être accessible sans restriction ADMIN")
         void readMethods_MustNotRequireAdmin() throws NoSuchMethodException {
             PreAuthorize getAllAnnotation = ApplicationController.class.getMethod("getAll", Boolean.class, Pageable.class)
                     .getAnnotation(PreAuthorize.class);
             assertThat(getAllAnnotation).isNull();
-
-            PreAuthorize getByIdAnnotation = ApplicationController.class.getMethod("getById", Long.class)
-                    .getAnnotation(PreAuthorize.class);
-            assertThat(getByIdAnnotation).isNull();
         }
     }
 }

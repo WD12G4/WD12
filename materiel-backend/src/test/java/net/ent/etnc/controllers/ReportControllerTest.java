@@ -5,7 +5,6 @@ import net.ent.etnc.dtos.auth.UserSummaryResponse;
 import net.ent.etnc.dtos.material.MaterialResponse;
 import net.ent.etnc.dtos.report.ReportCreateRequest;
 import net.ent.etnc.dtos.report.ReportResponse;
-import net.ent.etnc.dtos.report.ReportUpdateRequest;
 import net.ent.etnc.handlers.GlobalExceptionHandler;
 import net.ent.etnc.models.Material;
 import net.ent.etnc.models.Report;
@@ -14,7 +13,6 @@ import net.ent.etnc.models.enums.EMaterialType;
 import net.ent.etnc.models.enums.ERole;
 import net.ent.etnc.services.ReportService;
 import net.ent.etnc.services.commons.ResourceNotFoundException;
-import net.ent.etnc.services.commons.ServiceException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,7 +28,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -131,21 +128,6 @@ class ReportControllerTest {
                     .andExpect(jsonPath("$.content[0].id").value(100))
                     .andExpect(jsonPath("$.content[0].description").value("Écran défectueux"))
                     .andExpect(jsonPath("$.content[0].user.username").value("john_doe"));
-        }
-
-        @Test
-        @DisplayName("Doit filtrer par matériel quand materialId est fourni")
-        void getAll_WithMaterialId_CallsFindByMaterialId() throws Exception {
-            Page<Report> page = new PageImpl<>(List.of(sampleEntity), PageRequest.of(0, 20), 1);
-            when(reportService.findByMaterialId(eq(10L), any(Pageable.class))).thenReturn(page);
-            when(reportDtoAssembler.toDto(sampleEntity)).thenReturn(sampleResponse);
-
-            mockMvc.perform(get("/api/v1/reports")
-                            .param("materialId", "10"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.content[0].id").value(100));
-
-            verify(reportService).findByMaterialId(eq(10L), any(Pageable.class));
         }
 
         @Test
@@ -285,92 +267,6 @@ class ReportControllerTest {
     }
 
     @Nested
-    @DisplayName("PUT /api/v1/reports/{id}")
-    class UpdateTests {
-
-        @Test
-        @DisplayName("Doit modifier la description et retourner 200 OK")
-        void update_ValidRequest_Returns200() throws Exception {
-            String payload = """
-                    {
-                        "description": "Nouvelle description"
-                    }
-                    """;
-
-            when(reportService.findById(100L)).thenReturn(Optional.of(sampleEntity));
-            when(reportService.update(any(Report.class))).thenReturn(sampleEntity);
-            when(reportDtoAssembler.toDto(sampleEntity)).thenReturn(sampleResponse);
-
-            mockMvc.perform(put("/api/v1/reports/100")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(payload))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.id").value(100));
-
-            verify(reportDtoAssembler).updateEntity(eq(sampleEntity), any(ReportUpdateRequest.class));
-            verify(reportService).update(sampleEntity);
-        }
-
-        @Test
-        @DisplayName("Doit renvoyer 404 si le signalement à modifier n'existe pas")
-        void update_WhenNotFound_Returns404() throws Exception {
-            String payload = """
-                    {
-                        "description": "Nouvelle description"
-                    }
-                    """;
-
-            when(reportService.findById(999L)).thenReturn(Optional.empty());
-
-            mockMvc.perform(put("/api/v1/reports/999")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(payload))
-                    .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.error").exists());
-        }
-
-        @Test
-        @DisplayName("Doit renvoyer 403 Forbidden si l'utilisateur n'est pas le créateur")
-        void update_WhenNotCreator_Returns403() throws Exception {
-            String payload = """
-                    {
-                        "description": "Nouvelle description"
-                    }
-                    """;
-
-            when(reportService.findById(100L)).thenReturn(Optional.of(sampleEntity));
-            when(reportService.update(any(Report.class)))
-                    .thenThrow(new AccessDeniedException("Seul l'utilisateur ayant créé le signalement peut le modifier."));
-
-            mockMvc.perform(put("/api/v1/reports/100")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(payload))
-                    .andExpect(status().isForbidden())
-                    .andExpect(jsonPath("$.error").exists());
-        }
-
-        @Test
-        @DisplayName("Doit renvoyer 400 Bad Request si le signalement est déjà traité")
-        void update_WhenAlreadyHandled_Returns400() throws Exception {
-            String payload = """
-                    {
-                        "description": "Nouvelle description"
-                    }
-                    """;
-
-            when(reportService.findById(100L)).thenReturn(Optional.of(sampleEntity));
-            when(reportService.update(any(Report.class)))
-                    .thenThrow(new ServiceException("Impossible de modifier un signalement déjà traité."));
-
-            mockMvc.perform(put("/api/v1/reports/100")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(payload))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.error").value("Impossible de modifier un signalement déjà traité."));
-        }
-    }
-
-    @Nested
     @DisplayName("PATCH /api/v1/reports/{id}/handle")
     class HandleTests {
 
@@ -392,33 +288,6 @@ class ReportControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.handled").value(true))
                     .andExpect(jsonPath("$.handleDateTime").exists());
-        }
-    }
-
-    @Nested
-    @DisplayName("DELETE /api/v1/reports/{id}")
-    class DeleteTests {
-
-        @Test
-        @DisplayName("Doit supprimer et retourner 204 No Content")
-        void delete_Success_Returns204() throws Exception {
-            doNothing().when(reportService).deleteById(100L);
-
-            mockMvc.perform(delete("/api/v1/reports/100"))
-                    .andExpect(status().isNoContent());
-
-            verify(reportService).deleteById(100L);
-        }
-
-        @Test
-        @DisplayName("Doit renvoyer 403 si l'utilisateur n'est ni le créateur ni manager")
-        void delete_WhenUnauthorized_Returns403() throws Exception {
-            doThrow(new AccessDeniedException("Vous n'êtes pas autorisé à supprimer ce signalement."))
-                    .when(reportService).deleteById(100L);
-
-            mockMvc.perform(delete("/api/v1/reports/100"))
-                    .andExpect(status().isForbidden())
-                    .andExpect(jsonPath("$.error").exists());
         }
     }
 }

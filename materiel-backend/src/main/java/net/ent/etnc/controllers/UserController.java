@@ -29,7 +29,7 @@ public class UserController {
     private final UserDtoAssembler userAssembler;
 
     @Autowired
-    public UserController(UserService userService, UserDtoAssembler userAssembler) {
+    public UserController(final UserService userService, final UserDtoAssembler userAssembler) {
         this.userService = userService;
         this.userAssembler = userAssembler;
     }
@@ -39,18 +39,8 @@ public class UserController {
      */
     @GetMapping
     public Page<UserResponse> getAll(@PageableDefault(size = 20, sort = "id") Pageable pageable) {
-        return userService.findAll(pageable)
+        return this.userService.findAll(pageable)
                 .map(userAssembler::toDto);
-    }
-
-    /**
-     * Recherche un utilisateur par son identifiant (réservé aux administrateurs).
-     */
-    @GetMapping("/{id}")
-    public UserResponse getById(@PathVariable Long id) {
-        return userService.findById(id)
-                .map(userAssembler::toDto)
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable avec l'id : " + id));
     }
 
     /**
@@ -59,9 +49,9 @@ public class UserController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse create(@Valid @RequestBody UserCreateRequest request) {
-        User entity = userAssembler.toEntity(request);
-        User saved = userService.create(entity);
-        return userAssembler.toDto(saved);
+        User entity = this.userAssembler.toEntity(request);
+        User saved = this.userService.create(entity);
+        return this.userAssembler.toDto(saved);
     }
 
     /**
@@ -69,23 +59,23 @@ public class UserController {
      */
     @PutMapping("/{id}")
     public UserResponse update(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request) {
-        User existing = userService.findById(id)
+        User existing = this.userService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable avec l'id : " + id));
 
-        userAssembler.updateEntity(existing, request);
-        User updated = userService.update(existing);
-        return userAssembler.toDto(updated);
+        this.userAssembler.updateEntity(existing, request);
+        User updated = this.userService.update(existing);
+        return this.userAssembler.toDto(updated);
     }
 
     /**
-     * Supprime un utilisateur par son identifiant (réservé aux administrateurs).
+     * Supprime (archive) un utilisateur par son identifiant (réservé aux administrateurs).
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (!userService.existsById(id)) {
+        if (!this.userService.existsById(id)) {
             throw new ResourceNotFoundException("Utilisateur introuvable avec l'id : " + id);
         }
-        userService.deleteById(id);
+        this.userService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 }

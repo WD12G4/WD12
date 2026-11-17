@@ -86,33 +86,6 @@ class BuildingControllerTest {
     }
 
     @Nested
-    @DisplayName("GET /api/v1/buildings/{id}")
-    class GetByIdTests {
-
-        @Test
-        @DisplayName("Doit retourner le bâtiment quand il existe")
-        void getById_WhenExists_ReturnsBuilding() throws Exception {
-            when(buildingService.findById(1L)).thenReturn(Optional.of(sampleBuilding));
-            when(buildingAssembler.toDto(sampleBuilding)).thenReturn(sampleResponse);
-
-            mockMvc.perform(get("/api/v1/buildings/1"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.id").value(1))
-                    .andExpect(jsonPath("$.number").value(101));
-        }
-
-        @Test
-        @DisplayName("Doit renvoyer 404 si le bâtiment n'existe pas")
-        void getById_WhenNotFound_Returns404() throws Exception {
-            when(buildingService.findById(999L)).thenReturn(Optional.empty());
-
-            mockMvc.perform(get("/api/v1/buildings/999"))
-                    .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.error").exists());
-        }
-    }
-
-    @Nested
     @DisplayName("POST /api/v1/buildings")
     class CreateTests {
 

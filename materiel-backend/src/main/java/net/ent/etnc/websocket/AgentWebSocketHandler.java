@@ -294,18 +294,6 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    /**
-     * Version synchrone d'interrogation de l'agent pour compatibilité.
-     */
-    public List<AgentProcessInfo> fetchProcesses(final String serialNumber, final long timeoutSeconds) {
-        try {
-            List<AgentProcessInfo> res = fetchProcessesAsync(serialNumber, timeoutSeconds).join();
-            return res != null ? res : Collections.emptyList();
-        } catch (Exception e) {
-            return Collections.emptyList();
-        }
-    }
-
     public AgentKillResult executeKill(final String serialNumber, final int pid, final long timeoutSeconds) {
         AgentConnection conn = connectedAgents.get(serialNumber);
         if (conn == null || !conn.session().isOpen()) {

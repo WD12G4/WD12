@@ -90,33 +90,6 @@ class UserControllerTest {
     }
 
     @Nested
-    @DisplayName("GET /api/v1/users/{id}")
-    class GetByIdTests {
-
-        @Test
-        @DisplayName("Doit retourner l'utilisateur quand il existe")
-        void getById_WhenExists_ReturnsUser() throws Exception {
-            when(userService.findById(1L)).thenReturn(Optional.of(sampleUser));
-            when(userAssembler.toDto(sampleUser)).thenReturn(sampleResponse);
-
-            mockMvc.perform(get("/api/v1/users/1"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.id").value(1))
-                    .andExpect(jsonPath("$.username").value("alice"));
-        }
-
-        @Test
-        @DisplayName("Doit renvoyer 404 si l'utilisateur n'existe pas")
-        void getById_WhenNotFound_Returns404() throws Exception {
-            when(userService.findById(999L)).thenReturn(Optional.empty());
-
-            mockMvc.perform(get("/api/v1/users/999"))
-                    .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.error").exists());
-        }
-    }
-
-    @Nested
     @DisplayName("POST /api/v1/users")
     class CreateTests {
 

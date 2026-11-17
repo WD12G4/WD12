@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import net.ent.etnc.dtos.assemblers.ReportDtoAssembler;
 import net.ent.etnc.dtos.report.ReportCreateRequest;
 import net.ent.etnc.dtos.report.ReportResponse;
-import net.ent.etnc.dtos.report.ReportUpdateRequest;
 import net.ent.etnc.models.Report;
 import net.ent.etnc.services.ReportService;
 import net.ent.etnc.services.commons.ResourceNotFoundException;
@@ -34,19 +33,16 @@ public class ReportController {
     }
 
     /**
-     * Liste paginée des signalements, avec filtres optionnels par matériel, utilisateur ou statut.
+     * Liste paginée des signalements, avec filtres optionnels par utilisateur ou statut.
      */
     @GetMapping
     public Page<ReportResponse> getAll(
-            @RequestParam(required = false) Long materialId,
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) Boolean handled,
             @PageableDefault(size = 20, sort = "reportDateTime", direction = Sort.Direction.DESC) Pageable pageable) {
 
         Page<Report> reports;
-        if (materialId != null) {
-            reports = this.reportService.findByMaterialId(materialId, pageable);
-        } else if (userId != null) {
+        if (userId != null) {
             reports = this.reportService.findByUserId(userId, pageable);
         } else if (handled != null) {
             reports = this.reportService.findByHandled(handled, pageable);
@@ -78,19 +74,6 @@ public class ReportController {
     }
 
     /**
-     * Met à jour la description d'un signalement (réservé à l'utilisateur qui l'a créé).
-     */
-    @PutMapping("/{id}")
-    public ReportResponse update(@PathVariable Long id, @Valid @RequestBody ReportUpdateRequest request) {
-        Report existing = this.reportService.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Signalement introuvable avec l'id : " + id));
-
-        this.reportDtoAssembler.updateEntity(existing, request);
-        Report updated = this.reportService.update(existing);
-        return this.reportDtoAssembler.toDto(updated);
-    }
-
-    /**
      * Modifie l'état de traitement d'un signalement (réservé aux gestionnaires et administrateurs).
      */
     @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
@@ -99,14 +82,5 @@ public class ReportController {
                                         @RequestParam(defaultValue = "true") boolean handled) {
         Report updated = this.reportService.markAsHandled(id, handled);
         return this.reportDtoAssembler.toDto(updated);
-    }
-
-    /**
-     * Supprime un signalement (réservé au créateur du signalement ou aux gestionnaires/administrateurs).
-     */
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        this.reportService.deleteById(id);
     }
 }

@@ -60,19 +60,6 @@ class SupervisionControllerTest {
     }
 
     @Test
-    @DisplayName("getWorkstations doit retourner tous les postes")
-    void getWorkstations_ReturnsAll() throws Exception {
-        WorkstationDto ws = new WorkstationDto(1L, null, "bly-manager", "Poste connecté", "00:11:22:33:44:55", true);
-        when(supervisionService.findWorkstations(null)).thenReturn(List.of(ws));
-
-        mockMvc.perform(get("/api/v1/supervision/workstations"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].name").value("bly-manager"))
-                .andExpect(jsonPath("$[0].online").value(true));
-    }
-
-    @Test
     @DisplayName("getProcesses doit retourner les processus")
     void getProcesses_ReturnsList() throws Exception {
         ProcessInfoDto proc = new ProcessInfoDto(1234, 1L, "firefox", LocalDateTime.now());

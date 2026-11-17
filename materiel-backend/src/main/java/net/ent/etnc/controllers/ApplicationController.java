@@ -2,17 +2,14 @@ package net.ent.etnc.controllers;
 
 import jakarta.validation.Valid;
 import net.ent.etnc.dtos.application.ApplicationBlacklistRequest;
-import net.ent.etnc.dtos.application.ApplicationRequest;
 import net.ent.etnc.dtos.application.ApplicationResponse;
 import net.ent.etnc.dtos.assemblers.ApplicationDtoAssembler;
 import net.ent.etnc.models.Application;
 import net.ent.etnc.services.ApplicationService;
-import net.ent.etnc.services.commons.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,43 +37,8 @@ public class ApplicationController {
             @RequestParam(required = false) final Boolean blacklisted,
             @PageableDefault(size = 20, sort = "name") final Pageable pageable
     ) {
-        return applicationService.findAll(pageable, blacklisted)
-                .map(applicationAssembler::toDto);
-    }
-
-    /**
-     * Recherche une application par son identifiant.
-     */
-    @GetMapping("/{id}")
-    public ApplicationResponse getById(@PathVariable final Long id) {
-        return applicationService.findById(id)
-                .map(applicationAssembler::toDto)
-                .orElseThrow(() -> new ResourceNotFoundException("Application introuvable avec l'id : " + id));
-    }
-
-    /**
-     * Crée une application ou règle manuellement (réservé aux administrateurs, RG-27).
-     */
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ApplicationResponse create(@Valid @RequestBody final ApplicationRequest request) {
-        Application app = applicationAssembler.toEntity(request);
-        Application created = applicationService.create(app);
-        return applicationAssembler.toDto(created);
-    }
-
-    /**
-     * Met à jour une application existante (réservé aux administrateurs, RG-27).
-     */
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{id}")
-    public ApplicationResponse update(@PathVariable final Long id, @Valid @RequestBody final ApplicationRequest request) {
-        Application app = applicationService.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Application introuvable avec l'id : " + id));
-        applicationAssembler.updateEntity(app, request);
-        Application updated = applicationService.update(app);
-        return applicationAssembler.toDto(updated);
+        return this.applicationService.findAll(pageable, blacklisted)
+                .map(this.applicationAssembler::toDto);
     }
 
     /**
@@ -88,17 +50,7 @@ public class ApplicationController {
             @PathVariable final Long id,
             @Valid @RequestBody final ApplicationBlacklistRequest request
     ) {
-        Application updated = applicationService.toggleBlacklist(id, request.blacklisted());
-        return applicationAssembler.toDto(updated);
-    }
-
-    /**
-     * Supprime une application du catalogue (réservé aux administrateurs, RG-27).
-     */
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable final Long id) {
-        applicationService.deleteById(id);
+        Application updated = this.applicationService.toggleBlacklist(id, request.blacklisted());
+        return this.applicationAssembler.toDto(updated);
     }
 }

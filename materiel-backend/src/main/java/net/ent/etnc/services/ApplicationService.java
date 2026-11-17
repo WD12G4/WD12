@@ -14,11 +14,6 @@ import net.ent.etnc.services.commons.Service;
 public interface ApplicationService extends Service<Application, Long> {
 
     /**
-     * Recherche une application par son nom (insensible à la casse).
-     */
-    Optional<Application> findByName(final String name);
-
-    /**
      * Vérifie si un processus est sur la liste noire.
      */
     boolean isBlacklisted(final String processName);

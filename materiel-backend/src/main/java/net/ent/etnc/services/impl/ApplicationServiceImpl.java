@@ -171,15 +171,6 @@ public class ApplicationServiceImpl extends AbstractService<Application, Applica
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Application> findByName(final String name) {
-        if (name == null || name.isBlank()) {
-            return Optional.empty();
-        }
-        return this.repository.findByNameIgnoreCase(name.trim());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public boolean isBlacklisted(final String processName) {
         if (processName == null || processName.isBlank()) {
             return false;

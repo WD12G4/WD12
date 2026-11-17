@@ -37,18 +37,8 @@ public class BuildingController {
      */
     @GetMapping
     public Page<BuildingResponse> getAll(@PageableDefault(size = 20, sort = "id") Pageable pageable) {
-        return buildingService.findAll(pageable)
-                .map(buildingAssembler::toDto);
-    }
-
-    /**
-     * Recherche un bâtiment par son identifiant.
-     */
-    @GetMapping("/{id}")
-    public BuildingResponse getById(@PathVariable Long id) {
-        return buildingService.findById(id)
-                .map(buildingAssembler::toDto)
-                .orElseThrow(() -> new ResourceNotFoundException("Bâtiment introuvable avec l'id : " + id));
+        return this.buildingService.findAll(pageable)
+                .map(this.buildingAssembler::toDto);
     }
 
     /**
@@ -58,9 +48,9 @@ public class BuildingController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public BuildingResponse create(@Valid @RequestBody BuildingRequest request) {
-        Building entity = buildingAssembler.toEntity(request);
-        Building saved = buildingService.create(entity);
-        return buildingAssembler.toDto(saved);
+        Building entity = this.buildingAssembler.toEntity(request);
+        Building saved = this.buildingService.create(entity);
+        return this.buildingAssembler.toDto(saved);
     }
 
     /**
@@ -69,12 +59,12 @@ public class BuildingController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public BuildingResponse update(@PathVariable Long id, @Valid @RequestBody BuildingRequest request) {
-        Building existing = buildingService.findById(id)
+        Building existing = this.buildingService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Bâtiment introuvable avec l'id : " + id));
 
-        buildingAssembler.updateEntity(existing, request);
-        Building updated = buildingService.update(existing);
-        return buildingAssembler.toDto(updated);
+        this.buildingAssembler.updateEntity(existing, request);
+        Building updated = this.buildingService.update(existing);
+        return this.buildingAssembler.toDto(updated);
     }
 
     /**
@@ -83,10 +73,10 @@ public class BuildingController {
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (!buildingService.existsById(id)) {
+        if (!this.buildingService.existsById(id)) {
             throw new ResourceNotFoundException("Bâtiment introuvable avec l'id : " + id);
         }
-        buildingService.deleteById(id);
+        this.buildingService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 }
