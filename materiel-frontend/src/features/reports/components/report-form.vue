@@ -3,8 +3,9 @@
  * Formulaire de remontée : salle, matériel et type de problème en listes déroulantes,
  * description courte facultative (RG-21 : « pas besoin d'un gros formulaire »). Le matériel est
  * obligatoire (le backend rattache chaque remontée à un matériel) ; la salle sert à le trouver.
+ * Formateur : la salle est imposée, c'est sa salle de cours (RG-46, « pour éviter les erreurs »).
  * Composant de présentation : il émet la saisie, la vue appelle le service.
- * Utilisé par : report-create-view.vue
+ * Utilisé par : report-create-view.vue (qui recrée le formulaire si la salle imposée change)
  */
 import {computed, ref, watch} from 'vue';
 import type {Material} from '../../../models/material.model.ts';
@@ -22,6 +23,8 @@ import ReportMaterialSelect from './report-material-select.vue';
 const props = defineProps<{
   /** Salles proposées. */
   rooms: Room[];
+  /** Salle imposée (salle de cours du formateur, RG-46), ou null si le choix est libre. */
+  lockedRoomId: number | null;
   /** Matériel proposé (filtré par salle dans la liste). */
   materials: Material[];
   /** Vrai pendant l'envoi. */
@@ -37,7 +40,7 @@ const emit = defineEmits<{
 
 //------------------ DATAS -----------------------------------
 const draft = ref<ReportInput>({
-  roomId: null,
+  roomId: props.lockedRoomId,
   materialId: null,
   problemType: 'OUT_OF_ORDER',
   description: '',
@@ -47,6 +50,7 @@ const problemTypeOptions: SelectOption<ProblemType>[] = problemTypes.map(type =>
 
 //------------------ COMPUTED --------------------------------
 const isValid = computed(() => draft.value.materialId !== null);
+const isRoomLocked = computed(() => props.lockedRoomId !== null);
 /** Le bouton d'envoi est actif si la saisie est valide et qu'aucun envoi n'est en cours. */
 const canSubmit = computed(() => isValid.value && !props.submitting);
 
@@ -73,6 +77,7 @@ watch(() => draft.value.roomId, () => {
           id="report-room"
           v-model="draft.roomId"
           :rooms="rooms"
+          :disabled="isRoomLocked"
           empty-label="Choisir une salle"
       />
     </div>

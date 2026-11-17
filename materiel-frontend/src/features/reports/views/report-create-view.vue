@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
  * Signalement d'un problème sur un matériel, accessible à tous les rôles.
- * RG : RG-21 (contenu), RG-22 (document créé à la remontée), RG-23 (le gestionnaire est notifié)
+ * RG : RG-21 (contenu), RG-23 (le gestionnaire est notifié), RG-46 (salle imposée au formateur)
  */
-import {onMounted, ref} from 'vue';
+import {computed, onMounted, ref} from 'vue';
 import type {Material} from '../../../models/material.model.ts';
 import type {ReportInput} from '../../../models/report.model.ts';
 import {materialsServices} from '../../../services/materials.services.ts';
@@ -12,6 +12,7 @@ import {replaceWith} from '../../../router/navigation.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {useFlashMessage} from '../../../shared/composables/use-flash-message.ts';
 import {useLocations} from '../../../shared/composables/use-locations.ts';
+import {useTeachingRoom} from '../../../shared/composables/use-teaching-room.ts';
 import {useUnreadReports} from '../composables/use-unread-reports.ts';
 import Card from '../../../shared/components/card.vue';
 import LoadState from '../../../shared/components/load-state.vue';
@@ -23,7 +24,15 @@ const {loading: sending, errorMessage: sendError, run: runSend} = useAsyncState(
 const {rooms, loadLocations} = useLocations();
 const {show} = useFlashMessage();
 const {refresh: refreshUnread} = useUnreadReports();
+const {trainerRoomId} = useTeachingRoom();
 const materials = ref<Material[]>([]);
+
+//------------------ COMPUTED --------------------------------
+/** RG-46 : la salle du formateur est imposée ; changer de salle de cours recrée le formulaire. */
+const formKey = computed(() => trainerRoomId.value ?? 0);
+const intro = computed(() => (trainerRoomId.value === null
+  ? 'Choisissez la salle, le matériel concerné et le type de problème.'
+  : 'Choisissez le matériel concerné et le type de problème. La salle est votre salle de cours.'));
 
 //------------------ FUNCTIONS -------------------------------
 /** Charge les salles et le matériel proposés dans les listes déroulantes. */
@@ -51,7 +60,7 @@ onMounted(load);
 <template>
   <Card title="Signaler un problème">
     <template #header>
-      <p>Choisissez la salle, le matériel concerné et le type de problème.</p>
+      <p>{{ intro }}</p>
     </template>
     <template #body>
       <LoadState
@@ -60,7 +69,9 @@ onMounted(load);
           @retry="load"
       />
       <ReportForm
+          :key="formKey"
           :rooms="rooms"
+          :locked-room-id="trainerRoomId"
           :materials="materials"
           :submitting="sending"
           :error-message="sendError"

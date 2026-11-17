@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Liste des salles ; création, modification et suppression pour l'administrateur.
- * RG : RG-13, RG-31
+ * Le formateur ne voit que sa salle de cours (use-teaching-room.ts).
+ * RG : RG-13, RG-31, RG-34 (formateur : sa salle seulement)
  */
 import {computed, onMounted, ref} from 'vue';
 import type {Room, RoomInput} from '../../../models/room.model.ts';
@@ -10,6 +11,7 @@ import {useAuth} from '../../../shared/composables/use-auth.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {useFlashMessage} from '../../../shared/composables/use-flash-message.ts';
 import {useLocations} from '../../../shared/composables/use-locations.ts';
+import {useTeachingRoom} from '../../../shared/composables/use-teaching-room.ts';
 import Card from '../../../shared/components/card.vue';
 import LoadState from '../../../shared/components/load-state.vue';
 import RoomForm from '../components/room-form.vue';
@@ -21,6 +23,7 @@ const {show} = useFlashMessage();
 const {loading, errorMessage, run} = useAsyncState();
 const {loading: saving, errorMessage: saveError, run: runSave} = useAsyncState();
 const {buildings, rooms, loadLocations} = useLocations();
+const {trainerRoomId} = useTeachingRoom();
 /** Salle en cours de modification, ou null en mode création. */
 const editing = ref<Room | null>(null);
 /** Changer cette clé recrée le formulaire, donc le vide (après un succès). */
@@ -29,6 +32,9 @@ const formKey = ref(0);
 //------------------ COMPUTED --------------------------------
 /** RG-31 : seul l'administrateur gère les salles. */
 const canEdit = computed(() => hasRole('ADMIN'));
+/** RG-34 : le formateur ne voit que sa salle de cours. */
+const visibleRooms = computed(() => (trainerRoomId.value === null ? rooms.value : rooms.value.filter(room => room.id === trainerRoomId.value)));
+const listTitle = computed(() => (trainerRoomId.value === null ? 'Salles' : 'Votre salle de cours'));
 const formTitle = computed(() => {
   const room = editing.value;
   return room ? `Modifier la salle ${room.number} (bât. ${room.building.number})` : 'Nouvelle salle';
@@ -54,10 +60,10 @@ async function save(input: RoomInput): Promise<void> {
   }
 }
 
-/** Supprime après confirmation. TODO(question): que devient le matériel de la salle (RG-31) ? */
+/** Supprime après confirmation. Le backend refuse une salle qui contient encore du matériel (RG-31). */
 async function remove(room: Room): Promise<void> {
   const confirmed = window.confirm(
-    `Supprimer la salle ${room.number} du bâtiment ${room.building.number} ? Le matériel qui s'y trouve pourrait être affecté.`,
+    `Supprimer la salle ${room.number} du bâtiment ${room.building.number} ? Une salle qui contient encore du matériel ne peut pas être supprimée.`,
   );
   if (!confirmed) return;
   await run(async () => {
@@ -84,7 +90,7 @@ onMounted(load);
       />
     </template>
   </Card>
-  <Card title="Salles">
+  <Card :title="listTitle">
     <template #body>
       <LoadState
           :loading="loading"
@@ -93,7 +99,7 @@ onMounted(load);
       />
       <RoomList
           v-if="!loading"
-          :rooms="rooms"
+          :rooms="visibleRooms"
           :can-edit="canEdit"
           @edit="editing = $event"
           @remove="remove"

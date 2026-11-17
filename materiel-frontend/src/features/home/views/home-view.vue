@@ -7,7 +7,7 @@
  * Besoin : vision globale du parc, chiffres plutôt que graphiques (entretien 1, 12:49 et 13:37) ;
  * vue des salles simple et lisible (entretien 4, 19:36). Plus d'arbre à déplier : toutes les salles
  * sont visibles d'un coup et un seul clic ouvre la fiche d'une salle.
- * RG : RG-07, RG-10, RG-24
+ * RG : RG-07, RG-10, RG-24, RG-34 (formateur : sa salle seulement), RG-44 (vue des salles simple)
  */
 import {computed, onMounted, ref, watch} from 'vue';
 import type {Material} from '../../../models/material.model.ts';
@@ -30,7 +30,7 @@ import SupervisionPreview from '../components/supervision-preview.vue';
 //------------------ DATAS -----------------------------------
 const {loading, errorMessage, run} = useAsyncState();
 const {rooms, loadLocations} = useLocations();
-const {isTrainer, teachingRoomId} = useTeachingRoom();
+const {trainerRoomId} = useTeachingRoom();
 const materials = ref<Material[]>([]);
 /** Horizon des fins de disponibilité (30, 60 ou 90 jours), réglé dans le bandeau : compteurs et tuiles le suivent. */
 const horizon = ref(EXPIRY_WARNING_DAYS);
@@ -38,8 +38,7 @@ const supervision = useSupervision();
 const {workstationViews} = supervision;
 
 //------------------ COMPUTED --------------------------------
-/** Salle de cours du formateur, ou null pour les autres rôles (tout le parc). */
-const trainerRoomId = computed(() => (isTrainer.value ? teachingRoomId.value : null));
+/** RG-34 : le formateur ne voit que sa salle de cours ; les autres rôles voient tout le parc. */
 const scopedMaterials = computed(() => (trainerRoomId.value === null
   ? materials.value : materials.value.filter(material => material.room?.id === trainerRoomId.value)));
 const scopedRooms = computed(() => (trainerRoomId.value === null

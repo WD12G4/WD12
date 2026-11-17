@@ -2,8 +2,11 @@
  * Salle de cours du formateur : choisie juste après la connexion, obligatoire pour le formateur.
  * Elle est dans l'adresse de chaque page (?salle=12) : la garde (router/guards.ts) la recopie d'une
  * page à l'autre et la lit ici. Un rechargement ou un lien copié garde donc la salle.
- * La supervision affiche ensuite seulement les postes de cette salle (supervision-view.vue).
- * Utilisé par : router/guards.ts, App.vue, room-choice-view.vue, use-supervision-rooms.ts, use-dev-accounts.ts
+ * Le formateur ne voit ensuite que cette salle : matériel, salles, bâtiments, remontée, supervision.
+ * Ce filtre est fait par le front seulement : l'API ne limite pas encore le formateur à une salle.
+ * Utilisé par : router/guards.ts, App.vue, room-choice-view.vue, use-supervision-rooms.ts,
+ * use-dev-accounts.ts, et les vues qui se limitent à la salle du formateur (trainerRoomId).
+ * RG : RG-33 (choix obligatoire d'une salle), RG-34 (accès limité à la salle choisie)
  */
 import {computed, ref} from 'vue';
 import type {LocationQuery} from 'vue-router';
@@ -21,6 +24,8 @@ const teachingRoomId = ref<number | null>(null);
 const isTrainer = computed(() => currentUser.value?.role === 'USER');
 /** Vrai tant qu'un formateur connecté n'a pas de salle : la garde l'envoie sur le choix. */
 const needsRoomChoice = computed(() => isTrainer.value && teachingRoomId.value === null);
+/** RG-34 : salle à laquelle l'affichage est limité (formateur), ou null (gestionnaire, administrateur : tout le parc). */
+const trainerRoomId = computed(() => (isTrainer.value ? teachingRoomId.value : null));
 
 //------------------ FUNCTIONS -------------------------------
 /**
@@ -43,10 +48,11 @@ function setTeachingRoomId(id: number | null): void {
 
 /**
  * Accès à la salle de cours.
- * @returns la salle de l'adresse, le rôle formateur, le besoin de choisir et la lecture de l'adresse
+ * @returns la salle de l'adresse, le rôle formateur, la salle qui limite l'affichage, le besoin de choisir
+ * et la lecture de l'adresse
  */
 export function useTeachingRoom() {
-    return {teachingRoomId, isTrainer, needsRoomChoice, roomIdFromQuery, setTeachingRoomId};
+    return {teachingRoomId, isTrainer, trainerRoomId, needsRoomChoice, roomIdFromQuery, setTeachingRoomId};
 }
 
 export {TEACHING_ROOM_QUERY};

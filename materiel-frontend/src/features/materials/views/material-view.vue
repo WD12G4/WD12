@@ -3,7 +3,8 @@
  * Liste et recherche du matériel : l'écran le plus important pour le client
  * (besoin « scroller, chercher, vérifier », entretien 1, 0:31).
  * ?emplacement=stock|salle dans l'URL ouvre la liste déjà filtrée (liens du tableau de bord).
- * RG : RG-07, RG-10, RG-16 (création et archivage : gestionnaire et administrateur, comme le backend)
+ * RG : RG-07, RG-10, RG-16 (création et archivage : gestionnaire et administrateur, comme le backend),
+ * RG-34 (formateur : matériel de sa salle seulement)
  */
 import {computed, onMounted, ref} from 'vue';
 import {useRoute} from 'vue-router';
@@ -26,12 +27,11 @@ const {hasRole} = useAuth();
 const {loading, errorMessage, run} = useAsyncState();
 const {buildings, rooms, loadLocations} = useLocations();
 const {archiveMaterial} = useArchiveMaterial();
-const {isTrainer, teachingRoomId} = useTeachingRoom();
+const {trainerRoomId} = useTeachingRoom();
 const materials = ref<Material[]>([]);
 
 //------------------ COMPUTED --------------------------------
-/** Formateur : seulement le matériel et la salle de sa salle de cours (choisie à la connexion). */
-const trainerRoomId = computed(() => (isTrainer.value ? teachingRoomId.value : null));
+/** RG-34 : le formateur ne voit que le matériel et la salle de sa salle de cours (choisie à la connexion). */
 const scopedMaterials = computed(() => (trainerRoomId.value === null
   ? materials.value : materials.value.filter(material => material.room?.id === trainerRoomId.value)));
 const scopedRooms = computed(() => (trainerRoomId.value === null ? rooms.value : rooms.value.filter(room => room.id === trainerRoomId.value)));

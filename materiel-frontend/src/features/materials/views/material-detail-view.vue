@@ -1,18 +1,19 @@
 <script setup lang="ts">
 /**
  * Fiche d'un matériel, avec les actions autorisées par le rôle :
- * modifier et archiver (MANAGER et ADMIN, RG-16), changer d'emplacement (MANAGER et ADMIN, RG-17).
+ * modifier et archiver (MANAGER et ADMIN, RG-16), changer d'emplacement (MANAGER et ADMIN, RG-16).
+ * Le formateur n'ouvre que la fiche d'un matériel de sa salle de cours : une autre lui est refusée
+ * (filtre du front seulement, l'API ne limite pas encore le formateur à une salle).
+ * RG : RG-16, RG-34 (formateur : sa salle seulement)
  */
-import {computed, onMounted, ref, watch} from 'vue';
-import type {Material} from '../../../models/material.model.ts';
-import {materialsServices} from '../../../services/materials.services.ts';
+import {computed, onMounted, watch} from 'vue';
 import {useAuth} from '../../../shared/composables/use-auth.ts';
-import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
-import {useLocations} from '../../../shared/composables/use-locations.ts';
-import {useArchiveMaterial} from '../composables/use-archive-material.ts';
+import {useTeachingRoom} from '../../../shared/composables/use-teaching-room.ts';
+import {useMaterialDetail} from '../composables/use-material-detail.ts';
 import Card from '../../../shared/components/card.vue';
 import BackLink from '../../../shared/components/back-link.vue';
 import LoadState from '../../../shared/components/load-state.vue';
+import OutOfRoomCard from '../../../shared/components/out-of-room-card.vue';
 import MaterialDetails from '../components/material-details.vue';
 import MaterialActions from '../components/material-actions.vue';
 import MaterialAssign from '../components/material-assign.vue';
@@ -25,47 +26,18 @@ const props = defineProps<{
 
 //------------------ DATAS -----------------------------------
 const {hasRole} = useAuth();
-const {loading, errorMessage, errorStatus, run} = useAsyncState();
-const {loading: assigning, errorMessage: assignError, run: runAssign} = useAsyncState();
-const {errorMessage: archiveError, run: runArchive} = useAsyncState();
-const {rooms, loadLocations} = useLocations();
-const {archiveMaterial} = useArchiveMaterial();
-const material = ref<Material | null>(null);
+const {trainerRoomId} = useTeachingRoom();
+const {
+  material, rooms, loading, errorMessage, errorStatus, assigning, assignError, archiveError, load, assign, archive,
+} = useMaterialDetail(() => Number(props.id), () => hasRole('MANAGER'));
 
 //------------------ COMPUTED --------------------------------
-const materialId = computed(() => Number(props.id));
-const canEdit = computed(() => hasRole('MANAGER'));
-const canAssign = computed(() => hasRole('MANAGER'));
+/** RG-16 : le gestionnaire et l'administrateur modifient, archivent et affectent le matériel. */
+const canManage = computed(() => hasRole('MANAGER'));
 const isNotFound = computed(() => errorStatus.value === 404);
-
-//------------------ FUNCTIONS -------------------------------
-/** Charge le matériel et, en parallèle, les salles si l'utilisateur peut l'affecter (fiche affichée à la fin). */
-async function load(): Promise<void> {
-  material.value = null;
-  await run(async () => {
-    const [loaded] = await Promise.all([
-      materialsServices.findById(materialId.value),
-      canAssign.value ? loadLocations() : Promise.resolve(),
-    ]);
-    material.value = loaded;
-  });
-}
-
-/** Affecte à une salle ou remet en stock (RG-07), puis affiche le matériel à jour. */
-async function assign(roomId: number | null): Promise<void> {
-  await runAssign(async () => {
-    material.value = await materialsServices.assignRoom(materialId.value, roomId);
-  });
-}
-
-/** Archive après confirmation, puis recharge la fiche (RG-10). */
-async function archive(current: Material): Promise<void> {
-  await runArchive(async () => {
-    if (await archiveMaterial(current)) {
-      material.value = await materialsServices.findById(materialId.value);
-    }
-  });
-}
+/** RG-34 : vrai si un formateur ouvre un matériel qui n'est pas dans sa salle de cours (ou en stock). */
+const isOtherRoom = computed(() => trainerRoomId.value !== null && material.value !== null
+  && material.value.room?.id !== trainerRoomId.value);
 
 //------------------ LIFECYCLE -------------------------------
 onMounted(load);
@@ -91,6 +63,14 @@ watch(() => props.id, load);
       @retry="load"
   />
 
+  <!-- RG-34 : matériel hors de la salle du formateur -->
+  <OutOfRoomCard
+      v-else-if="isOtherRoom"
+      title="Matériel non accessible"
+      label="Le matériel de ma salle"
+      :to="{ name: 'materials' }"
+  />
+
   <!-- Données -->
   <template v-else>
     <Card :title="`Matériel ${material.serialNumber}`">
@@ -98,13 +78,13 @@ watch(() => props.id, load);
         <MaterialDetails :material="material" />
         <MaterialActions
             :material="material"
-            :can-edit="canEdit"
+            :can-edit="canManage"
             :error-message="archiveError"
             @archive="archive"
         />
       </template>
     </Card>
-    <Card v-if="canAssign" title="Emplacement">
+    <Card v-if="canManage" title="Emplacement">
       <template #body>
         <MaterialAssign
             :material="material"
