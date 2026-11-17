@@ -37,11 +37,11 @@ export class ApiError extends Error {
 
     /**
      * Choisit le message à afficher.
-     * Pour 400 et 404, le message du backend est déjà en français et précis : on le garde.
+     * Pour 400, 404 et 409, le message du backend est déjà en français et précis : on le garde s'il existe.
      * Pour les autres codes, un message fixe est plus clair (le backend renvoie « Forbidden »…).
      */
     private static pickMessage(status: number, serverMessage?: string): string {
-        if ((status === 400 || status === 404) && serverMessage) {
+        if ((status === 400 || status === 404 || status === 409) && serverMessage) {
             return serverMessage;
         }
         return statusMessages[status] ?? defaultMessage;

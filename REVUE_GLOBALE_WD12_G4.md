@@ -91,7 +91,7 @@ Il n'y a ni README pour le backend, ni documentation de l'API. La note de la rel
 | Suppression physique des comptes (I7, RG-40) | ✅ **Corrigé** : `UserServiceImpl.deleteById` effectue un archivage logique (`enabled=false`), et les clés étrangères SQL empêchent les suppressions en cascade (`RESTRICT`). |
 | Agent (I3) | Accepte n'importe quel certificat et tourne en root ou SYSTEM. |
 | Liste noire (I6) | Ne s'applique que si une page de supervision est ouverte ; l'arrêt est attribué au spectateur. |
-| Erreurs de l'API (I8) | Un doublon en modification donne une erreur 500. |
+| Erreurs de l'API (I8) | ✅ **Corrigé** : gestionnaire `DataIntegrityViolationException` (409) et messages de validation propres dans `GlobalExceptionHandler` ; contrôle d'unicité en `update` dans les services. |
 | Déploiement (I9) | Base, Adminer, backend et console Keycloak (`admin / admin`) publiés sur la VM. |
 | Secret des agents | Valeur par défaut écrite dans 5 fichiers versionnés (`application.yml`, `.env.example`, `Config.cs` et `config.json` de l'agent, et son README). |
 

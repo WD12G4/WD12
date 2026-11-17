@@ -88,7 +88,6 @@ class BuildingServiceImplTest {
         @DisplayName("Doit lever ServiceException si le numéro est négatif")
         void create_ThrowsException_WhenNumberNegative() {
             sampleBuilding.setNumber(-5);
-            when(repository.findByNumber(-5)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> buildingService.create(sampleBuilding))
                     .isInstanceOf(ServiceException.class)
@@ -101,7 +100,6 @@ class BuildingServiceImplTest {
         @DisplayName("Doit lever ServiceException si le numéro dépasse 999")
         void create_ThrowsException_WhenNumberGreaterThan999() {
             sampleBuilding.setNumber(1000);
-            when(repository.findByNumber(1000)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> buildingService.create(sampleBuilding))
                     .isInstanceOf(ServiceException.class)
@@ -116,6 +114,7 @@ class BuildingServiceImplTest {
         @Test
         @DisplayName("Doit mettre à jour le bâtiment valide")
         void update_Success() {
+            when(repository.findByNumber(101)).thenReturn(Optional.of(sampleBuilding));
             when(repository.existsById(1L)).thenReturn(true);
             when(repository.saveAndFlush(any(Building.class))).thenReturn(sampleBuilding);
 
@@ -123,6 +122,22 @@ class BuildingServiceImplTest {
 
             assertThat(updated).isNotNull();
             verify(repository).saveAndFlush(sampleBuilding);
+        }
+
+        @Test
+        @DisplayName("Doit lever ServiceException si le numéro est déjà utilisé par un autre bâtiment")
+        void update_ThrowsException_WhenNumberAlreadyUsedByAnother() {
+            Building other = new Building();
+            other.setId(2L);
+            other.setNumber(101);
+
+            when(repository.findByNumber(101)).thenReturn(Optional.of(other));
+
+            assertThatThrownBy(() -> buildingService.update(sampleBuilding))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("existe déjà");
+
+            verify(repository, never()).saveAndFlush(any());
         }
 
         @Test
@@ -137,6 +152,7 @@ class BuildingServiceImplTest {
         @Test
         @DisplayName("Doit lever ResourceNotFoundException si le bâtiment à mettre à jour n'existe pas")
         void update_ThrowsNotFound_WhenNotExisting() {
+            when(repository.findByNumber(101)).thenReturn(Optional.empty());
             when(repository.existsById(1L)).thenReturn(false);
 
             assertThatThrownBy(() -> buildingService.update(sampleBuilding))

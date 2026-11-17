@@ -141,10 +141,14 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 
 #### I8 — Erreurs de l'API : 500 sur un doublon, message Java brut sur une validation
 - **Où :** `…/handlers/GlobalExceptionHandler.java:40-44` ; `…/controllers/BuildingController.java:70`, `…/controllers/RoomController.java:70` ; `materiel-frontend/src/services/api-error.ts:44`
-- **Statut :** Vérifié — **Effort :** faible — **Concerné :** back
-- **Problème :** l'unicité n'est contrôlée qu'à la création ; en modification la contrainte SQL échoue et `DataIntegrityViolationException` n'a pas de gestionnaire. Pour `MethodArgumentNotValidException`, c'est `getMessage()` qui est renvoyé, et le front affiche tel quel le message des 400.
-- **Scénario :** renommer le bâtiment 102 en 101 → « Une erreur inattendue est survenue ». Envoyer un formulaire invalide → « Validation failed for argument [0] in public … ».
-- **Correction :** un gestionnaire `DataIntegrityViolationException` → 409 avec un message clair ; un gestionnaire dédié qui assemble les messages des champs (déjà rédigés en français dans les DTO).
+- **Statut :** ✅ **Corrigé** — **Effort :** faible — **Concerné :** back, front
+- **Problème initial :** l'unicité n'était contrôlée qu'à la création ; en modification la contrainte SQL échouait et `DataIntegrityViolationException` n'avait pas de gestionnaire (renvoyant une 500 inattendue). Pour `MethodArgumentNotValidException`, c'était `getMessage()` qui était renvoyé brut avec la trace interne Spring.
+- **Scénario :** renommer le bâtiment 102 en 101 → « Une erreur inattendue est survenue » (500). Envoyer un formulaire invalide → « Validation failed for argument [0] in public … ».
+- **Correction appliquée :**
+  - Gestionnaire dédié `MethodArgumentNotValidException` dans `GlobalExceptionHandler` extrayant le premier message français de validation de champ (`getDefaultMessage()`) en HTTP 400.
+  - Gestionnaire `DataIntegrityViolationException` dans `GlobalExceptionHandler` renvoyant une 409 Conflict avec un message clair (« Une ressource avec ces caractéristiques existe déjà ou une contrainte d'intégrité a été enfreinte. »).
+  - Contrôle d'unicité ajouté dans les méthodes `update` des services (`BuildingServiceImpl`, `RoomServiceImpl`, `MaterialServiceImpl`) levant une `ServiceException` explicite.
+  - Côté front (`api-error.ts`), prise en compte du `serverMessage` renvoyé par l'API pour le statut 409.
 
 #### I9 — Le déploiement publie la base, Adminer, le backend et la console Keycloak
 - **Où :** `docker-compose.prod.yml:12`, `:27-38`, `:53`, `:87`, `:89-90`, `:102` ; `.env.example:6`, `:51-52` ; `docker/keycloak/gestion-parc-realm.json:5`, `:52`, `:61`, `:70`
@@ -267,7 +271,7 @@ Le fichier `Suivi_RG_WD12_G4.xlsx` n'était pas dans l'archive : ce tableau repo
 | 4 bis | I7 — suppression logique (archivage) et alignement schéma SQL/JPA | faible | back | ✅ **Fait** |
 | 5 | I9 — ports publiés, mots de passe de la VM | faible | déploiement | À faire |
 | 6 | I10 — figer le tag déployé sur la VM | faible | CI | À faire |
-| 7 | I8 — gestionnaires d'erreurs | faible | back | À faire |
+| 7 | I8 — gestionnaires d'erreurs et contrôle doublons en update | faible | back, front | ✅ **Fait** |
 | 8 | C2, ~~C3~~, I3, ~~I5~~, I6 — supervision et agent | moyen | back, agent | C3 ✅ **Fait (commit `a744c4b`)**, I5 ✅ **Fait** |
 
 Les points 1 à 7 tiennent en une demi-journée. Les points du groupe 8 demandent plus de temps : s'ils ne sont pas faits, les présenter à l'oral comme des limites identifiées, avec la correction prévue.

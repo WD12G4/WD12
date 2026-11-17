@@ -8,6 +8,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.MethodParameter;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,9 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.util.Collections;
 import java.util.List;
@@ -95,6 +100,23 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("handleMethodArgumentNotValid doit extraire le message du champ en 400")
+    void handleMethodArgumentNotValid_ReturnsFieldMessage() throws Exception {
+        Object target = new Object();
+        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(target, "target");
+        bindingResult.addError(new FieldError("target", "number", "Le numéro doit être positif"));
+
+        MethodParameter parameter = new MethodParameter(
+                GlobalExceptionHandlerTest.class.getDeclaredMethod("handleMethodArgumentNotValid_ReturnsFieldMessage"), -1
+        );
+        MethodArgumentNotValidException ex = new MethodArgumentNotValidException(parameter, bindingResult);
+
+        ResponseEntity<Map<String, String>> response = exceptionHandler.handleMethodArgumentNotValid(ex);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).containsEntry("error", "Le numéro doit être positif");
+    }
+
+    @Test
     @DisplayName("handleNotFound doit renvoyer 404 Not Found pour ResourceNotFoundException")
     void handleNotFound_Returns404() {
         ResponseEntity<Map<String, String>> response =
@@ -116,5 +138,15 @@ class GlobalExceptionHandlerTest {
                 exceptionHandler.handleConflict(new OptimisticLockingFailureException("Verrouillage optimiste"));
         assertThat(responseOptimistic.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(responseOptimistic.getBody()).containsEntry("error", "Verrouillage optimiste");
+    }
+
+    @Test
+    @DisplayName("handleDataIntegrityViolation doit renvoyer 409 Conflict avec un message clair")
+    void handleDataIntegrityViolation_Returns409() {
+        ResponseEntity<Map<String, String>> response =
+                exceptionHandler.handleDataIntegrityViolation(new DataIntegrityViolationException("unique constraint violated"));
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody()).containsKey("error");
+        assertThat(response.getBody().get("error")).contains("existe déjà");
     }
 }

@@ -169,6 +169,7 @@ class RoomServiceImplTest {
         @Test
         @DisplayName("Doit mettre à jour la salle valide")
         void update_Success() {
+            when(repository.findByNumberAndBuilding(12, sampleBuilding)).thenReturn(Optional.of(sampleRoom));
             when(repository.existsById(10L)).thenReturn(true);
             when(repository.saveAndFlush(any(Room.class))).thenReturn(sampleRoom);
 
@@ -177,6 +178,23 @@ class RoomServiceImplTest {
             assertThat(updated).isNotNull();
             verify(buildingService).findById(1L);
             verify(repository).saveAndFlush(sampleRoom);
+        }
+
+        @Test
+        @DisplayName("Doit lever ServiceException si le numéro de salle est déjà utilisé dans ce bâtiment")
+        void update_ThrowsException_WhenRoomNumberAlreadyUsedInBuilding() {
+            Room other = new Room();
+            other.setId(20L);
+            other.setNumber(12);
+            other.setBuilding(sampleBuilding);
+
+            when(repository.findByNumberAndBuilding(12, sampleBuilding)).thenReturn(Optional.of(other));
+
+            assertThatThrownBy(() -> roomService.update(sampleRoom))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("existe déjà dans le bâtiment");
+
+            verify(repository, never()).saveAndFlush(any());
         }
 
         @Test
@@ -191,6 +209,7 @@ class RoomServiceImplTest {
         @Test
         @DisplayName("Doit lever ResourceNotFoundException si la salle n'existe pas en BDD lors de l'update")
         void update_ThrowsNotFound_WhenNotExisting() {
+            when(repository.findByNumberAndBuilding(12, sampleBuilding)).thenReturn(Optional.empty());
             when(repository.existsById(10L)).thenReturn(false);
 
             assertThatThrownBy(() -> roomService.update(sampleRoom))

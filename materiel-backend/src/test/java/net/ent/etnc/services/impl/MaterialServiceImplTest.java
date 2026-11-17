@@ -108,7 +108,6 @@ class MaterialServiceImplTest {
         @DisplayName("Doit échouer si la date de fin de disponibilité est dans le passé pour un matériel non archivé")
         void create_ThrowsException_WhenDateInPastAndNotArchived() {
             sampleMaterial.setEndAvailabilityDate(LocalDate.now().minusDays(1));
-            when(repository.existsBySerialNumber("SN-12345")).thenReturn(false);
 
             assertThatThrownBy(() -> materialService.create(sampleMaterial))
                     .isInstanceOf(ServiceException.class)
@@ -122,7 +121,6 @@ class MaterialServiceImplTest {
         void create_ThrowsException_WhenArchivedAndAssignedToRoom() {
             sampleMaterial.setArchived(true);
             sampleMaterial.setRoom(new Room());
-            when(repository.existsBySerialNumber("SN-12345")).thenReturn(false);
 
             assertThatThrownBy(() -> materialService.create(sampleMaterial))
                     .isInstanceOf(ServiceException.class)
@@ -135,7 +133,6 @@ class MaterialServiceImplTest {
         @DisplayName("Doit échouer si le numéro de série dépasse 100 caractères")
         void create_ThrowsException_WhenSerialNumberTooLong() {
             sampleMaterial.setSerialNumber("A".repeat(101));
-            when(repository.existsBySerialNumber(any())).thenReturn(false);
 
             assertThatThrownBy(() -> materialService.create(sampleMaterial))
                     .isInstanceOf(ServiceException.class)
@@ -146,7 +143,6 @@ class MaterialServiceImplTest {
         @DisplayName("Doit échouer si le type de matériel est nul")
         void create_ThrowsException_WhenMaterialTypeNull() {
             sampleMaterial.setMaterialType(null);
-            when(repository.existsBySerialNumber("SN-12345")).thenReturn(false);
 
             assertThatThrownBy(() -> materialService.create(sampleMaterial))
                     .isInstanceOf(ServiceException.class)
@@ -314,6 +310,22 @@ class MaterialServiceImplTest {
             assertThatThrownBy(() -> materialService.update(sampleMaterial))
                     .isInstanceOf(ServiceException.class)
                     .hasMessageContaining("numéro de série doit être renseigné");
+        }
+
+        @Test
+        @DisplayName("Doit échouer si le numéro de série existe déjà pour un autre matériel lors de la mise à jour")
+        void update_ThrowsException_WhenSerialNumberAlreadyExists() {
+            Material other = new Material();
+            other.setId(2L);
+            other.setSerialNumber("SN-12345");
+
+            when(repository.findBySerialNumber("SN-12345")).thenReturn(Optional.of(other));
+
+            assertThatThrownBy(() -> materialService.update(sampleMaterial))
+                    .isInstanceOf(ServiceException.class)
+                    .hasMessageContaining("existe déjà");
+
+            verify(repository, never()).saveAndFlush(any());
         }
     }
 }

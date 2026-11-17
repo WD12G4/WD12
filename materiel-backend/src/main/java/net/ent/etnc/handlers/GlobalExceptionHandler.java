@@ -4,6 +4,8 @@ import jakarta.validation.ConstraintViolationException;
 import net.ent.etnc.services.commons.ResourceNotFoundException;
 import net.ent.etnc.services.commons.ServiceException;
 import net.ent.etnc.services.commons.VersionConflictException;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Maps application failures to stable HTTP error responses.
@@ -35,10 +38,22 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maps bean validation failures on DTOs to HTTP 400 with the localized field message.
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, String>> handleMethodArgumentNotValid(MethodArgumentNotValidException exception) {
+        String message = exception.getBindingResult().getFieldErrors().stream()
+                .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse("Données de formulaire invalides");
+        return ResponseEntity.badRequest().body(Map.of("error", message));
+    }
+
+    /**
      * Maps business-rule failures to HTTP 400.
      */
-    @ExceptionHandler({ServiceException.class, ConstraintViolationException.class,
-            MethodArgumentNotValidException.class, IllegalArgumentException.class})
+    @ExceptionHandler({ServiceException.class, ConstraintViolationException.class, IllegalArgumentException.class})
     public ResponseEntity<Map<String, String>> handleBadRequest(Exception exception) {
         return ResponseEntity.badRequest().body(Map.of("error", exception.getMessage()));
     }
@@ -58,6 +73,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleConflict(Exception exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", exception.getMessage()));
     }
+
+    /**
+     * Maps database uniqueness and integrity violations to HTTP 409 Conflict.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> handleDataIntegrityViolation(DataIntegrityViolationException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("error", "Une ressource avec ces caractéristiques existe déjà ou une contrainte d'intégrité a été enfreinte."));
+    }
 }
-
-

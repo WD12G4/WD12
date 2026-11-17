@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -51,13 +52,7 @@ public class RoomServiceImpl extends AbstractService<Room, RoomRepository> imple
         log.debug("Demande de création d'une salle : numéro={}, bâtiment_id={}",
                 room.getNumber(), room.getBuilding() != null ? room.getBuilding().getId() : null);
 
-        validateRoom(room);
-        if (findByNumberAndBuilding(room.getNumber(), room.getBuilding()).isPresent()) {
-            log.warn("Échec création salle : la salle numéro {} existe déjà dans le bâtiment {}",
-                    room.getNumber(), room.getBuilding().getNumber());
-            throw new ServiceException(String.format("La salle numéro %s existe déjà dans le bâtiment %s.",
-                    room.getNumber(), room.getBuilding().getNumber()));
-        }
+        validateRoom(room, null);
 
         Room created = super.create(room);
         log.info("Salle créée avec succès [id={}, number={}, buildingNumber={}]",
@@ -65,7 +60,18 @@ public class RoomServiceImpl extends AbstractService<Room, RoomRepository> imple
         return created;
     }
 
-    private void validateRoom(final Room room) {
+    @Override
+    @Transactional
+    public Room update(final Room room) {
+        log.debug("Demande de mise à jour de la salle [id={}, number={}]", room.getId(), room.getNumber());
+        validateRoom(room, room.getId());
+
+        Room updated = super.update(room);
+        log.info("Salle mise à jour avec succès [id={}, number={}]", updated.getId(), updated.getNumber());
+        return updated;
+    }
+
+    private void validateRoom(final Room room, final Long currentId) {
         if (room.getBuilding() == null || room.getBuilding().getId() == null) {
             log.warn("Validation rejetée : bâtiment non renseigné pour la salle.");
             throw new ServiceException("Le bâtiment doit être renseigné.");
@@ -83,17 +89,15 @@ public class RoomServiceImpl extends AbstractService<Room, RoomRepository> imple
             log.warn("Validation rejetée : numéro de salle supérieur à 999 ({})", room.getNumber());
             throw new ServiceException("Le numéro de la salle doit être inférieur à 999.");
         }
-    }
 
-    @Override
-    @Transactional
-    public Room update(final Room room) {
-        log.debug("Demande de mise à jour de la salle [id={}, number={}]", room.getId(), room.getNumber());
-        validateRoom(room);
-
-        Room updated = super.update(room);
-        log.info("Salle mise à jour avec succès [id={}, number={}]", updated.getId(), updated.getNumber());
-        return updated;
+        findByNumberAndBuilding(room.getNumber(), room.getBuilding()).ifPresent(other -> {
+            if (!Objects.equals(currentId, other.getId())) {
+                log.warn("Validation rejetée : la salle numéro {} existe déjà dans le bâtiment {}",
+                        room.getNumber(), room.getBuilding().getNumber());
+                throw new ServiceException(String.format("La salle numéro %s existe déjà dans le bâtiment %s.",
+                        room.getNumber(), room.getBuilding().getNumber()));
+            }
+        });
     }
 
     @Override
