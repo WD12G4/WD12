@@ -105,10 +105,12 @@ jobs:
   # 1 bis. Tests navigateur (Playwright) : le front avec une fausse API qui remplace
   # Keycloak et le backend (materiel-frontend/e2e). Chaque test cite les RG vérifiées.
   # Ne bloque pas la publication de l'image : le job 2 ne dépend que du job 1.
+  # Exécuteur hébergé par GitHub : les tests n'ont pas besoin du réseau de l'école (fausse API), et
+  # Chromium y trouve ses bibliothèques système (absentes des exécuteurs de l'école, sans sudo).
   # --------------------------------------------------------------------------
   frontend-e2e:
     name: Frontend E2E Tests (Playwright)
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: [frontend-build-test]
     if: ${{ !inputs.skip_tests }}
 
