@@ -3,37 +3,16 @@
  * Toujours naviguer vers une route nommée ({ name, params }) : jamais router.push('/chemin').
  * Fonctions pour une navigation cohérente :
  * - replaceWith / returnTo : après un formulaire, il ne reste pas dans l'historique ;
- * - backLinkTarget / followBackLink : le lien « ← Retour » ramène à la page d'où l'on vient
- *   (Vue Router range le chemin de la page précédente dans history.state.back) ;
+ * - previousRoute : page précédente (Vue Router range son chemin dans history.state.back), utilisée
+ *   aussi par le lien « ← Retour » (back-link.ts) ;
  * - afterLoginHref / navigateAfterLogin : après la connexion (Keycloak, qui joue MinDef Connect) et le
  *   choix de la salle, retour à la page demandée ;
  * - hrefOf : adresse d'une route, pour les redirections de Keycloak.
- * Utilisé par : les vues, shared/components/back-link.vue
+ * Utilisé par : les vues, router/back-link.ts
  */
 import type {RouteLocationResolved} from 'vue-router';
 import { router } from './index.ts';
 import type { RouteNames, RouteTarget } from './route-types.ts';
-
-/** Libellé du lien « Retour » selon la page vers laquelle il ramène. */
-const backLabels: Partial<Record<RouteNames, string>> = {
-    'home': 'Retour au tableau de bord',
-    'materials': 'Retour au matériel',
-    'material-detail': 'Retour à la fiche du matériel',
-    'rooms': 'Retour aux salles',
-    'room-detail': 'Retour à la salle',
-    'buildings': 'Retour aux bâtiments',
-    'users': 'Retour aux comptes',
-    'reports': 'Retour aux remontées',
-    'supervision': 'Retour à la supervision',
-};
-
-/** Lien « Retour » calculé : son libellé, son adresse, et s'il recule dans l'historique. */
-export interface BackLinkTarget {
-    label: string;
-    href: string;
-    usesHistory: boolean;
-    to: RouteTarget;
-}
 
 /**
  * Remplace la page courante, qui ne reste pas dans l'historique (ex. formulaire envoyé).
@@ -44,7 +23,7 @@ export function replaceWith(to: RouteTarget) {
 }
 
 /** Page précédente dans l'historique du navigateur, si c'est une page de l'application. */
-function previousRoute(): RouteLocationResolved | null {
+export function previousRoute(): RouteLocationResolved | null {
     const back = (window.history.state as {back?: string | null} | null)?.back;
     if (!back) return null;
     const resolved = router.resolve(back);
@@ -61,29 +40,6 @@ export function returnTo(to: RouteTarget) {
     const target = router.resolve(to);
     if (previous && previous.name === target.name && previous.path === target.path) return router.back();
     return router.replace(to);
-}
-
-/**
- * Lien « Retour » de la page courante : vers la page d'où l'on vient si elle a un libellé
- * (les formulaires n'en ont pas), sinon vers la page parente « fallback » (adresse tapée, page rechargée).
- * @param fallback page parente
- */
-export function backLinkTarget(fallback: RouteTarget): BackLinkTarget {
-    const previous = previousRoute();
-    const label = previous ? backLabels[previous.name as RouteNames] : undefined;
-    if (previous && label && previous.fullPath !== router.currentRoute.value.fullPath) {
-        return {label, href: previous.href, usesHistory: true, to: fallback};
-    }
-    return {label: backLabels[fallback.name] ?? 'Retour', href: router.resolve(fallback).href, usesHistory: false, to: fallback};
-}
-
-/**
- * Suit un lien « Retour » : recule dans l'historique (filtres et transitions gardés) ou va à la page parente.
- * @param back lien calculé par backLinkTarget
- */
-export function followBackLink(back: BackLinkTarget) {
-    if (back.usesHistory) return router.back();
-    return router.push(back.to);
 }
 
 /** Remplace des paramètres d'adresse de la page courante (ex. { salle: '12' }), sans ajout à l'historique. */

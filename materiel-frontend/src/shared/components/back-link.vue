@@ -9,7 +9,7 @@
 import {computed} from 'vue';
 import {useRoute} from 'vue-router';
 import type {RouteTarget} from '../../router/route-types.ts';
-import {backLinkTarget, followBackLink} from '../../router/navigation.ts';
+import {backLinkTarget, followBackLink} from '../../router/back-link.ts';
 
 //------------------ PROPS / EMITS ---------------------------
 const props = defineProps<{
