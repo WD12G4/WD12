@@ -5,8 +5,9 @@
  * RG : RG-21
  */
 import {computed} from 'vue';
-import {type Material, materialTypeLabels} from '../../../models/material.model.ts';
+import type {Material} from '../../../models/material.model.ts';
 import type {SelectOption} from '../../../shared/composables/use-listbox.ts';
+import {useMaterialTypes} from '../../../shared/composables/use-material-types.ts';
 import AppSelect from '../../../shared/components/app-select.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -21,6 +22,9 @@ const props = defineProps<{
 
 /** Identifiant du matériel choisi, ou null tant qu'aucun n'est choisi. */
 const materialId = defineModel<number | null>({required: true});
+
+//------------------ DATAS -----------------------------------
+const {typeLabel} = useMaterialTypes();
 
 //------------------ COMPUTED --------------------------------
 /** Sans salle choisie, il n'y a pas de matériel à proposer. */
@@ -37,7 +41,7 @@ const placeholder = computed(() => (noRoom.value ? 'Choisissez d\'abord une sall
 //------------------ FUNCTIONS -------------------------------
 /** Libellé d'une option : « Écran – SN-0042 ». */
 function optionLabel(material: Material): string {
-  return `${materialTypeLabels[material.materialType]} – ${material.serialNumber}`;
+  return `${typeLabel(material.materialType)} – ${material.serialNumber}`;
 }
 </script>
 

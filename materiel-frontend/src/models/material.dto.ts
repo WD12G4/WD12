@@ -1,8 +1,9 @@
 /**
  * Forme JSON échangée avec /api/v1/materials et conversions vers le modèle.
- * Source : MaterialResponse, MaterialRequest et MaterialAssignRequest (backend, package dtos.material).
+ * Source : MaterialResponse, MaterialRequest, MaterialAssignRequest et MaterialTypeResponse
+ * (backend, package dtos.material).
  */
-import type {Material, MaterialInput, MaterialType} from './material.model.ts';
+import type {Material, MaterialInput, MaterialType, MaterialTypeOption} from './material.model.ts';
 import {type RoomDto, roomFromDto} from './room.dto.ts';
 
 /** Réponse de l'API pour un matériel. Les dates sont des chaînes 'AAAA-MM-JJ'. */
@@ -23,6 +24,17 @@ export interface MaterialRequestDto {
     endAvailabilityDate: string | null;
     roomId: number | null;
     archived: boolean;
+}
+
+/** Réponse de GET /api/v1/material-types/ : un type de matériel (enum EMaterialType). */
+export interface MaterialTypeDto {
+    code: MaterialType;
+    libelle: string;
+}
+
+/** Convertit un type de matériel reçu de l'API en option du front. */
+export function materialTypeFromDto(dto: MaterialTypeDto): MaterialTypeOption {
+    return {code: dto.code, label: dto.libelle};
 }
 
 /** Corps attendu par PATCH /api/v1/materials/{id}/room. */

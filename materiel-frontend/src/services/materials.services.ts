@@ -1,11 +1,12 @@
 /**
- * Accès à la ressource /api/v1/materials.
+ * Accès aux ressources /api/v1/materials et /api/v1/material-types.
  * Toutes les méthodes lèvent ApiError si l'API répond en erreur.
  * RG : RG-07 (affectation / remise en stock), RG-10 (archivage), RG-16 (droits)
  */
-import type {Material, MaterialInput} from '../models/material.model.ts';
+import type {Material, MaterialInput, MaterialTypeOption} from '../models/material.model.ts';
 import {
     type MaterialAssignRequestDto, type MaterialDto, materialFromDto, materialToRequest,
+    type MaterialTypeDto, materialTypeFromDto,
 } from '../models/material.dto.ts';
 import {type PageDto, pageContent} from '../models/page.dto.ts';
 import {apiRequest} from './http-client.ts';
@@ -62,5 +63,11 @@ export const materialsServices = {
     /** Archive le matériel : suppression logique, la salle est libérée (RG-10). Réservé à ADMIN. */
     delete: async (id: number): Promise<void> => {
         await apiRequest<void>(`/materials/${id}`, {method: 'DELETE'});
+    },
+
+    /** Types de matériel avec leur libellé, dans l'ordre de l'enum EMaterialType du backend (RG-03). */
+    findTypes: async (): Promise<MaterialTypeOption[]> => {
+        const dtos = await apiRequest<MaterialTypeDto[]>('/material-types/');
+        return dtos.map(materialTypeFromDto);
     },
 };

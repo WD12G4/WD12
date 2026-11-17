@@ -10,6 +10,7 @@ import {replaceWith, returnTo} from '../../../router/navigation.ts';
 import {useAsyncState} from '../../../shared/composables/use-async-state.ts';
 import {useFlashMessage} from '../../../shared/composables/use-flash-message.ts';
 import {useLocations} from '../../../shared/composables/use-locations.ts';
+import {useMaterialTypes} from '../../../shared/composables/use-material-types.ts';
 import Card from '../../../shared/components/card.vue';
 import LoadState from '../../../shared/components/load-state.vue';
 import MaterialForm from '../components/material-form.vue';
@@ -18,12 +19,15 @@ import MaterialForm from '../components/material-form.vue';
 const {loading, errorMessage, run} = useAsyncState();
 const {loading: saving, errorMessage: saveError, run: runSave} = useAsyncState();
 const {rooms, loadLocations} = useLocations();
+const {loadMaterialTypes} = useMaterialTypes();
 const {show} = useFlashMessage();
 
 //------------------ FUNCTIONS -------------------------------
-/** Charge les salles proposées dans le formulaire. */
+/** Charge les salles et les types proposés dans le formulaire. */
 async function load(): Promise<void> {
-  await run(loadLocations);
+  await run(async () => {
+    await Promise.all([loadLocations(), loadMaterialTypes()]);
+  });
 }
 
 /** Crée le matériel puis ouvre sa fiche. */

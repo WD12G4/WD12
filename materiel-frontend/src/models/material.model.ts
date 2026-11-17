@@ -6,35 +6,22 @@
 import type {Room} from './room.model.ts';
 
 //----------------- VALEURS ------------------------------
-/**
- * Types de matériel acceptés par l'API (EMaterialType côté backend).
- * Un switch (matériel réseau cité par le client, RG-03) est un « Périphérique » : décision d'équipe du 17/11.
- * Ne pas ajouter de valeur ici tant que le backend ne l'accepte pas.
- */
-const materialTypes = ['UC', 'SCREEN', 'PROJECTOR', 'PERIPHERAL'] as const;
-
-/** Libellés affichés. L'API ne les fournit plus : ils sont définis ici. */
-const materialTypeLabels = {
-    UC: 'Unité centrale',
-    SCREEN: 'Écran',
-    PROJECTOR: 'Projecteur',
-    PERIPHERAL: 'Périphérique',
-} as const;
-
-/** Libellés courts, pour les boutons segmentés et les pastilles où la place manque. */
-const materialTypeShortLabels = {
-    UC: 'UC',
-    SCREEN: 'Écran',
-    PROJECTOR: 'Projecteur',
-    PERIPHERAL: 'Périph.',
-} as const;
-
 /** Longueur maximale du numéro de série, identique au backend (RG-01). */
 const serialNumberMaxLength = 100;
 
 //----------------- TYPES --------------------------------
-/** Code d'un type de matériel. */
-type MaterialType = (typeof materialTypes)[number];
+/**
+ * Code d'un type de matériel (ex. 'UC'). La liste et les libellés viennent de l'API
+ * (enum EMaterialType du backend, GET /material-types/) : voir use-material-types.ts.
+ * Un switch (matériel réseau cité par le client, RG-03) est un « Périphérique » : décision d'équipe du 17/11.
+ */
+type MaterialType = string;
+
+/** Type de matériel proposé par l'API : code et libellé affiché. */
+interface MaterialTypeOption {
+    code: MaterialType;
+    label: string;
+}
 
 /** Matériel suivi à l'unité. */
 interface Material {
@@ -82,7 +69,7 @@ interface MaterialFilters {
     showArchived: boolean;
 }
 
-export {materialTypes, materialTypeLabels, materialTypeShortLabels, serialNumberMaxLength};
+export {serialNumberMaxLength};
 export type {
-    MaterialType, Material, MaterialInput, MaterialTypeFilter, MaterialLocationFilter, MaterialFilters,
+    MaterialType, MaterialTypeOption, Material, MaterialInput, MaterialTypeFilter, MaterialLocationFilter, MaterialFilters,
 };

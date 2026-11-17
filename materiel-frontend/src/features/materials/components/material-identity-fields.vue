@@ -5,10 +5,10 @@
  * Utilisé par : material-form.vue
  * RG : RG-01 (numéro de série obligatoire, 100 caractères maximum), RG-03 (type obligatoire)
  */
-import {
-  type MaterialInput, type MaterialType, materialTypeLabels, materialTypes, serialNumberMaxLength,
-} from '../../../models/material.model.ts';
+import {computed, watch} from 'vue';
+import {type MaterialInput, type MaterialType, serialNumberMaxLength} from '../../../models/material.model.ts';
 import type {SelectOption} from '../../../shared/composables/use-listbox.ts';
+import {useMaterialTypes} from '../../../shared/composables/use-material-types.ts';
 import AppSelect from '../../../shared/components/app-select.vue';
 
 //------------------ PROPS / EMITS ---------------------------
@@ -16,8 +16,17 @@ import AppSelect from '../../../shared/components/app-select.vue';
 const draft = defineModel<MaterialInput>({required: true});
 
 //------------------ DATAS -----------------------------------
-/** RG-03 : le type est choisi parmi ceux de l'API. */
-const typeOptions: SelectOption<MaterialType>[] = materialTypes.map(type => ({value: type, label: materialTypeLabels[type]}));
+const {materialTypes} = useMaterialTypes();
+
+//------------------ COMPUTED --------------------------------
+/** RG-03 : le type est choisi parmi ceux de l'API (enum EMaterialType du backend), avec leur libellé. */
+const typeOptions = computed<SelectOption<MaterialType>[]>(() => materialTypes.value.map(type => ({value: type.code, label: type.label})));
+
+//------------------ LIFECYCLE -------------------------------
+// Création : sans type choisi, le premier type de l'API est proposé par défaut.
+watch([materialTypes, () => draft.value.materialType], ([types, current]) => {
+  if (current === '' && types.length > 0) draft.value.materialType = types[0].code;
+}, {immediate: true});
 </script>
 
 <template>

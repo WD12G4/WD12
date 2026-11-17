@@ -9,8 +9,9 @@
  */
 import {computed} from 'vue';
 import {useRouter} from 'vue-router';
-import {type Material, materialTypeLabels} from '../../../models/material.model.ts';
+import type {Material} from '../../../models/material.model.ts';
 import {formatDate} from '../../../shared/composables/use-dates.ts';
+import {useMaterialTypes} from '../../../shared/composables/use-material-types.ts';
 import {locationLabel} from '../../../shared/composables/use-room-label.ts';
 import MaterialStatusBadge from '../../../shared/components/material-status-badge.vue';
 
@@ -33,6 +34,7 @@ const emit = defineEmits<{
 
 //------------------ DATAS -----------------------------------
 const router = useRouter();
+const {typeLabel} = useMaterialTypes();
 
 //------------------ COMPUTED --------------------------------
 /** Emplacement lisible : « Bât. 12 – Salle 104 » ou « En stock » (RG-07). */
@@ -65,7 +67,7 @@ function onSerialClick(event: MouseEvent): void {
       {{ material.serialNumber }}
     </a>
   </td>
-  <td>{{ materialTypeLabels[material.materialType] }}</td>
+  <td>{{ typeLabel(material.materialType) }}</td>
   <td>{{ location }}</td>
   <td>{{ endDate }}</td>
   <td>

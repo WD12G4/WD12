@@ -5,8 +5,9 @@
  * Utilisé par : material-detail-view.vue
  */
 import {computed} from 'vue';
-import {type Material, materialTypeLabels} from '../../../models/material.model.ts';
+import type {Material} from '../../../models/material.model.ts';
 import {formatDate} from '../../../shared/composables/use-dates.ts';
+import {useMaterialTypes} from '../../../shared/composables/use-material-types.ts';
 import {locationLabel} from '../../../shared/composables/use-room-label.ts';
 import MaterialStatusBadge from '../../../shared/components/material-status-badge.vue';
 
@@ -15,6 +16,9 @@ const props = defineProps<{
   /** Matériel à décrire. */
   material: Material;
 }>();
+
+//------------------ DATAS -----------------------------------
+const {typeLabel} = useMaterialTypes();
 
 //------------------ COMPUTED --------------------------------
 const location = computed(() => locationLabel(props.material.room));
@@ -25,7 +29,7 @@ const endDate = computed(() => formatDate(props.material.endAvailabilityDate));
   <dl class="detail-grid">
     <div>
       <dt>Type</dt>
-      <dd>{{ materialTypeLabels[material.materialType] }}</dd>
+      <dd>{{ typeLabel(material.materialType) }}</dd>
     </div>
     <div>
       <dt>Emplacement</dt>

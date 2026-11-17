@@ -9,8 +9,8 @@
  */
 import {computed} from 'vue';
 import {problemTypeLabels, type Report} from '../../../models/report.model.ts';
-import {materialTypeLabels} from '../../../models/material.model.ts';
 import {formatDateTime} from '../../../shared/composables/use-dates.ts';
+import {useMaterialTypes} from '../../../shared/composables/use-material-types.ts';
 import {locationLabel} from '../../../shared/composables/use-room-label.ts';
 import Link from '../../../shared/components/Link.vue';
 import SidePanel from '../../../shared/components/side-panel.vue';
@@ -33,11 +33,14 @@ const emit = defineEmits<{
   toggleHandled: [report: Report];
 }>();
 
+//------------------ DATAS -----------------------------------
+const {typeLabel} = useMaterialTypes();
+
 //------------------ COMPUTED --------------------------------
 const title = computed(() => (props.report?.problemType ? problemTypeLabels[props.report.problemType] : 'Remontée'));
 const createdAt = computed(() => (props.report ? formatDateTime(props.report.createdAt) : ''));
 const location = computed(() => (props.report ? locationLabel(props.report.material.room) : ''));
-const materialType = computed(() => (props.report ? materialTypeLabels[props.report.material.materialType] : ''));
+const materialType = computed(() => (props.report ? typeLabel(props.report.material.materialType) : ''));
 const handledAt = computed(() => (props.report?.handledAt ? `le ${formatDateTime(props.report.handledAt)}` : ''));
 const description = computed(() => props.report?.description || 'Aucune description.');
 const toggleLabel = computed(() => (props.report?.handled ? 'Rouvrir' : 'Marquer comme traitée'));

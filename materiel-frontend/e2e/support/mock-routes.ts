@@ -39,6 +39,11 @@ function killEvent(state: MockState, processName: string, workstationId: number)
 
 //------------------ ROUTES ----------------------------------
 export const materialRoutes: ApiRoute[] = [
+    // Comme MaterialTypesController : l'enum EMaterialType, dans son ordre, avec les libellés.
+    ['GET', /^\/material-types\/$/, () => ({body: [
+        {code: 'UC', libelle: 'Unité centrale'}, {code: 'SCREEN', libelle: 'Écran'},
+        {code: 'PROJECTOR', libelle: 'Projecteur'}, {code: 'PERIPHERAL', libelle: 'Périphérique'},
+    ]})],
     ['GET', /^\/materials$/, ({state}) => ({body: asPage(state.materials)})],
     ['GET', /^\/materials\/(\d+)$/, ({state, params}) => {
         const material = byId(state.materials, params[0]);

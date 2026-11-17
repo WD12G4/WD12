@@ -6,9 +6,10 @@
  * Besoin : vue des salles simple et lisible (entretien 4, 19:36). RG : RG-07, RG-24
  */
 import {computed, type Ref} from 'vue';
-import {type Material, type MaterialType, materialTypes, materialTypeShortLabels} from '../../../models/material.model.ts';
+import type {Material, MaterialType, MaterialTypeOption} from '../../../models/material.model.ts';
 import type {Room} from '../../../models/room.model.ts';
 import {isMaterialExpiring} from '../../../shared/composables/use-material-status.ts';
+import {useMaterialTypes} from '../../../shared/composables/use-material-types.ts';
 
 /** Nombre de matériels d'un type, pour les pastilles d'une tuile. */
 interface TypeCount {
@@ -20,7 +21,7 @@ interface TypeCount {
 /** Résumé d'un lot de matériels (une salle ou le stock). Les booléens évitent la logique dans les templates. */
 interface MaterialSummary {
     total: number;
-    /** Types présents seulement, dans l'ordre de materialTypes. */
+    /** Types présents seulement, dans l'ordre de l'enum du backend. */
     byType: TypeCount[];
     /** Matériels dont la fin de disponibilité approche ou est passée (RG-24). */
     expiring: number;
@@ -39,13 +40,13 @@ interface RoomSummary extends MaterialSummary {
 
 /**
  * Résume un lot de matériels : total, répartition par type, alertes de fin de disponibilité.
- * Libellés courts (materialTypeShortLabels) : les pastilles tiennent à plusieurs sur une ligne de tuile.
  * @param materials matériels non archivés
  * @param horizon nombre de jours pour « bientôt en fin de disponibilité »
+ * @param types types de matériel fournis par l'API, dans l'ordre d'affichage
  */
-function summarize(materials: Material[], horizon: number): MaterialSummary {
-    const byType = materialTypes
-        .map(type => ({type, label: materialTypeShortLabels[type], count: materials.filter(m => m.materialType === type).length}))
+function summarize(materials: Material[], horizon: number, types: MaterialTypeOption[]): MaterialSummary {
+    const byType = types
+        .map(({code, label}) => ({type: code, label, count: materials.filter(m => m.materialType === code).length}))
         .filter(typeCount => typeCount.count > 0);
     const expiring = materials.filter(material => isMaterialExpiring(material, horizon)).length;
     return {total: materials.length, byType, expiring, hasMaterials: materials.length > 0, hasExpiring: expiring > 0};
@@ -74,6 +75,7 @@ function compareRooms(a: Room, b: Room): number {
  * @returns roomSummaries (une tuile par salle, triées) et stockSummary (matériel sans salle, RG-07)
  */
 export function useRoomOverview(rooms: Ref<Room[]>, materials: Ref<Material[]>, horizon: Readonly<Ref<number>>) {
+    const {materialTypes} = useMaterialTypes();
     const activeMaterials = computed(() => materials.value.filter(material => !material.archived));
 
     const roomSummaries = computed<RoomSummary[]>(() => {
@@ -82,11 +84,11 @@ export function useRoomOverview(rooms: Ref<Room[]>, materials: Ref<Material[]>, 
             room,
             title: `Salle ${room.number}`,
             subtitle: `Bâtiment ${room.building.number}`,
-            ...summarize(byRoom.get(room.id) ?? [], horizon.value),
+            ...summarize(byRoom.get(room.id) ?? [], horizon.value, materialTypes.value),
         }));
     });
 
-    const stockSummary = computed(() => summarize(activeMaterials.value.filter(material => material.room === null), horizon.value));
+    const stockSummary = computed(() => summarize(activeMaterials.value.filter(material => material.room === null), horizon.value, materialTypes.value));
 
     return {roomSummaries, stockSummary};
 }

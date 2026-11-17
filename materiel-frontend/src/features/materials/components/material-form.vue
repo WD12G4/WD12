@@ -35,7 +35,8 @@ const emit = defineEmits<{
 //------------------ DATAS -----------------------------------
 const defaultMaterial: Readonly<MaterialInput> = {
   serialNumber: '',
-  materialType: 'UC',
+  /** Rempli avec le premier type de l'API dès son chargement (material-identity-fields.vue). */
+  materialType: '',
   endAvailabilityDate: null,
   roomId: null,
   archived: false,
@@ -45,7 +46,7 @@ const draft = ref<MaterialInput>({...defaultMaterial});
 
 //------------------ COMPUTED --------------------------------
 /** Champs obligatoires remplis (RG-01, RG-03) ; la date de fin est facultative (RG-04). */
-const isValid = computed(() => draft.value.serialNumber.trim().length > 0);
+const isValid = computed(() => draft.value.serialNumber.trim().length > 0 && draft.value.materialType !== '');
 /** Le bouton d'envoi est actif si la saisie est valide et qu'aucun envoi n'est en cours. */
 const canSubmit = computed(() => isValid.value && !props.submitting);
 const submitLabel = computed(() => (props.initial ? 'Enregistrer' : 'Créer le matériel'));
