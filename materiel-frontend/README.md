@@ -21,9 +21,9 @@ npm run dev
 L'application est servie sur http://localhost:5173. Le proxy Vite relaie `/api` vers `http://localhost:8080`
 **sans réécrire le chemin** : le front et l'API restent sur la même origine.
 
-### Connexion : Keycloak (joue MinDef Connect)
+### Connexion : Keycloak (Fournisseur d'identité OpenID Connect / SSO)
 
-Le front ne demande jamais le mot de passe : « S'identifier avec MinDefConnect » ouvre la page de Keycloak
+Le front ne demande jamais le mot de passe : « S'identifier avec le SSO » ouvre la page de Keycloak
 (realm `gestion-parc`, client public `materiel-frontend`, code d'autorisation + PKCE), qui ramène ensuite sur
 la page demandée. Le jeton reste en mémoire (`keycloak-js`) et part dans l'en-tête `Authorization`.
 Le backend vérifie sa signature, retrouve le compte par son identifiant et lui applique son rôle :
@@ -31,7 +31,7 @@ Keycloak prouve l'identité, les rôles restent dans la base (page « Comptes »
 
 - Adresse de Keycloak : celle de l'application suivie de `/auth`. Le Nginx du front (ou le proxy de Vite)
   relaie `/auth/` vers Keycloak : même origine et même port 80 que l'application, donc rien à ouvrir de
-  plus et le proxy de l'école laisse passer.
+  plus et le proxy du réseau laisse passer.
 - HTTPS obligatoire hors `localhost` : keycloak-js utilise l'API Web Crypto, que les navigateurs ne fournissent
   qu'en HTTPS. Nginx sert l'application en HTTPS (port 443, le port 80 redirige) avec un certificat auto-signé
   créé au premier démarrage pour l'adresse de `APP_URL` (volume `certs_data`). Le navigateur demande une
@@ -83,7 +83,7 @@ Tous les écrans appellent l'API du backend.
 
 | Écran | Contenu | Rôle |
 |---|---|---|
-| Connexion | Keycloak (joue MinDef Connect), session restaurée au rechargement, menu selon le rôle | tous |
+| Connexion | Keycloak (SSO OpenID Connect), session restaurée au rechargement, menu selon le rôle | tous |
 | Choix de la salle | Le formateur choisit sa salle de cours avant toute page ; il en change par le bouton de la barre du haut | formateur |
 | Tableau de bord | Compteurs (liens vers la liste déjà filtrée), fins de disponibilité à 30, 60 ou 90 jours, salles en tuiles par bâtiment, tuile « En stock ». Formateur : sa salle seulement, avec un aperçu de ses postes et de la supervision | tous |
 | Matériel | Recherche et filtres, fiche, création, modification, affectation, archivage | tous / gestionnaire et administrateur pour modifier |
