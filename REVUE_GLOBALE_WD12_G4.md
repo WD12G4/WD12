@@ -100,8 +100,8 @@ Il n'y a ni README pour le backend, ni documentation de l'API. La note de la rel
 - `main` contient un seul commit, du 20 octobre. Tout le projet est sur `proto-backend-frontend`
   (143 commits d'avance), plus 6 autres branches.
 - Aucun test automatisé du front dans le dépôt.
-- Restes : dépendance `rsql-jpa` inutilisée côté backend, `.gitignore` qui parle de binaires Go,
-  `config.json` de l'agent versionné avec une adresse et un numéro de série réels.
+- ~~Restes : dépendance `rsql-jpa` inutilisée côté backend, `.gitignore` qui parle de binaires Go,
+  `config.json` de l'agent versionné avec une adresse et un numéro de série réels.~~ ✅ **Corrigé** : dépendance `rsql-jpa` retirée de `build.gradle`, références Go supprimées du `.gitignore`, et `config.json` de l'agent remplacé par des valeurs modèles d'exemple (`UC-DELL-001`, `127.0.0.1`).
 - Historique : 3 commits du 12/11 sont signés « Claude », dont 2 avec `Co-Authored-By`. Ils sont déjà
   poussés ; les retirer demanderait de réécrire l'historique partagé.
 

@@ -38,8 +38,8 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 
 | Étiquette | Personne |
 |---|---|
-| back, agent, déploiement, CI | `wolkern721` |
-| Keycloak, HTTPS Nginx | `r.adamczak` |
+| back, agent, déploiement, CI | `wolkern721` |\
+| Keycloak, HTTPS Nginx | `r.adamczak` |\
 | front | Paul |
 
 ---
@@ -211,7 +211,7 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 - **État des agents en mémoire** (`AgentWebSocketHandler.java:26`) : incompatible avec deux instances du backend et perdu au redémarrage. À présenter comme limite connue, avec la piste (table d'état ou diffusion entre instances).
 - **Validation écrite trois fois** (DTO, entité, service) : garder Bean Validation pour le format, les services pour les règles métier.
 - **Images non figées :** `nginx:alpine`, `adminer:latest` (`materiel-frontend.dockerfile:33`, `docker-compose.prod.yml:28`).
-- **`materiel-agent/config.json`** versionné avec une adresse et un numéro de série réels : le remplacer par un modèle.
+- ~~**`materiel-agent/config.json`** versionné avec une adresse et un numéro de série réels~~ : ✅ **Corrigé** (remplacé par des valeurs modèles d'exemple `UC-DELL-001`, `127.0.0.1`).
 - **Confirmations en `window.confirm`** (6 endroits) : fonctionnel, mais non stylable ni cohérent avec les thèmes.
 
 ---
