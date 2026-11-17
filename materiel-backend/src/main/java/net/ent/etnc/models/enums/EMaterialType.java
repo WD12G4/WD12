@@ -5,7 +5,7 @@ import lombok.Getter;
 public enum EMaterialType {
     UC("Unité centrale"),
     SCREEN("Écran"),
-    PROJECTOR("Projecteur'"),
+    PROJECTOR("Projecteur"),
     PERIPHERAL("Périphérique");
 
     @Getter

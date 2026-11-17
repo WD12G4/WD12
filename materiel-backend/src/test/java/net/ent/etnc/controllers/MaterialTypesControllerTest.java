@@ -9,7 +9,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -30,11 +29,18 @@ class MaterialTypesControllerTest {
     }
 
     @Test
-    @DisplayName("Doit renvoyer la liste complète de tous les types de matériels")
+    @DisplayName("Doit renvoyer la liste complète de tous les types de matériels avec leurs libellés")
     void getAll_ReturnsAllMaterialTypes() throws Exception {
         mockMvc.perform(get("/api/v1/material-types/"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(4)))
-                .andExpect(jsonPath("$", hasItems("UC", "SCREEN", "PROJECTOR", "PERIPHERAL")));
+                .andExpect(jsonPath("$[0].code").value("UC"))
+                .andExpect(jsonPath("$[0].libelle").value("Unité centrale"))
+                .andExpect(jsonPath("$[1].code").value("SCREEN"))
+                .andExpect(jsonPath("$[1].libelle").value("Écran"))
+                .andExpect(jsonPath("$[2].code").value("PROJECTOR"))
+                .andExpect(jsonPath("$[2].libelle").value("Projecteur"))
+                .andExpect(jsonPath("$[3].code").value("PERIPHERAL"))
+                .andExpect(jsonPath("$[3].libelle").value("Périphérique"));
     }
 }
