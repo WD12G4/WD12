@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS reports (
     handle_date_time TIMESTAMP,
     handled BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT uk__report__report_date_time__user__material UNIQUE (material_id, user_id, report_date_time),
-    CONSTRAINT fk__reports__users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk__reports__users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
     CONSTRAINT fk__reports__materials FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE CASCADE
 );
 
@@ -64,12 +64,12 @@ CREATE TABLE IF NOT EXISTS killevents (
     version BIGINT NOT NULL DEFAULT 0,
     process_name VARCHAR(100) NOT NULL,
     uc_id BIGINT NOT NULL,
-    user_id BIGINT,
+    user_id BIGINT NOT NULL,
     kill_date_time TIMESTAMP NOT NULL,
     result BOOLEAN NOT NULL DEFAULT TRUE,
-    CONSTRAINT uk__killevent__process_name__uc__kill_date_time UNIQUE (process_name, uc_id, kill_date_time),
+    CONSTRAINT uk__killevent__process_name__uc__user__kill_date_time UNIQUE (process_name, uc_id, user_id, kill_date_time),
     CONSTRAINT fk__killevents__materials FOREIGN KEY (uc_id) REFERENCES materials(id) ON DELETE CASCADE,
-    CONSTRAINT fk__killevents__users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    CONSTRAINT fk__killevents__users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
 );
 
 -- 8. Table des applications (catalogue des processus et liste noire)

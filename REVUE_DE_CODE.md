@@ -29,7 +29,7 @@ Les risques étaient concentrés sur la **supervision**, la partie la plus réce
 1. ~~**Deux contrôleurs sans aucun contrôle de rôle**~~ : ✅ C1 corrigé via `@PreAuthorize("hasRole('ADMIN')")` sur les modifications du catalogue et de la liste noire (`ApplicationController` et `ApplicationServiceImpl`).
 2. ~~**Le canal des agents est ouvert**~~ : ✅ **Corrigé (commit `a744c4b`)** via secret partagé (Handshake) et validation du matériel en base.
 3. **L'agent tourne en SYSTEM / root et ne vérifie pas le certificat du serveur** : qui se place entre l'agent et le serveur peut lui faire arrêter des processus.
-4. **Les remontées et le journal ne sont protégés que par le front** : un formateur peut lire toutes les remontées et écrire de fausses lignes dans le journal des arrêts (I2 ✅ **Corrigé** : route `POST /killevents` retirée).
+4. **Les remontées et le journal ne sont protégés que par le front** : un formateur peut lire toutes les remontées et écrire de fausses lignes dans le journal des arrêts (I2 ✅ **Corrigé** : route `POST /killevents` retirée ; I7 ✅ **Corrigé** : schéma SQL aligné sur JPA et archivage).
 5. **Le déploiement publie tout** : base, Adminer, backend et console Keycloak (`admin / admin`) sont joignables directement.
 
 Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotations et sont les plus rentables.
@@ -131,10 +131,13 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 
 #### I7 — Supprimer un compte efface ses remontées ; schéma SQL et entités divergent
 - **Où :** `…/controllers/UserController.java:83-90` ; `docker/initdb/01-schema.sql:57`, `:70`, `:72` ; `…/models/KillEvent.java:20-21` et `:47-49` ; `…/resources/application.yml:37`
-- **Statut :** Vérifié — **Effort :** faible (compte), moyen (schéma) — **Concerné :** back
-- **Problème :** `DELETE /users/{id}` supprime physiquement (RG-40 demande un archivage ; le front archive déjà par `enabled=false`). Avec le schéma SQL, les remontées du compte partent en cascade et l'auteur des arrêts passe à `NULL`, alors que l'entité le déclare obligatoire. La contrainte d'unicité de `killevents` n'est pas la même dans le script et dans l'entité. `ddl-auto: update` laisse Hibernate retoucher la base par-dessus le script.
-- **Scénario :** un administrateur appelle `DELETE /users/7` → toutes les remontées du formateur 7 disparaissent. Sur une base créée par Hibernate seul, la même requête donne une erreur 500 (clé étrangère).
-- **Correction :** faire de `DELETE /users/{id}` une désactivation, ou retirer la route. Choisir une seule source pour le schéma (`ddl-auto: validate` + script, ou Flyway).
+- **Statut :** ✅ **Corrigé** — **Effort :** faible (compte), moyen (schéma) — **Concerné :** back
+- **Problème initial :** `DELETE /users/{id}` supprimait physiquement (RG-40 demande un archivage ; le front archive déjà par `enabled=false`). Avec le schéma SQL initial, les remontées du compte partaient en cascade et l'auteur des arrêts passait à `NULL`, alors que l'entité le déclare obligatoire. La contrainte d'unicité de `killevents` n'était pas la même dans le script et dans l'entité. `ddl-auto: update` laissait Hibernate retoucher la base par-dessus le script.
+- **Scénario :** un administrateur appelle `DELETE /users/7` → toutes les remontées du formateur 7 disparaissaient. Sur une base créée par Hibernate seul, la même requête donnait une erreur 500 (clé étrangère).
+- **Correction appliquée :**
+  - `UserServiceImpl.deleteById` effectue une désactivation logique (`enabled=false`, RG-40) avec protection du dernier administrateur actif.
+  - `docker/initdb/01-schema.sql` aligné sur l'entité JPA `KillEvent` : `user_id BIGINT NOT NULL`, contrainte `uk__killevent__process_name__uc__user__kill_date_time` (4 colonnes) et clés étrangères `ON DELETE RESTRICT` (sur `reports` et `killevents`).
+  - `application.yml` : configuration de `ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}` pour que les scripts SQL restent l'unique source de vérité sans altération par Hibernate.
 
 #### I8 — Erreurs de l'API : 500 sur un doublon, message Java brut sur une validation
 - **Où :** `…/handlers/GlobalExceptionHandler.java:40-44` ; `…/controllers/BuildingController.java:70`, `…/controllers/RoomController.java:70` ; `materiel-frontend/src/services/api-error.ts:44`
@@ -248,7 +251,7 @@ Le fichier `Suivi_RG_WD12_G4.xlsx` n'était pas dans l'archive : ce tableau repo
 | RG-27 (liste noire : administrateur) | ✅ modifications et blacklist réservées à ADMIN (@PreAuthorize) | C1 |
 | RG-34 (formateur limité à sa salle) | ❌ front seul | C2 |
 | RG-38 (formateur : ses remontées) | ❌ front seul | I1 |
-| RG-40 (archivage des comptes) | ⚠️ le front archive, l'API supprime encore | I7 |
+| RG-40 (archivage des comptes) | ✅ suppression logique (archivage) dans l'API et schéma protégé | I7 |
 | RG-31 (suppression salle / bâtiment) | ✅ bâtiment non supprimable si salles présentes, salle non supprimable si matériels présents | m10 |
 
 ---
@@ -261,6 +264,7 @@ Le fichier `Suivi_RG_WD12_G4.xlsx` n'était pas dans l'archive : ce tableau repo
 | 2 | I2 — retirer `POST /killevents` | faible | back | ✅ **Fait** |
 | 3 | I1 — filtrer les remontées par auteur | faible | back | À faire |
 | 4 | I4 — retrait de l'agent par session | faible | back | ✅ **Fait (commit `a744c4b`)** |
+| 4 bis | I7 — suppression logique (archivage) et alignement schéma SQL/JPA | faible | back | ✅ **Fait** |
 | 5 | I9 — ports publiés, mots de passe de la VM | faible | déploiement | À faire |
 | 6 | I10 — figer le tag déployé sur la VM | faible | CI | À faire |
 | 7 | I8 — gestionnaires d'erreurs | faible | back | À faire |
