@@ -5,7 +5,9 @@
 - **Périmètre :** backend Spring, agent C#, front Vue, Docker / Nginx / Keycloak, CI
 - **Références :** tous les `chemin:ligne` renvoient au commit `4a8a7a4`, pas à la branche `frontBase_ESL` actuellement ouverte en local.
 
-> Ce fichier remplace la première version, qui portait sur `frontBase_ESL`. Il est exclu de Git en local (`.git/info/exclude`) pour ne pas partir sur GitHub par erreur.
+> Ce fichier remplace la première version, qui portait sur `frontBase_ESL`. Il est versionné dans le dépôt depuis le 13 novembre : les corrections y sont notées au fil de l'eau, par la personne qui les fait.
+
+> **Mise à jour du 16 novembre 2026** (état relu : `proto-backend-frontend`, commit `7cb3ba0`) : les statuts des constats C1, C2, C3, I1, I2, I3, I6, I7, I8, I9, m9 et m10 ont été recontrôlés dans le code et sont exacts. Le constat I10 a été requalifié (il n'y a plus de job de déploiement). Les délais de I5 ont été alignés sur le code. Les 331 tests du backend passent. Le 17 novembre, I7 et I8 ont été corrigés (voir ces constats) ; les 336 tests du backend passent.
 
 ## Ce qui a été exécuté, et ce qui ne l'a pas été
 
@@ -38,8 +40,8 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 
 | Étiquette | Personne |
 |---|---|
-| back, agent, déploiement, CI | `wolkern721` |\
-| Keycloak, HTTPS Nginx | `r.adamczak` |\
+| back, agent, déploiement, CI | `wolkern721` |
+| Keycloak, HTTPS Nginx | `r.adamczak` |
 | front | Paul |
 
 ---
@@ -73,10 +75,6 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
   - Suppression de l'auto-création aveugle de fiches UC dans `SupervisionServiceImpl`.
   - Intégration du secret partagé dans l'agent C# .NET 10 (`Config.cs`, `config.json`, argument `--secret`, variable `WD12_AGENT_SECRET`).
   - Tests unitaires complets au vert : `AgentHandshakeInterceptorTest` et `AgentWebSocketHandlerTest`.
-
----
-
-## 2. Constats
 
 ### 🟠 Important
 
@@ -118,7 +116,7 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 - **Scénario :** une salle de 15 postes dont les agents ne répondent plus (veille) → chaque lecture dure 45 s, les lectures s'empilent, les 10 connexions sont prises et toute l'application ralentit. Deux personnes sur la même salle → processus qui disparaissent par intermittence.
 - **Correction appliquée :**
   - Sortie de l'interrogation réseau de la transaction SQL (`@Transactional` retiré de `findProcessesForWorkstations`).
-  - Interrogation en parallèle de tous les agents via `CompletableFuture` et méthode asynchrone non-bloquante `fetchProcessesAsync` dans `AgentWebSocketHandler`, bornée par un délai par poste (3 s) et un délai global (4 s au lieu de N × 3 s).
+  - Interrogation en parallèle de tous les agents via `CompletableFuture` et méthode asynchrone non-bloquante `fetchProcessesAsync` dans `AgentWebSocketHandler`, bornée par un délai par poste (5 s) et un délai global (6 s, au lieu de N × 3 s auparavant).
   - Sessions WebSocket encapsulées dans un `ConcurrentWebSocketSessionDecorator` pour sécuriser les envois concurrents multi-threads.
   - Côté front (`use-supervision.ts`), ajout d'un verrou `refreshing` empêchant le déclenchement d'une nouvelle relecture tant que la précédente est en cours, et vérification de la concordance de salle (`state.roomId !== roomId`).
 
@@ -157,16 +155,13 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 - **Scénario :** depuis un poste de la salle, ouvrir `https://<vm>/auth/admin`, entrer `admin / admin` → contrôle complet des identités. Ou `http://<vm>:8082` (Adminer) avec `postgres / postgres` → passer son propre compte en ADMIN dans la table `users`.
 - **Correction :** ne publier que les ports 80 et 443 ; retirer Adminer du compose de production ; changer les mots de passe dans le `.env` de la VM ; bloquer `/auth/admin` dans Nginx. Les comptes de démonstration sont une décision assumée : les garder pour la soutenance, les annoncer comme tels.
 
-#### I10 — CI : le déploiement tire `:latest` au lieu de l'image construite
-- **Où :** `.github/workflows/backend.yml:144-154`, `.github/workflows/frontend.yml:131-141`
-- **Statut :** Vérifié — **Effort :** faible — **Concerné :** CI
-- **Problème :** le job de déploiement exécute `docker compose pull backend` sans préciser le tag : il télécharge l'image taguée `:latest`, qui n'est pas mise à jour par les commits ordinaires.
-- **Scénario :** pousser une correction sur le backend → la CI passe au vert, mais la VM continue de faire tourner l'ancienne version.
-- **Correction :** passer le tag de l'image en variable d'environnement au compose sur la VM.
-
----
-
-## 2. Constats
+#### I10 — Déploiement : la VM suit `latest`, sans version figée
+- **Où :** `.github/workflows/backend.yml:139-189`, `.github/workflows/frontend.yml:126-176` ; `docker-compose.prod.yml:44`, `:61` ; `.env.example:22`, `:39`
+- **Statut :** Vérifié, **requalifié le 16/11** — **Effort :** faible — **Concerné :** CI, déploiement
+- **Constat du 13/11, périmé :** il décrivait un job de déploiement qui tirait une image `:latest` non mise à jour par les commits ordinaires. Ce job n'existe plus. Chaque push publie l'image sous deux tags, `latest` et les 7 premiers caractères du commit, et la VM est mise à jour à la main (`docker compose -f docker-compose.prod.yml pull`, puis `up -d`).
+- **Problème restant :** `BACKEND_IMAGE` et `FRONTEND_IMAGE` pointent sur `latest`. On ne sait pas quelle version tourne sur la VM, un `pull` embarque tout commit poussé entre-temps, et revenir en arrière demande de retrouver le bon tag.
+- **Scénario :** la veille de la soutenance, un `pull` récupère un commit poussé après la répétition → la démonstration ne tourne plus sur la version répétée.
+- **Correction :** dans le `.env` de la VM, écrire le tag du commit validé (`FRONTEND_IMAGE=ghcr.io/wd12g4/wd12-frontend:<commit>`, de même pour le backend). Ces tags sont déjà publiés par la CI : rien à changer dans les workflows.
 
 ### 🟡 À confirmer
 
@@ -177,10 +172,6 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 | A3 | Journal vu par le gestionnaire | `KillEventServiceImpl.java:49-57` | Seul ADMIN voit tous les arrêts ; un gestionnaire ne voit que les siens. À comparer au fichier des RG. |
 | A4 | Modification d'une remontée | `ReportServiceImpl.java:86-91` | Le contexte indique « auteur ou gestionnaire » ; le code n'autorise que l'auteur. |
 | A5 | Dossier d'installation de l'agent | `install-service.bat:15-17` | Si l'exécutable lancé en SYSTEM est dans un dossier modifiable par le stagiaire, il peut le remplacer. À vérifier sur un poste réel. |
-
----
-
-## 2. Constats
 
 ### 🟡 Mineur
 
@@ -200,10 +191,6 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 | m12 | En-têtes de sécurité Nginx | `materiel-frontend/nginx.conf:30-109` | Ni HSTS, ni `X-Content-Type-Options`, ni `frame-ancestors`. | faible | déploiement |
 | m13 | Journalisation | `application.yml:66` | `DEBUG` par défaut pour toute l'application. | faible | back |
 
----
-
-## 2. Constats
-
 ### 🔵 Suggestions
 
 - **Lien compte ↔ identité :** le rôle est retrouvé par `preferred_username` (`KeycloakJwtConverter.java:75`). C'est correct tant que le realm interdit l'inscription et le changement d'identifiant (c'est le cas). Avec le vrai MinDef Connect, préférer un identifiant stable (`sub`) et vérifier l'audience du jeton.
@@ -212,7 +199,7 @@ Pour la soutenance, les points 1 et 4 se corrigent en quelques lignes d'annotati
 - **Validation écrite trois fois** (DTO, entité, service) : garder Bean Validation pour le format, les services pour les règles métier.
 - **Images non figées :** `nginx:alpine`, `adminer:latest` (`materiel-frontend.dockerfile:33`, `docker-compose.prod.yml:28`).
 - ~~**`materiel-agent/config.json`** versionné avec une adresse et un numéro de série réels~~ : ✅ **Corrigé** (remplacé par des valeurs modèles d'exemple `UC-DELL-001`, `127.0.0.1`).
-- **Confirmations en `window.confirm`** (6 endroits) : fonctionnel, mais non stylable ni cohérent avec les thèmes.
+- **Confirmations en `window.confirm`** (7 endroits) : fonctionnel, mais non stylable ni cohérent avec les thèmes.
 
 ---
 
@@ -253,7 +240,8 @@ Le fichier `Suivi_RG_WD12_G4.xlsx` n'était pas dans l'archive : ce tableau repo
 | RG-04 (date de fin facultative) | ✅ corrigé côté back (`Material.java:46`, `MaterialRequest.java:19`) | — |
 | RG-21 (type de problème) | ❌ aucun champ dans `Report.java` | à faire, back + front |
 | RG-27 (liste noire : administrateur) | ✅ modifications et blacklist réservées à ADMIN (@PreAuthorize) | C1 |
-| RG-34 (formateur limité à sa salle) | ❌ front seul | C2 |
+| RG-34 (formateur limité à sa salle) | ⚠️ front seul : tableau de bord, matériel, salles, bâtiments et supervision limités à la salle choisie (16/11) ; l'API ne limite rien | C2 |
+| RG-46 (salle imposée dans une remontée) | ⚠️ front seul : salle du formateur imposée dans le formulaire (16/11) ; l'API accepte tout matériel | I1 |
 | RG-38 (formateur : ses remontées) | ❌ front seul | I1 |
 | RG-40 (archivage des comptes) | ✅ suppression logique (archivage) dans l'API et schéma protégé | I7 |
 | RG-31 (suppression salle / bâtiment) | ✅ bâtiment non supprimable si salles présentes, salle non supprimable si matériels présents | m10 |
@@ -270,7 +258,7 @@ Le fichier `Suivi_RG_WD12_G4.xlsx` n'était pas dans l'archive : ce tableau repo
 | 4 | I4 — retrait de l'agent par session | faible | back | ✅ **Fait (commit `a744c4b`)** |
 | 4 bis | I7 — suppression logique (archivage) et alignement schéma SQL/JPA | faible | back | ✅ **Fait** |
 | 5 | I9 — ports publiés, mots de passe de la VM | faible | déploiement | À faire |
-| 6 | I10 — figer le tag déployé sur la VM | faible | CI | À faire |
+| 6 | I10 — écrire le tag du commit validé dans le `.env` de la VM | faible | déploiement | À faire (requalifié le 16/11) |
 | 7 | I8 — gestionnaires d'erreurs et contrôle doublons en update | faible | back, front | ✅ **Fait** |
 | 8 | C2, ~~C3~~, I3, ~~I5~~, I6 — supervision et agent | moyen | back, agent | C3 ✅ **Fait (commit `a744c4b`)**, I5 ✅ **Fait** |
 
