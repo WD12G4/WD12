@@ -64,12 +64,17 @@ async function update(input: UserUpdateInput): Promise<void> {
   await saveThen(() => usersServices.update(user.id, input), `Le compte ${user.username} a été modifié.`);
 }
 
-/** Archive un compte actif (après confirmation) ou réactive un compte archivé (RG-19, RG-40). */
+/**
+ * Archive un compte actif (après confirmation) ou réactive un compte archivé (RG-19, RG-40).
+ * L'archivage passe par DELETE (suppression logique côté API) ; la réactivation par PUT.
+ */
 async function toggleArchive(user: User): Promise<void> {
-  const archiving = user.enabled;
-  if (archiving && !window.confirm(`Archiver le compte ${user.username} ? Il ne pourra plus se connecter (réactivable à tout moment).`)) return;
-  const message = `Le compte ${user.username} a été ${archiving ? 'archivé' : 'réactivé'}.`;
-  await saveThen(() => usersServices.update(user.id, {role: user.role, enabled: !archiving}), message);
+  if (user.enabled) {
+    if (!window.confirm(`Archiver le compte ${user.username} ? Il ne pourra plus se connecter (réactivable à tout moment).`)) return;
+    await saveThen(() => usersServices.delete(user.id), `Le compte ${user.username} a été archivé.`);
+    return;
+  }
+  await saveThen(() => usersServices.update(user.id, {role: user.role, enabled: true}), `Le compte ${user.username} a été réactivé.`);
 }
 
 //------------------ LIFECYCLE -------------------------------

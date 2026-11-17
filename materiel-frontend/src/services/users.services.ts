@@ -36,4 +36,12 @@ export const usersServices = {
         });
         return userFromDto(dto);
     },
+
+    /**
+     * Archive le compte : suppression logique, le compte est désactivé et reste réactivable (RG-40).
+     * Lève ApiError 400 s'il s'agit du dernier administrateur actif.
+     */
+    delete: async (id: number): Promise<void> => {
+        await apiRequest<void>(`/users/${id}`, {method: 'DELETE'});
+    },
 };
