@@ -312,6 +312,11 @@ public class AgentWebSocketHandler extends TextWebSocketHandler {
                     .build();
             conn.session().sendMessage(new TextMessage(cmd.toString()));
             return future.get(timeoutSeconds, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            pendingKillRequests.remove(requestId);
+            log.warn("Interruption lors de la demande d'arrêt du processus {} sur UC={}", pid, serialNumber);
+            return new AgentKillResult(false, pid, "", "Interruption de la communication : " + e.getMessage());
         } catch (TimeoutException e) {
             pendingKillRequests.remove(requestId);
             return new AgentKillResult(false, pid, "", "Délai d'attente dépassé pour la réponse de l'agent");

@@ -27,35 +27,31 @@ Les rôles s'héritent de manière hiérarchique : l'Administrateur dispose de t
 ### Schéma d'architecture des flux
 
 ```
-                      +---------------------------------------+
-                      |          Navigateur Client            |
-                      |  Vue 3 + TypeScript (Thèmes & DSFR)   |
-                      +-------------------+-------------------+
-                                          | HTTPS (Port 443)
-                                          v
-                      +---------------------------------------+
-                      |          Reverse Proxy Nginx          |
-                      +---+---------------+---------------+---+
-                          |               |               |
-              /           |     /api      |     /auth     |     /ws
-              v           |               v               v
-       +--------------+   |        +--------------+ +-------------+
-       |   Frontend   |   |        |   Backend    | |  Keycloak   |
-       |  (Nginx SPA) |   |        | Spring Boot  | | (IdP SSO /  |
-       +--------------+   |        |   Java 21    | |   OAuth2)   |
-                          |        +-------+------+ +------+------+
-                          |                |               |
-                          |                v               |
-                          |        +--------------+        |
-                          +------->|  PostgreSQL  |<-------+
-                                   |  (BDD v16)   |
-                                   +--------------+
-                                          ^
-                                          | wss (Port 443 /ws/agent)
-                      +-------------------+-------------------+
-                      |       Agent de Supervision (.NET 10)  |
-                      |    Exécuté sur chaque UC stagiaire    |
-                      +---------------------------------------+
+       +--------------------+              +----------------------+
+       | Navigateur Client  |              | Agent de Supervision |
+       | (Vue 3 / DSFR)     |              | (.NET 10 stagiaires) |
+       +---------+----------+              +----------+-----------+
+                 | HTTPS (:443)                       | WSS (:443 /ws/agent)
+                 +-----------------+  +---------------+
+                                   |  |
+                                   v  v
+                      +---------------------------+
+                      |    Reverse Proxy Nginx    |
+                      +----+-----------+-----+----+
+                           |           |     |
+                 / (SPA)   | /api & /ws|     | /auth
+                 v         v           |     v
+          +------------+ +-------------+  +------------+
+          |  Frontend  | |   Backend   |  |  Keycloak  |
+          | (Nginx SPA)| | Spring Boot |  | (IdP SSO / |
+          |            | |   Java 21   |  |   OAuth2)  |
+          +------------+ +------+------+  +-----+------+
+                                |               |
+                                v               v
+                         +-----------------------------+
+                         |         PostgreSQL          |
+                         |          (BDD v16)          |
+                         +-----------------------------+
 ```
 
 ### Organisation du dépôt

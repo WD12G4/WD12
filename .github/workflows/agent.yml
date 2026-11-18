@@ -17,6 +17,83 @@ permissions:
   contents: write
 
 jobs:
+  # --------------------------------------------------------------------------
+  # 1. CI : Analyse de qualité de code SonarQube (.NET 10)
+  # --------------------------------------------------------------------------
+  agent-sonar:
+    name: Agent SonarQube Analysis
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: ./materiel-agent
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect & Configure Proxy
+        run: |
+          if timeout 2 bash -c '</dev/tcp/172.16.0.1/8080' 2>/dev/null; then
+            echo "Proxy 172.16.0.1:8080 détecté -> Activation du proxy"
+            echo "HTTP_PROXY=http://172.16.0.1:8080" >> "$GITHUB_ENV"
+            echo "HTTPS_PROXY=http://172.16.0.1:8080" >> "$GITHUB_ENV"
+            echo "NO_PROXY=localhost,127.0.0.1,*.internet.comsic,*.etrs.net,*.etrs.terre.defense.gouv.fr,192.168.*,172.16.*,10.10.*,*.pdi,*.etnc.terre.defense.gouv.fr" >> "$GITHUB_ENV"
+            echo "http_proxy=http://172.16.0.1:8080" >> "$GITHUB_ENV"
+            echo "https_proxy=http://172.16.0.1:8080" >> "$GITHUB_ENV"
+            echo "no_proxy=localhost,127.0.0.1,*.internet.comsic,*.etrs.net,*.etrs.terre.defense.gouv.fr,192.168.*,172.16.*,10.10.*,*.pdi,*.etnc.terre.defense.gouv.fr" >> "$GITHUB_ENV"
+          else
+            echo "Proxy 172.16.0.1:8080 non joignable -> Connexion directe"
+          fi
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: SonarQube Analysis
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          if [ -z "$SONAR_HOST_URL" ]; then
+            echo "SONAR_HOST_URL non défini, étape ignorée."
+            exit 0
+          fi
+          if ! curl -s --connect-timeout 3 -m 5 -I "$SONAR_HOST_URL" > /dev/null 2>&1; then
+            echo "Serveur SonarQube ($SONAR_HOST_URL) non joignable, étape ignorée."
+            exit 0
+          fi
+          echo "Serveur SonarQube joignable, préparation de l'analyse..."
+          dotnet tool install --global dotnet-sonarscanner || true
+          export PATH="$PATH:$HOME/.dotnet/tools"
+
+          echo "Lancement de SonarScanner..."
+          dotnet sonarscanner begin \
+            /k:"materiel-agent" \
+            /n:"materiel-agent" \
+            /d:sonar.host.url="$SONAR_HOST_URL" \
+            /d:sonar.token="$SONAR_TOKEN" \
+            /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
+            /d:sonar.exclusions="**/bin/**,**/obj/**,**/out/**,**/packages/**,**/tests/**" \
+            /d:sonar.coverage.exclusions="**/Program.cs,**/tests/**,**/bin/**,**/obj/**"
+
+          dotnet build MaterielAgent.csproj -c Release --no-incremental
+          dotnet test tests/MaterielAgent.Tests.csproj -c Release --collect:"XPlat Code Coverage;Format=opencover" --results-directory ./TestResults
+
+          dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+
+  # --------------------------------------------------------------------------
+  # 2. Build & Packaging Matrix
+  # --------------------------------------------------------------------------
   build-agent:
     name: Build & Package Matrix
     runs-on: ubuntu-latest
@@ -90,6 +167,9 @@ jobs:
           name: materiel-agent-${{ matrix.os_name }}
           path: ./materiel-agent/packages/*
 
+  # --------------------------------------------------------------------------
+  # 3. Release : Publication des binaires GitHub Releases
+  # --------------------------------------------------------------------------
   create-release:
     name: Publish GitHub Release
     runs-on: ubuntu-latest

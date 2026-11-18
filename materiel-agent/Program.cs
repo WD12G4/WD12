@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace MaterielAgent;
 
-public class Program
+public static class Program
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -51,7 +51,9 @@ public class Program
             using var ws = new ClientWebSocket();
             if (cfg.AllowSelfSignedCert)
             {
+#pragma warning disable S4830 // Autorisé explicitement par configuration (--insecure / allow_self_signed_cert) pour les environnements de test / lab
                 ws.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+#pragma warning restore S4830
             }
             if (!string.IsNullOrWhiteSpace(cfg.SharedSecret))
             {
@@ -100,8 +102,8 @@ public class Program
                 await ReceiveLoopAsync(ws, cfg.SerialNumber, linkCts.Token);
 
                 // Si ReceiveLoopAsync s'est terminé (déconnexion serveur), arrêter le heartbeat
-                linkCts.Cancel();
-                await Task.WhenAny(heartbeatTask, Task.Delay(500));
+                await linkCts.CancelAsync();
+                await Task.WhenAny(heartbeatTask, Task.Delay(500, CancellationToken.None));
             }
             catch (OperationCanceledException)
             {
@@ -119,7 +121,10 @@ public class Program
                     {
                         await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Agent stopping", CancellationToken.None);
                     }
-                    catch { }
+                    catch (Exception)
+                    {
+                        // Ignoré lors de la fermeture
+                    }
                 }
             }
 
@@ -158,7 +163,10 @@ public class Program
                 await SendJsonAsync(ws, pong, ct);
             }
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException)
+        {
+            // Arrêt normal du heartbeat
+        }
         catch (Exception ex)
         {
             Console.WriteLine($"[Heartbeat] Erreur : {ex.Message}");
@@ -168,7 +176,7 @@ public class Program
     private static async Task ReceiveLoopAsync(ClientWebSocket ws, string serialNumber, CancellationToken ct)
     {
         var buffer = new byte[8192];
-        var ms = new MemoryStream();
+        using var ms = new MemoryStream();
 
         while (!ct.IsCancellationRequested && ws.State == WebSocketState.Open)
         {
@@ -182,7 +190,7 @@ public class Program
                     Console.WriteLine($"Fermeture reçue du serveur (Status={result.CloseStatus}, Description={result.CloseStatusDescription}).");
                     return;
                 }
-                ms.Write(buffer, 0, result.Count);
+                await ms.WriteAsync(buffer.AsMemory(0, result.Count), ct);
             } while (!result.EndOfMessage);
 
             ms.Seek(0, SeekOrigin.Begin);

@@ -6,8 +6,15 @@ using System.Text.Json.Serialization;
 
 namespace MaterielAgent;
 
-public class Config
+public partial class Config
 {
+    private static readonly string[] VirtualKeywords =
+    [
+        "virtual", "vbox", "vmware", "hyper-v", "docker", "wsl", "vpn",
+        "tap", "tun", "tailscale", "loopback", "teredo", "pseudo", "wireguard",
+        "utun", "awdl", "bridge", "veth", "virbr"
+    ];
+
     [JsonPropertyName("server_url")]
     public string ServerUrl { get; set; } = "ws://127.0.0.1:8080/ws/agent";
 
@@ -30,39 +37,8 @@ public class Config
         var config = new Config();
         string configPath = "config.json";
 
-        // Analyse manuelle des arguments simples style --server / -server / --serial / -config
-        for (int i = 0; i < args.Length; i++)
-        {
-            string arg = args[i];
-            if ((arg == "--config" || arg == "-config" || arg == "-c") && i + 1 < args.Length)
-            {
-                configPath = args[++i];
-            }
-            else if ((arg == "--server" || arg == "-server" || arg == "-s") && i + 1 < args.Length)
-            {
-                config.ServerUrl = args[++i];
-            }
-            else if ((arg == "--serial" || arg == "-serial") && i + 1 < args.Length)
-            {
-                config.SerialNumber = args[++i];
-            }
-            else if ((arg == "--secret" || arg == "-secret" || arg == "-k") && i + 1 < args.Length)
-            {
-                config.SharedSecret = args[++i];
-            }
-            else if ((arg == "--reconnect" || arg == "-reconnect" || arg == "-r") && i + 1 < args.Length)
-            {
-                if (int.TryParse(args[++i], out int sec)) config.ReconnectDelaySec = sec;
-            }
-            else if (arg == "--insecure" || arg == "--allow-self-signed")
-            {
-                config.AllowSelfSignedCert = true;
-            }
-            else if (arg == "--strict-ssl")
-            {
-                config.AllowSelfSignedCert = false;
-            }
-        }
+        // Analyse initiale des arguments simples (ex: chemin de config ou flags initiaux)
+        ParseCommandLineArgs(args, config, ref configPath);
 
         // 1. Lecture du fichier config.json si présent
         // Si le chemin n'est pas absolu et n'existe pas dans le répertoire de travail actuel
@@ -123,11 +99,37 @@ public class Config
             config.AllowSelfSignedCert = allowCert;
         }
 
-        // 3. Ré-application des flags explicites (priorité maximale)
+        // 3. Ré-application des flags explicites (priorité maximale sur l'environnement et le fichier)
+        ParseCommandLineArgs(args, config, ref configPath);
+
+        // 4. Fallback pour SerialNumber si vide : Adresse MAC sans séparateurs ou Hostname
+        if (string.IsNullOrWhiteSpace(config.SerialNumber))
+        {
+            string mac = GetMacAddress();
+            string cleanMac = mac.Replace(":", "", StringComparison.Ordinal).Replace("-", "", StringComparison.Ordinal).ToUpperInvariant();
+            if (!string.IsNullOrWhiteSpace(cleanMac) && cleanMac != "000000000000")
+            {
+                config.SerialNumber = cleanMac;
+            }
+            else
+            {
+                config.SerialNumber = Environment.MachineName;
+            }
+        }
+
+        return config;
+    }
+
+    private static void ParseCommandLineArgs(string[] args, Config config, ref string configPath)
+    {
         for (int i = 0; i < args.Length; i++)
         {
             string arg = args[i];
-            if ((arg == "--server" || arg == "-server" || arg == "-s") && i + 1 < args.Length)
+            if ((arg == "--config" || arg == "-config" || arg == "-c") && i + 1 < args.Length)
+            {
+                configPath = args[++i];
+            }
+            else if ((arg == "--server" || arg == "-server" || arg == "-s") && i + 1 < args.Length)
             {
                 config.ServerUrl = args[++i];
             }
@@ -152,23 +154,6 @@ public class Config
                 config.AllowSelfSignedCert = false;
             }
         }
-
-        // 4. Fallback pour SerialNumber si vide : Adresse MAC sans séparateurs ou Hostname
-        if (string.IsNullOrWhiteSpace(config.SerialNumber))
-        {
-            string mac = GetMacAddress();
-            string cleanMac = mac.Replace(":", "").Replace("-", "").ToUpperInvariant();
-            if (!string.IsNullOrWhiteSpace(cleanMac) && cleanMac != "000000000000")
-            {
-                config.SerialNumber = cleanMac;
-            }
-            else
-            {
-                config.SerialNumber = Environment.MachineName;
-            }
-        }
-
-        return config;
     }
 
     public static string GetMacAddress()
@@ -208,25 +193,18 @@ public class Config
 
             return !string.IsNullOrEmpty(fallback) ? fallback : "00:00:00:00:00:00";
         }
-        catch
+        catch (Exception)
         {
             return "00:00:00:00:00:00";
         }
     }
 
-    private static bool IsVirtualInterface(string name, string description)
+    internal static bool IsVirtualInterface(string name, string description)
     {
-        string[] virtualKeywords =
-        {
-            "virtual", "vbox", "vmware", "hyper-v", "docker", "wsl", "vpn",
-            "tap", "tun", "tailscale", "loopback", "teredo", "pseudo", "wireguard",
-            "utun", "awdl", "bridge", "veth", "virbr"
-        };
-
         string n = name.ToLowerInvariant();
         string d = description.ToLowerInvariant();
 
-        return virtualKeywords.Any(k => n.Contains(k) || d.Contains(k));
+        return VirtualKeywords.Any(k => n.Contains(k, StringComparison.Ordinal) || d.Contains(k, StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -244,7 +222,7 @@ public class Config
                 currentUser.Equals("SYSTEM", StringComparison.OrdinalIgnoreCase) ||
                 currentUser.Equals("LOCAL SERVICE", StringComparison.OrdinalIgnoreCase) ||
                 currentUser.Equals("NETWORK SERVICE", StringComparison.OrdinalIgnoreCase) ||
-                currentUser.EndsWith("$") ||
+                currentUser.EndsWith('$') ||
                 currentUser.Equals(Environment.MachineName + "$", StringComparison.OrdinalIgnoreCase);
 
             // 1. Si le processus tourne directement sous une session utilisateur (non-root, non-service système)
@@ -291,22 +269,23 @@ public class Config
 
             return !string.IsNullOrWhiteSpace(currentUser) ? currentUser : null;
         }
-        catch
+        catch (Exception)
         {
             return null;
         }
     }
 
-    private static string? DetectLinuxSessionUser()
+    internal static string? DetectLinuxSessionUser()
     {
         // Méthode A : loginctl (standard systemd)
         try
         {
+            string loginctlPath = File.Exists("/usr/bin/loginctl") ? "/usr/bin/loginctl" : "/bin/loginctl";
             using var proc = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "loginctl",
+                    FileName = loginctlPath,
                     Arguments = "list-users --no-legend",
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
@@ -327,16 +306,20 @@ public class Config
                 }
             }
         }
-        catch { }
+        catch (Exception)
+        {
+            // loginctl non disponible
+        }
 
         // Méthode B : commande who (utilisateurs loggés)
         try
         {
+            string whoPath = File.Exists("/usr/bin/who") ? "/usr/bin/who" : "/bin/who";
             using var proc = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "who",
+                    FileName = whoPath,
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
@@ -356,7 +339,10 @@ public class Config
                 }
             }
         }
-        catch { }
+        catch (Exception)
+        {
+            // who non disponible
+        }
 
         // Méthode C : corrélation entre /etc/passwd (UID >= 1000) et les processus actifs (/proc)
         try
@@ -394,17 +380,26 @@ public class Config
                             }
                         }
                     }
-                    catch { }
-                    finally { p.Dispose(); }
+                    catch (Exception)
+                    {
+                        // Processus fermé ou inaccessible
+                    }
+                    finally
+                    {
+                        p.Dispose();
+                    }
                 }
             }
         }
-        catch { }
+        catch (Exception)
+        {
+            // /etc/passwd inaccessible
+        }
 
         return null;
     }
 
-    private static string? DetectMacConsoleUser()
+    internal static string? DetectMacConsoleUser()
     {
         try
         {
@@ -412,7 +407,7 @@ public class Config
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "stat",
+                    FileName = "/usr/bin/stat",
                     Arguments = "-f%Su /dev/console",
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
@@ -429,38 +424,44 @@ public class Config
                 }
             }
         }
-        catch { }
+        catch (Exception)
+        {
+            // Commande stat macOS inaccessible
+        }
         return null;
     }
 
-    // Windows API (WTS) pour interroger la session de console interactive depuis un service SYSTEM (Session 0)
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern uint WTSGetActiveConsoleSessionId();
+    internal static partial class NativeMethods
+    {
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        internal static partial uint WTSGetActiveConsoleSessionId();
 
-    [DllImport("wtsapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern bool WTSQuerySessionInformationW(
-        IntPtr hServer,
-        uint sessionId,
-        int wtsInfoClass,
-        out IntPtr ppBuffer,
-        out uint pBytesReturned);
+        [LibraryImport("wtsapi32.dll", EntryPoint = "WTSQuerySessionInformationW", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static partial bool WTSQuerySessionInformationW(
+            IntPtr hServer,
+            uint sessionId,
+            int wtsInfoClass,
+            out IntPtr ppBuffer,
+            out uint pBytesReturned);
 
-    [DllImport("wtsapi32.dll")]
-    private static extern void WTSFreeMemory(IntPtr pMemory);
+        [LibraryImport("wtsapi32.dll")]
+        internal static partial void WTSFreeMemory(IntPtr pMemory);
+    }
 
-    private const int WTSUserName = 5;
+    private const int WtsUserName = 5;
 
-    private static string? DetectWindowsConsoleUser()
+    internal static string? DetectWindowsConsoleUser()
     {
         // Méthode 1 : API native Win32 WTS (extrêmement rapide et fiable depuis Session 0 / SYSTEM)
         try
         {
-            uint sessionId = WTSGetActiveConsoleSessionId();
+            uint sessionId = NativeMethods.WTSGetActiveConsoleSessionId();
             if (sessionId != 0xFFFFFFFF)
             {
                 IntPtr buffer = IntPtr.Zero;
                 uint bytesReturned = 0;
-                if (WTSQuerySessionInformationW(IntPtr.Zero, sessionId, WTSUserName, out buffer, out bytesReturned) && buffer != IntPtr.Zero)
+                if (NativeMethods.WTSQuerySessionInformationW(IntPtr.Zero, sessionId, WtsUserName, out buffer, out bytesReturned) && buffer != IntPtr.Zero)
                 {
                     try
                     {
@@ -469,28 +470,32 @@ public class Config
                             !user.Equals("SYSTEM", StringComparison.OrdinalIgnoreCase) &&
                             !user.Equals("LOCAL SERVICE", StringComparison.OrdinalIgnoreCase) &&
                             !user.Equals("NETWORK SERVICE", StringComparison.OrdinalIgnoreCase) &&
-                            !user.EndsWith("$"))
+                            !user.EndsWith('$'))
                         {
                             return user;
                         }
                     }
                     finally
                     {
-                        WTSFreeMemory(buffer);
+                        NativeMethods.WTSFreeMemory(buffer);
                     }
                 }
             }
         }
-        catch { }
+        catch (Exception)
+        {
+            // Échec WTS API
+        }
 
         // Méthode 2 : Fallback via query user
         try
         {
+            string cmdPath = Path.Combine(Environment.SystemDirectory, "cmd.exe");
             using var proc = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "cmd.exe",
+                    FileName = cmdPath,
                     Arguments = "/c query user",
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
@@ -501,7 +506,7 @@ public class Config
             {
                 string output = proc.StandardOutput.ReadToEnd();
                 proc.WaitForExit(1500);
-                foreach (var line in output.Split('\n'))
+                foreach (var line in output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
                 {
                     if (line.Contains("Active", StringComparison.OrdinalIgnoreCase) ||
                         line.Contains("Actif", StringComparison.OrdinalIgnoreCase))
@@ -512,7 +517,7 @@ public class Config
                             !parts[0].Equals("SYSTEM", StringComparison.OrdinalIgnoreCase) &&
                             !parts[0].Equals("LOCAL SERVICE", StringComparison.OrdinalIgnoreCase) &&
                             !parts[0].Equals("NETWORK SERVICE", StringComparison.OrdinalIgnoreCase) &&
-                            !parts[0].EndsWith("$"))
+                            !parts[0].EndsWith('$'))
                         {
                             return parts[0];
                         }
@@ -520,7 +525,10 @@ public class Config
                 }
             }
         }
-        catch { }
+        catch (Exception)
+        {
+            // query user inaccessible
+        }
         return null;
     }
 }
