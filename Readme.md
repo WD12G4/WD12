@@ -66,7 +66,6 @@ Les rôles s'héritent de manière hiérarchique : l'Administrateur dispose de t
 | [`materiel-frontend/`](./materiel-frontend) | Interface utilisateur SPA, authentification PKCE, thèmes & DSFR | Vue 3, TypeScript, Vite, Tailwind CSS / Vanilla CSS |
 | [`materiel-agent/`](./materiel-agent) | Agent léger installé sur les postes stagiaires | C# (.NET 10 console), multiplateforme (Windows, Linux, macOS) |
 | [`docker/`](./docker) | Scripts SQL d'initialisation (`initdb/`) et configuration du realm (`keycloak/`) | PostgreSQL SQL, JSON realm Keycloak |
-| [`anasi/`](./anasi) | Diagrammes de conception (cas d'utilisation, classes, flux) | Mermaid, PlantUML, draw.io |
 | [`.github/workflows/`](./.github/workflows) | Chaîne d'intégration et déploiement continus | GitHub Actions (Build, Test, SonarQube, Docker GHCR) |
 
 ### Mécanisme d'authentification
@@ -167,4 +166,3 @@ Ce dépôt présente la solution au stade de **prototype de démonstration** :
 * [`REVUE_GLOBALE_WD12_G4.md`](./REVUE_GLOBALE_WD12_G4.md) : Analyse d'alignement avec les exigences et synthèse globale du projet.
 * [`materiel-frontend/README.md`](./materiel-frontend/README.md) : Architecture de l'interface, gestion des thèmes et guide de développement.
 * [`materiel-agent/README.md`](./materiel-agent/README.md) : Guide d'installation et de configuration de l'agent de supervision.
-* `anasi/` : Dossier contenant l'ensemble des diagrammes d'analyse et d'architecture.
